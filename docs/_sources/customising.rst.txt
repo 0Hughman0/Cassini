@@ -38,3 +38,25 @@ To make changes to the gui, create you own gui class and then simply set the ``g
         gui_cls = MyGui
 
 Each ``Tier`` creates its own ``gui_cls`` instance upon ``__init__``, passing itself as the first argument.
+
+Using ``Tier.meta`` you can store and retrieve JSON serializable data. You may find however, that you have more complex
+typing needs, or simply that ``tier.meta.my_attr`` is a bit too cumbersome. Cassini provides the ``MetaAttr`` that you
+can use when you subclass ``TierBase``::
+
+    from cassini import BaseTier
+    from cassini.accessors import MetaAttr
+
+    class CustomTier(BaseTier):
+        shopping = MetaAttr(post_get=lambda val: val.split(','),
+                            pre_set=lambda val: ','.join(val))
+
+    ...
+
+    >>> tier = CustomTier()
+    >>> tier.shopping = ['spam', 'ham', 'something canned']
+    >>> tier.meta.shopping
+    'spam,ham,something canned'
+    >>> tier.shopping
+    ['spam', 'ham', 'something canned']
+
+

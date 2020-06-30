@@ -15,6 +15,8 @@
     <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Cassini API" href="api.html" />
+    <link rel="prev" title="Advanced Features" href="features.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -68,6 +70,26 @@ the base class <code class="docutils literal notranslate"><span class="pre">Tier
 </pre></div>
 </div>
 <p>Each <code class="docutils literal notranslate"><span class="pre">Tier</span></code> creates its own <code class="docutils literal notranslate"><span class="pre">gui_cls</span></code> instance upon <code class="docutils literal notranslate"><span class="pre">__init__</span></code>, passing itself as the first argument.</p>
+<p>Using <code class="docutils literal notranslate"><span class="pre">Tier.meta</span></code> you can store and retrieve JSON serializable data. You may find however, that you have more complex
+typing needs, or simply that <code class="docutils literal notranslate"><span class="pre">tier.meta.my_attr</span></code> is a bit too cumbersome. Cassini provides the <code class="docutils literal notranslate"><span class="pre">MetaAttr</span></code> that you
+can use when you subclass <code class="docutils literal notranslate"><span class="pre">TierBase</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">cassini</span> <span class="kn">import</span> <span class="n">BaseTier</span>
+<span class="kn">from</span> <span class="nn">cassini.accessors</span> <span class="kn">import</span> <span class="n">MetaAttr</span>
+
+<span class="k">class</span> <span class="nc">CustomTier</span><span class="p">(</span><span class="n">BaseTier</span><span class="p">):</span>
+    <span class="n">shopping</span> <span class="o">=</span> <span class="n">MetaAttr</span><span class="p">(</span><span class="n">post_get</span><span class="o">=</span><span class="k">lambda</span> <span class="n">val</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">),</span>
+                        <span class="n">pre_set</span><span class="o">=</span><span class="k">lambda</span> <span class="n">val</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+
+<span class="o">...</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tier</span> <span class="o">=</span> <span class="n">CustomTier</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tier</span><span class="o">.</span><span class="n">shopping</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;spam&#39;</span><span class="p">,</span> <span class="s1">&#39;ham&#39;</span><span class="p">,</span> <span class="s1">&#39;something canned&#39;</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tier</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">shopping</span>
+<span class="s1">&#39;spam,ham,something canned&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tier</span><span class="o">.</span><span class="n">shopping</span>
+<span class="p">[</span><span class="s1">&#39;spam&#39;</span><span class="p">,</span> <span class="s1">&#39;ham&#39;</span><span class="p">,</span> <span class="s1">&#39;something canned&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
 </div>
 
 
@@ -88,9 +110,10 @@ the base class <code class="docutils literal notranslate"><span class="pre">Tier
 
 <h3>Navigation</h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="features.html">Features</a></li>
-<li class="toctree-l1"><a class="reference internal" href="features.html#templating">Templating</a></li>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">Advanced Features</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Customizing Cassini</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Cassini API</a></li>
 </ul>
 
@@ -98,6 +121,8 @@ the base class <code class="docutils literal notranslate"><span class="pre">Tier
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="features.html" title="previous chapter">Advanced Features</a></li>
+      <li>Next: <a href="api.html" title="next chapter">Cassini API</a></li>
   </ul></li>
 </ul>
 </div>

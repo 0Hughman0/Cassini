@@ -5,6 +5,9 @@ Quickstart
 
     pip install cassini
 
+2. Install ``ipywidgets`` Jupyter Lab extension - usually just requires ``conda install -c conda-forge nodejs`` and
+``jupyter labextension install @jupyter-widgets/jupyterlab-manager``, however see their
+`docs <https://ipywidgets.readthedocs.io/en/stable/user_install.html>`_ for more info.
 
 2. Navigate to the directory you wish to create your project, make a ``project.py``::
 
