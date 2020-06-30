@@ -1,4 +1,4 @@
-Advanced Features
+Features
 =================
 
 Templating

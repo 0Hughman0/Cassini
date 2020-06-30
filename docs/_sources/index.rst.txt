@@ -29,6 +29,8 @@ Try it:
 .. image:: https://mybinder.org/badge_logo.svg
  :target: https://mybinder.org/v2/gh/0Hughman0/Cassini/master?urlpath=lab%2Ftree%2Fexamples%2Fdefault
 
+And checkout :doc:`features` to see what you can do.
+
 Indices and tables
 ==================
 

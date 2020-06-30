@@ -25,3 +25,5 @@ Quickstart
 5. Run jupyter lab using ``jupyter lab --notebook-dir="%CD%"``
 
 Once your browser window opens, navigate to ``Home.ipynb``, run the top cell and from there you can create your project.
+
+Next head to :doc:`features` to see what you can do now you have things set up.

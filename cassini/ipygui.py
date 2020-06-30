@@ -236,7 +236,7 @@ class BaseTierGui:
         Overload this method to customise the appearance of your `Tier` header.
         """
         components = dict()
-        components['Motivation'] = self._build_motivation
+        components['Description'] = self._build_description
         components['Highlights'] = self._build_highlights_accordion
         components['Conclusion'] = self._build_conclusion
 
@@ -269,7 +269,7 @@ class BaseTierGui:
         text += '</h3>'
         return VBox((widgetify_html(text), open_btn))
 
-    def _build_motivation(self) -> DOMWidget:
+    def _build_description(self) -> DOMWidget:
         """
         Creates a widget that displays the motivation for a `Tier`.
         """
