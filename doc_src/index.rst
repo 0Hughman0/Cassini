@@ -25,7 +25,7 @@ Its aim is to help you structure, store and explore your data.
 It's fully customisable, but provides a powerful out-of-the-box configuration.
 
 Try it out in .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/0Hughman0/Cassini/master?filepath=lab%2Ftree%2Fexamples%2Fdefault%2F
+ :target: https://mybinder.org/v2/gh/0Hughman0/Cassini/master?urlpath=lab%2Ftree%2Fexamples%2Fdefault%2F
 
 
 Indices and tables
