@@ -27,7 +27,7 @@ It's fully customisable, but provides a powerful out-of-the-box configuration.
 Try it:
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/https%3A%2F%2Fmybinder.org%2Fv2%2Fgh%2F0Hughman0%2FCassini%2Fmaster/master?urlpath=lab%2Ftree%2Fexamples%2Fdefault
+ :target: https://mybinder.org/v2/gh/0Hughman0/Cassini/master?urlpath=lab%2Ftree%2Fexamples%2Fdefault
 
 Indices and tables
 ==================
