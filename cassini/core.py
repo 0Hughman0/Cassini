@@ -156,15 +156,12 @@ class TierBase(metaclass=TierMeta):
         return a datetime parsed using `config.DATE_FORMAT` found in meta file
     conclusion : str
         return the conclusion found in a `Tier` _instance's meta file.
-
-    Class Attributes
-    ----------------
     rank : int
-        rank of this `Tier` class (not to be set directly)
+        (class attribute) rank of this `Tier` class (not to be set directly)
     id_regex : str
-        regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id.
+        (class attribute) regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id.
     gui_cls : Any
-        The class called upon initialisation to use as gui for this object. Constructor should take `self` as first
+        (class attribute) The class called upon initialisation to use as gui for this object. Constructor should take `self` as first
         argument.
     """
 
