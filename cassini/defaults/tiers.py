@@ -263,7 +263,7 @@ class Sample(TierBase):
         """
         techs = []
         for technique in self.parent.techniques:
-            dataset = DataSet(*self.identifiers, technique)
+            dataset = self.child_cls(*self.identifiers, technique)
             if dataset.exists():
                 techs.append(dataset)
         return techs
