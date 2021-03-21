@@ -549,7 +549,7 @@ class TierBase(metaclass=TierMeta):
             df = df[include]
 
         if exclude:
-            df = df.drop(exclude)
+            df = df.drop(exclude, axis=1)
 
         return df
 
