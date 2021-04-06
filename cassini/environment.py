@@ -3,6 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from warnings import warn
 import re
+import os
+
+from jupyterlab.labapp import LabApp
 
 from typing import Union, Tuple, List
 
@@ -54,7 +57,7 @@ class Project:
         self.rank_map = {}
         self.hierarchy = hierarchy
 
-        project_folder = Path(project_folder)
+        project_folder = Path(project_folder).resolve()
         self.project_folder = project_folder if project_folder.is_dir() else project_folder.parent
 
         self.template_env = PathLibEnv(autoescape=jinja2.select_autoescape(['html', 'xml']),
@@ -123,6 +126,10 @@ class Project:
         """
         return self.project_folder / 'templates'
 
+    @soft_prop
+    def caslib_folder(self) -> Path:
+        return self.project_folder / 'caslib'
+
     def setup_files(self):
         """
         Setup files needed for this project.
@@ -151,6 +158,34 @@ class Project:
         print(f"Setting up Home Tier")
         home.setup_files()
         print("Success")
+
+    def launch(self, app=None, patch_pythonpath=True):
+        """
+        Jump off point for a cassini project.
+
+        Sets up required files for your project, monkeypatches `PYTHONPATH` to make your project available throughout
+        and launches a jupyterlab server.
+
+        This explicitly associates an instance of the Jupyter server with a particular project.
+
+        Parameters
+        ----------
+        app : LabApp
+            A ready made Jupyter Lab app (By defuault will just create a new one).
+        patch_pythonpath : bool
+            Add `self.project_folder` to the `PYTHONPATH`? (defaults to `True`)
+        """
+        self.setup_files()
+
+        if patch_pythonpath:
+            py_path = os.environ.get('PYTHONPATH', '')
+            project_path = str(self.project_folder.resolve())
+            os.environ['PYTHONPATH'] = py_path + os.pathsep + project_path if py_path else project_path
+
+        if app is None:
+            app = LabApp()
+
+        app.launch_instance()
 
     def parse_name(self, name: str) -> Union[Tuple[str], Tuple]:
         """

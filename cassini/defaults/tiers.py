@@ -62,10 +62,21 @@ class Home(TierBase):
     @cached_prop
     def file(self) -> Path:
         return env.project.project_folder / f"{self.name}.ipynb"
-
+        
     @cached_prop
     def meta_file(self):
         return None
+    
+    def serialize(self) -> dict:
+        data = {}
+        
+        data['identifiers'] = self.name
+        data['name'] = self.name
+        data['file'] = str(self.file)
+        data['parents'] = []
+        data['children'] = [child.name for child in self]
+        
+        return data
 
     def exists(self):
         return self.folder.exists()
@@ -263,7 +274,7 @@ class Sample(TierBase):
         """
         techs = []
         for technique in self.parent.techniques:
-            dataset = DataSet(*self.identifiers, technique)
+            dataset = self.child_cls(*self.identifiers, technique)
             if dataset.exists():
                 techs.append(dataset)
         return techs

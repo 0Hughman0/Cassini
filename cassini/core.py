@@ -14,7 +14,7 @@ import pandas as pd
 
 from .ipygui import BaseTierGui
 from .accessors import MetaAttr, cached_prop, cached_class_prop
-from .utils import FileMaker
+from .utils import FileMaker, open_file
 from .environment import env
 from .config import config
 
@@ -435,6 +435,7 @@ class TierBase(metaclass=TierMeta):
         """
         return self.parent.folder / (self.name + '.ipynb')
 
+
     @cached_prop
     def parent(self) -> Union[TierBase, None]:
         """
@@ -482,6 +483,24 @@ class TierBase(metaclass=TierMeta):
             child `Tier` object.
         """
         return self.child_cls(*self._identifiers, id)
+
+    def serialize(self):
+        data = dict(self.meta)
+        data['identifiers'] = self.identifiers
+        data['name'] = self.name
+        data['file'] = str(self.file)
+        
+        parents = []
+        parent = self.parent
+        
+        while parent:
+            parents.append(parent)
+            parent = parent.parent
+        
+        data['parents'] = [parent.name for parent in parents][::-1]
+        data['children'] = [child.name for child in self]
+        
+        return data
 
     def children_df(self, * , include: Sequence[str] = None, exclude: Sequence[str] = None) -> Union[pd.DataFrame, None]:
         """
@@ -590,7 +609,7 @@ class TierBase(metaclass=TierMeta):
         Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
         the window won't open for you!
         """
-        os.startfile(self.folder)
+        open_file(self.folder)
 
     def get_highlights(self) -> Dict[str, List[Dict[str, Dict[str, Any]]]]:
         """

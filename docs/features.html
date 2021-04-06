@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
     <title>Features &#8212; Cassini 0.1.0 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Customizing Cassini" href="customising.html" />
@@ -33,9 +33,9 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="features">
+  <section id="features">
 <h1>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="templating">
+<section id="templating">
 <h2>Templating<a class="headerlink" href="#templating" title="Permalink to this headline">¶</a></h2>
 <p>Often you may find yourself repeating the same protocol over multiple samples, tweaking and recording various parameters
 and producing various outputs. To help streamline this process Cassini supports Jinja2 templating of <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> files.</p>
@@ -60,8 +60,8 @@ your own. Cassini passes the new <code class="docutils literal notranslate"><spa
 <p>Your templates will be visible in the Cassini gui for easy use, or you can pass them to <code class="docutils literal notranslate"><span class="pre">setup_files</span></code> if you’re
 calling that directly.</p>
 <img alt="_images/templating.png" src="_images/templating.png" />
-</div>
-<div class="section" id="highlights">
+</section>
+<section id="highlights">
 <h2>Highlights<a class="headerlink" href="#highlights" title="Permalink to this headline">¶</a></h2>
 <p>Often the outcome of some lab work can be summarised with a few results.</p>
 <p>Cassini provides the <code class="docutils literal notranslate"><span class="pre">%%hlt</span></code> magic that automatically saves the output of a cell as a highlight.</p>
@@ -81,8 +81,8 @@ calling that directly.</p>
 </div>
 <img alt="_images/Highlights.PNG" src="_images/Highlights.PNG" />
 <p>It’s also automatically added to the that <code class="docutils literal notranslate"><span class="pre">Tier</span></code>’s highlights widget.</p>
-</div>
-<div class="section" id="tier-meta-data">
+</section>
+<section id="tier-meta-data">
 <h2>Tier Meta data<a class="headerlink" href="#tier-meta-data" title="Permalink to this headline">¶</a></h2>
 <p>Easily store and retrieve arbitrary meta data for any WorkPackage, Experiment or Sample to be shared with other programs,
 or just for reference.</p>
@@ -109,8 +109,8 @@ or just for reference.</p>
 </pre></div>
 </div>
 <p>Meaning they can be retrieved later.</p>
-</div>
-<div class="section" id="paths">
+</section>
+<section id="paths">
 <h2>Paths<a class="headerlink" href="#paths" title="Permalink to this headline">¶</a></h2>
 <p>Work with files and folders intuitively using functionality based on <code class="docutils literal notranslate"><span class="pre">pathlib</span></code>.</p>
 <p>Every <code class="docutils literal notranslate"><span class="pre">Tier</span></code> object has a folder:</p>
@@ -132,8 +132,8 @@ or just for reference.</p>
 <span class="go">DirEntry(&#39;.../WP2.1/Raman/c/data2.txt&#39;)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="exploring-work">
+</section>
+<section id="exploring-work">
 <h2>Exploring Work<a class="headerlink" href="#exploring-work" title="Permalink to this headline">¶</a></h2>
 <p>Each <code class="docutils literal notranslate"><span class="pre">Tier</span></code> has a <code class="docutils literal notranslate"><span class="pre">children_df()</span></code> method which automatically generates a DataFrames with each child, including
 custom metadata, allowing you to quickly query your work:</p>
@@ -142,8 +142,8 @@ custom metadata, allowing you to quickly query your work:</p>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">wp.gui.children_df()</span></code> provides clickable links to these <code class="docutils literal notranslate"><span class="pre">Tiers</span></code>.</p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -162,7 +162,7 @@ custom metadata, allowing you to quickly query your work:</p>
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Features</a><ul>
@@ -212,7 +212,7 @@ custom metadata, allowing you to quickly query your work:</p>
       &copy;2020, Hugh Ramsden.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

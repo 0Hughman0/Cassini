@@ -1,5 +1,5 @@
 from .defaults.tiers import DEFAULT_TIERS
-from .environment import Project
+from .environment import Project, env
 from .core import TierBase
 from cassini.defaults.tiers import Home
 

@@ -217,7 +217,7 @@ class BaseTierGui:
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
     def __init__(self, tier):
-        self.tier : 'BaseTier' = tier
+        self.tier: 'BaseTier' = tier
 
     def _get_header_components(self) -> Dict[str, Callable[[], DOMWidget]]:
         """
@@ -248,7 +248,7 @@ class BaseTierGui:
 
         return components
 
-    def _build_header_title(self) -> DOMWidget:
+    def _build_header_title(self, *, parent=None) -> DOMWidget:
         """
         Creates a widget that displays the title a `Tier` along side clickable links and buttons to its components
         """
@@ -269,7 +269,7 @@ class BaseTierGui:
         text += '</h3>'
         return VBox((widgetify_html(text), open_btn))
 
-    def _build_description(self) -> DOMWidget:
+    def _build_description(self, *, parent=None) -> Union[DOMWidget, None]:
         """
         Creates a widget that displays the motivation for a `Tier`.
         """
@@ -278,7 +278,7 @@ class BaseTierGui:
             return None
         return widgetify(Markdown(description))
 
-    def _build_highlights_accordion(self) -> DOMWidget:
+    def _build_highlights_accordion(self, *, parent=None) -> Union[DOMWidget, None]:
         """
         Creates a widget that displays highlights for this `Tier` in an `ipywidgets.Accordion` - which is nice!
         """
@@ -299,7 +299,7 @@ class BaseTierGui:
         widget.selected_index = None
         return widget
 
-    def _build_conclusion(self) -> DOMWidget:
+    def _build_conclusion(self, *, parent=None) -> Union[DOMWidget, None]:
         """
         Build widget to display conclusion of this `Tier` object.
         """
@@ -308,7 +308,7 @@ class BaseTierGui:
             return None
         return widgetify(Markdown(self.tier.conclusion))
 
-    def _build_children(self) -> DOMWidget:
+    def _build_children(self, *, parent=None) -> DOMWidget:
         """
         Build a widget to display an `UnescapedDataFrame` containing this `Tier`'s children.
         """
@@ -362,13 +362,13 @@ class BaseTierGui:
         """
         return display(self._build_highlights_accordion())
 
-    def children_df(self, * , include: Sequence[str] = None, exclude: Sequence[str] = None) -> Union[UnescapedDataFrame, None]:
+    def children_df(self, *, include: Sequence[str] = None, exclude: Sequence[str] = None) -> Union[UnescapedDataFrame, None]:
         """
         Calls `tier.children_df` but returns an `UnescapedDataFrame` instead.
         """
         return UnescapedDataFrame(self.tier.children_df(include=include, exclude=exclude))
 
-    def new_child(self) -> DOMWidget:
+    def new_child(self, *, parent=None) -> DOMWidget:
         """
         Widget for creating new child for this `Tier`.
         """
@@ -387,6 +387,7 @@ class BaseTierGui:
                 obj.setup_files(mapping[template])
                 obj.description = description
                 display(widgetify_html(obj._repr_html_()))
+            parent.update('Children')
 
         form = InputSequence(create,
                              Text(description=f'Identifier', placeholder=f'{child.id_regex}'),
