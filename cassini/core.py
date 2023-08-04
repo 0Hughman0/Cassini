@@ -8,14 +8,14 @@ import time
 from pathlib import Path
 from collections import defaultdict
 
-from typing import Any, KeysView, List, Type, TypeVar, Tuple, Iterator, Union, Dict, ClassVar, Sequence
+from typing import Any, KeysView, List, Type, Tuple, Iterator, Union, Dict, ClassVar, Sequence, Optional, cast
 
-import pandas as pd
+import pandas as pd  # type: ignore
 
 from .ipygui import BaseTierGui
 from .accessors import MetaAttr, cached_prop, cached_class_prop
 from .utils import FileMaker, open_file
-from .environment import env
+from .environment import env, _Env, Project
 from .config import config
 
 
@@ -125,6 +125,7 @@ class TierMeta(type):
     """
     Metaclass mixin for the TierBase. Needed to ensure that each Tier Class has its own cache.
     """
+    cache: Dict[Tuple[str, ...], TierBase]
 
     def __new__(cls, name, bases, dct):
         kls = super().__new__(cls, name, bases, dct)
@@ -165,27 +166,29 @@ class TierBase(metaclass=TierMeta):
         argument.
     """
 
-    rank: ClassVar[int] = None
+    rank: ClassVar[int] = -1
     id_regex: ClassVar[str] = r'(\d+)'
 
     gui_cls = BaseTierGui
 
     @cached_class_prop
-    def hierarchy(self) -> List[TierType]:
+    def hierarchy(self: Any) -> List[Type[TierBase]]:
         """
         Gets the hierarchy from `env.project`.
         """
+        assert env.project
         return env.project.hierarchy
 
+
     @cached_class_prop
-    def pretty_type(cls) -> str:
+    def pretty_type(cls: Any) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
         return cls.__name__
 
     @cached_class_prop
-    def short_type(cls) -> str:
+    def short_type(cls: Any) -> str:
         """
         Name used to programmatically refer to instances of this `Tier`.
 
@@ -194,14 +197,14 @@ class TierBase(metaclass=TierMeta):
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys('aeiou')))
 
     @cached_class_prop
-    def name_part_template(cls) -> str:
+    def name_part_template(cls: Any) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + '{}'
 
     @cached_class_prop
-    def name_part_regex(cls) -> str:
+    def name_part_regex(cls: Any) -> str:
         """
         Regex where first group matches `id` part of string. Default is fill in `cls.name_part_template` with
         `cls.id_regex`.
@@ -209,38 +212,42 @@ class TierBase(metaclass=TierMeta):
         return cls.name_part_template.format(cls.id_regex)
 
     @cached_class_prop
-    def parent_cls(cls) -> Union[TierBase, None]:
+    def parent_cls(cls: Any) -> Union[Type[TierBase], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
         """
+        assert env.project
+
         if cls.rank is None or cls.rank <= 0:
             return None
         return cls.hierarchy[cls.rank - 1]
 
     @cached_class_prop
-    def child_cls(cls) -> Union[TierBase, None]:
+    def child_cls(cls: Any) -> Union[Type[TierBase], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
         """
+        assert env.project
+
         if cls.rank is None or cls.rank >= (len(cls.hierarchy) - 1):
             return None
         return cls.hierarchy[cls.rank + 1]
 
     @cached_class_prop
-    def default_template(cls):
+    def default_template(cls: Any) -> Union[Path, None]:
         """
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f'{cls.pretty_type}.tmplt.ipynb'
 
     @cached_class_prop
-    def _meta_folder_name(cls) -> str:
+    def _meta_folder_name(cls: Any) -> str:
         """
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
         """
         return config.META_DIR_TEMPLATE.format(cls.short_type)
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: str, **kwargs):
         obj = cls.cache.get(args)
         if obj:
             return obj
@@ -277,7 +284,7 @@ class TierBase(metaclass=TierMeta):
         if self.meta_file:
             self.meta: Meta = Meta(self.meta_file)
 
-    def setup_files(self, template: Path = None):
+    def setup_files(self, template: Union[Path, None] = None):
         """
         Create all the files needed for a valid `Tier` object to exist.
 
@@ -328,11 +335,11 @@ class TierBase(metaclass=TierMeta):
 
     description = MetaAttr()
     conclusion = MetaAttr()
-    started = MetaAttr(lambda val: datetime.datetime.strptime(val, config.DATE_FORMAT),
-                       lambda val: val.strftime(config.DATE_FORMAT))
+    started = MetaAttr(lambda val: datetime.datetime.strptime(val, config.DATE_FORMAT), # type: ignore
+                       lambda val: val.strftime(config.DATE_FORMAT))  # type: ignore
 
     @cached_prop
-    def identifiers(self) -> Tuple[str]:
+    def identifiers(self) -> Tuple[str, ...]:
         """
         Read only copy of identifiers that make up this `Tier` object.
         """
@@ -359,6 +366,7 @@ class TierBase(metaclass=TierMeta):
             >>> smpl.name  # all 3 joined together
             WP2.3c
         """
+
         return ''.join(cls.name_part_template.format(id) for cls, id in zip(self.hierarchy[1:], self.identifiers))
 
     @cached_prop
@@ -385,7 +393,10 @@ class TierBase(metaclass=TierMeta):
 
         Defaults to `self.parent.folder / self.name`.
         """
-        return self.parent.folder / self.name
+        if self.parent:
+            return self.parent.folder / self.name
+        else: # this is bad
+            return Path(self.name)
 
     @cached_prop
     def meta_file(self) -> Path:
@@ -397,6 +408,7 @@ class TierBase(metaclass=TierMeta):
         meta_file : Path
             Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.json')`
         """
+        assert self.parent
         return self.parent.folder / self._meta_folder_name / (self.name + '.json')
 
     @cached_prop
@@ -409,6 +421,7 @@ class TierBase(metaclass=TierMeta):
         highlights_file : Path
             Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.hlts')`
         """
+        assert self.parent
         return self.parent.folder / self._meta_folder_name / (self.name + '.hlts')
 
     @cached_prop
@@ -421,6 +434,7 @@ class TierBase(metaclass=TierMeta):
         cache_file : Path
             Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.cache')`
         """
+        assert self.parent
         return self.parent.folder / self._meta_folder_name / (self.name + '.cache')
 
     @cached_prop
@@ -433,6 +447,7 @@ class TierBase(metaclass=TierMeta):
         file : Path
             Defaults to self.parent.folder / (self.name + '.ipynb').
         """
+        assert self.parent
         return self.parent.folder / (self.name + '.ipynb')
 
 
@@ -482,6 +497,7 @@ class TierBase(metaclass=TierMeta):
         child : Type[TierBase]
             child `Tier` object.
         """
+        assert self.child_cls
         return self.child_cls(*self._identifiers, id)
 
     def serialize(self):
@@ -502,7 +518,7 @@ class TierBase(metaclass=TierMeta):
         
         return data
 
-    def children_df(self, * , include: Sequence[str] = None, exclude: Sequence[str] = None) -> Union[pd.DataFrame, None]:
+    def children_df(self, * , include: Optional[Sequence[str]] = None, exclude: Optional[Sequence[str]]) -> Union[pd.DataFrame, None]:
         """
         Build an `UnescapedDataFrame` containing rows from each child of this `Tier`. Columns are inferred from contents
         of meta files.
@@ -534,14 +550,14 @@ class TierBase(metaclass=TierMeta):
         if not children:
             return None
 
-        data = defaultdict(list)
-        attributes = set()
+        data: Dict[str, List[Any]] = defaultdict(list)
+        attributes_set: set[str] = set()
 
         for child in children:
-            attributes.update(child.meta.keys())
+            attributes_set.update(child.meta.keys())
             data['Name'].append(child.name)
 
-        attributes = list(attributes)
+        attributes = list(attributes_set)
 
         for child in children:
             for attr in attributes:
@@ -570,13 +586,15 @@ class TierBase(metaclass=TierMeta):
         if exclude:
             df = df.drop(exclude, axis=1)
 
-        return df
+        return cast(pd.DataFrame, df)
 
     @classmethod
     def get_templates(cls) -> List[Path]:
         """
         Get all the templates for this `Tier`.
         """
+        assert env.project
+
         return [Path(cls.pretty_type) / entry.name for entry in
                 os.scandir(env.project.template_folder / cls.pretty_type)
                 if entry.is_file()]
@@ -595,6 +613,8 @@ class TierBase(metaclass=TierMeta):
         rendered_text : str
             template rendered with `self`.
         """
+        assert env.project
+
         template = env.project.template_env.get_template(template)
         return template.render(**{self.short_type: self, 'tier': self})
 
@@ -734,6 +754,8 @@ class TierBase(metaclass=TierMeta):
 
         Empty iterator if no children.
         """
+        assert self.child_cls
+
         child_cls = self.child_cls
         child_meta_dir = self / child_cls._meta_folder_name
         if child_meta_dir.exists():
@@ -764,5 +786,3 @@ class TierBase(metaclass=TierMeta):
         if self.meta_file:
             self.meta_file.unlink()
 
-
-TierType = TypeVar('TierType', bound=TierBase)

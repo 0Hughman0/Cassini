@@ -1,21 +1,25 @@
 [tool.poetry]
 name = "cassini"
-version = "0.2.0-alpha"
+version = "0.2.0-alpha1"
 description = "A tool to structure experimental work, data and analysis using Jupyter Lab."
 authors = ["0Hughman0 <rammers2@hotmail.co.uk>"]
 license = "GPL-3.0-only"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.8"
 pandas = "^1.0"
 ipywidgets = "^7.5"
-jupyterlab = "^3.0.12"
+jupyterlab = "^4.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.4"
 sphinx = "^3.1"
 matplotlib = "^3.4.1"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.4.1"
+pytest-cov = "^4.1.0"
 
 [build-system]
 requires = ["poetry>=0.12"]

@@ -5,9 +5,13 @@ from warnings import warn
 import re
 import os
 
-from jupyterlab.labapp import LabApp
+from jupyterlab.labapp import LabApp # type: ignore
 
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, TYPE_CHECKING, Type, TypeVar
+from typing_extensions import TypeGuard
+
+if TYPE_CHECKING:
+    from .core import TierBase
 
 import jinja2
 
@@ -43,7 +47,7 @@ class Project:
     This class is a singleton i.e. only 1 instance per interpreter can be created.
     """
 
-    _instance = None
+    _instance: Union[Project, None] = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance:
@@ -53,7 +57,7 @@ class Project:
         env.project = instance
         return instance
 
-    def __init__(self, hierarchy: List['BaseTier'], project_folder: Union[str, Path]):
+    def __init__(self, hierarchy: List[Type[TierBase]], project_folder: Union[str, Path]):
         self.rank_map = {}
         self.hierarchy = hierarchy
 
@@ -74,7 +78,7 @@ class Project:
         """
         return self.hierarchy[0]()
 
-    def env(self, name: str) -> 'BaseTier':
+    def env(self, name: str) -> TierBase:
         """
         Initialise the global environment to a particular `Tier` that is retrieved by parsing `name`.
 
@@ -95,7 +99,7 @@ class Project:
         env.update(obj)
         return obj
 
-    def __getitem__(self, name: str) -> 'TierBase':
+    def __getitem__(self, name: str) -> TierBase:
         """
         Retrieve a tier object from the project by name.
 
@@ -187,7 +191,7 @@ class Project:
 
         app.launch_instance()
 
-    def parse_name(self, name: str) -> Union[Tuple[str], Tuple]:
+    def parse_name(self, name: str) -> Union[Tuple[str, ...], Tuple]:
         """
         Parses a string that corresponds to a `Tier` and returns a list of its identifiers.
 
@@ -257,13 +261,15 @@ class Project:
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!
-            return ()
+            return tuple()
         else:
             return tuple(ids)
 
     def __repr__(self):
         return f"<Project at: '{self.project_folder}' hierarchy: '{self.hierarchy}' ({env})>"
 
+
+ValWithInstance = TypeVar('ValWithInstance')
 
 class _Env:
     """
@@ -284,7 +290,7 @@ class _Env:
     This object shouldn't be created directly, instead you should call `project.env('...')` to set its value.
     """
 
-    instance = None
+    instance: Union[_Env, None] = None
 
     def __new__(cls, *args, **kwargs):
         if cls.instance:
@@ -293,18 +299,24 @@ class _Env:
         cls.instance = instance
         return instance
 
-    def __init__(self):
-        self.project = None
-        self._o = None
+    def __init__(self) -> None:
+        self.project: Union[Project, None] = None
+        self._o: Union[TierBase, None] = None
+
+    def _has_instance(self, val: Union[ValWithInstance, None]) -> TypeGuard[ValWithInstance]:
+        return self.instance is not None
 
     @property
-    def o(self) -> 'TierBase':
+    def o(self) -> Union[TierBase, None]:
         """
         Reference to current Tier object.
         """
-        return self._o
+        if self._has_instance(self._o):
+            return self._o
+        
+        return None
 
-    def update(self, obj: 'TierBase'):
+    def update(self, obj: TierBase):
         self._o = obj
 
 

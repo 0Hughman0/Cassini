@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 import html
 
-from typing import Iterator, List
+from typing import Iterator, List, overload
 
 import pandas as pd
 from IPython.display import display
@@ -47,7 +47,7 @@ class Home(TierBase):
     Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
 
-    name_template = None
+    name_template = 'Unused'
 
     gui_cls = HomeGui
 
@@ -57,10 +57,13 @@ class Home(TierBase):
 
     @cached_prop
     def folder(self):
+        assert env.project
+        assert self.child_cls
         return env.project.project_folder / (self.child_cls.pretty_type + 's')
 
     @cached_prop
-    def file(self) -> Path:
+    def file(self):
+        assert env.project
         return env.project.project_folder / f"{self.name}.ipynb"
         
     @cached_prop
@@ -82,6 +85,8 @@ class Home(TierBase):
         return self.folder.exists()
 
     def setup_files(self):
+        assert self.child_cls
+
         with FileMaker() as maker:
             print(f"Creating {self.child_cls.pretty_type} folder")
             maker.mkdir(self.folder)
@@ -265,6 +270,7 @@ class Sample(TierBase):
 
     @cached_prop
     def folder(self):
+        assert self.parent
         return self.parent.folder
 
     @property
@@ -272,6 +278,9 @@ class Sample(TierBase):
         """
         Convenient way of getting a list of `DataSet`s this sample has.
         """
+        assert self.parent
+        assert self.child_cls
+
         techs = []
         for technique in self.parent.techniques:
             dataset = self.child_cls(*self.identifiers, technique)
@@ -300,6 +309,8 @@ class DataSet(TierBase):
 
     @cached_prop
     def folder(self):
+        assert self.parent
+
         return self.parent / self.id / self.parent.id
 
     @cached_prop

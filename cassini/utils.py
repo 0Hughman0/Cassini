@@ -2,7 +2,8 @@ from pathlib import Path
 import os
 import sys
 import functools
-from typing import Union, Callable
+from typing import Union, Callable, Any
+from typing_extensions import Self
 
 
 class FileMaker:
@@ -61,21 +62,26 @@ class XPlatform:
     Class for easily making cross platform functions/ methods(?). Stops nasty if elses.
     """
 
-    def __init__(self):
-        self._func = None
-        self._default = None
+    def __init__(self) -> None:
+        self._func: Union[Callable, None] = None
+        self._default: Union[Callable, None] = None
 
     @property
     def func(self) -> Callable:
         """
         Returns the platform appropriate function (or default if not known)
         """
-        return self._func if self._func else self._default
+        if self._func:
+            return self._func
+        
+        assert self._default
+
+        return self._default        
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
 
-    def add(self, platform: str) -> 'XPlatform':
+    def add(self, platform: str) -> Callable[[Any], Self]:
         """
         Add a platform dependent function. To be used as a decorator.
 
@@ -119,7 +125,7 @@ open_file = XPlatform()
 
 
 @open_file.add('win32')
-def open_file(filename: str):
+def win_open_file(filename: str):
     """
     Windows open file implementation.
     """
@@ -127,7 +133,7 @@ def open_file(filename: str):
 
 
 @open_file.default
-def open_file(filename: str):
+def nix_open_file(filename: str):
     """
     *Nix open file implementation.
     """
