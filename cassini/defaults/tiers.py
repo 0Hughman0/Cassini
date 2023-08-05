@@ -4,9 +4,9 @@ import html
 
 from typing import Iterator, List, overload
 
-import pandas as pd
+import pandas as pd # type: ignore[import]
 from IPython.display import display
-from ipywidgets import SelectMultiple, Text, HBox, Button
+from ipywidgets import SelectMultiple, Text, HBox, Button # type: ignore[import]
 
 from ..core import TierBase
 from ..accessors import cached_prop, cached_class_prop
@@ -46,8 +46,6 @@ class Home(TierBase):
 
     Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
-
-    name_template = 'Unused'
 
     gui_cls = HomeGui
 
@@ -357,3 +355,4 @@ class DataSet(TierBase):
 
 
 DEFAULT_TIERS = [Home, WorkPackage, Experiment, Sample, DataSet]
+

@@ -1,11 +1,11 @@
 import html
 
-from typing import Any, Callable, Dict, Union, Sequence
+from typing import Any, Callable, Dict, Union, Sequence, Optional
 
 import pandas as pd
 import pandas.api.types as pd_types
 
-from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layout, Accordion, DOMWidget
+from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layout, Accordion, DOMWidget # type: ignore[import]
 from IPython.display import display, Markdown, publish_display_data
 
 from .environment import env
@@ -315,7 +315,7 @@ class BaseTierGui:
         children_df = self.children_df()
         return widgetify(children_df)
 
-    def header(self, *, include: Sequence[str] = None, exclude: Sequence[str] = None) -> DOMWidget:
+    def header(self, *, include: Union[Sequence[str], None] = None, exclude: Union[Sequence[str], None] = None) -> DOMWidget:
         """
         Builds header widget from its components.
 
@@ -362,7 +362,7 @@ class BaseTierGui:
         """
         return display(self._build_highlights_accordion())
 
-    def children_df(self, *, include: Sequence[str] = None, exclude: Sequence[str] = None) -> Union[UnescapedDataFrame, None]:
+    def children_df(self, *, include: Union[Sequence[str], None] = None, exclude: Union[Sequence[str], None] = None) -> Union[UnescapedDataFrame, None]:
         """
         Calls `tier.children_df` but returns an `UnescapedDataFrame` instead.
         """

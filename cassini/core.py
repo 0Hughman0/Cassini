@@ -304,7 +304,7 @@ class TierBase(metaclass=TierMeta):
         if self.exists():
             raise FileExistsError(f"Meta for {self.name} exists already")
 
-        if self.file.exists():
+        if self.file and self.file.exists():
             raise FileExistsError(f"Notebook for {self.name} exists already")
 
         print(f"Creating files for {self.name}")
@@ -412,7 +412,7 @@ class TierBase(metaclass=TierMeta):
         return self.parent.folder / self._meta_folder_name / (self.name + '.json')
 
     @cached_prop
-    def highlights_file(self) -> Path:
+    def highlights_file(self) -> Union[Path, None]:
         """
         Path to where highlights file for this `Tier` object should be.
 
@@ -425,7 +425,7 @@ class TierBase(metaclass=TierMeta):
         return self.parent.folder / self._meta_folder_name / (self.name + '.hlts')
 
     @cached_prop
-    def cache_file(self) -> Path:
+    def cache_file(self) -> Union[Path, None]:
         """
         Path to where cache file for this `Tier` object will be.
 
@@ -438,7 +438,7 @@ class TierBase(metaclass=TierMeta):
         return self.parent.folder / self._meta_folder_name / (self.name + '.cache')
 
     @cached_prop
-    def file(self) -> Path:
+    def file(self) -> Union[Path, None]:
         """
         Path to where `.ipynb` file for this `Tier` instance will be.
 
@@ -461,7 +461,7 @@ class TierBase(metaclass=TierMeta):
         return None
 
     @cached_prop
-    def href(self) -> str:
+    def href(self) -> Union[str, None]:
         """
         href usable in notebook HTML giving link to `self.file`.
 
@@ -475,7 +475,10 @@ class TierBase(metaclass=TierMeta):
         href : str
             href usable in notebook HTML.
         """
-        return html.escape(Path(os.path.relpath(self.file, os.getcwd())).as_posix())
+        if self.file:
+            return html.escape(Path(os.path.relpath(self.file, os.getcwd())).as_posix())
+        else:
+            return None
 
     def exists(self) -> bool:
         """
@@ -518,7 +521,7 @@ class TierBase(metaclass=TierMeta):
         
         return data
 
-    def children_df(self, * , include: Optional[Sequence[str]] = None, exclude: Optional[Sequence[str]]) -> Union[pd.DataFrame, None]:
+    def children_df(self, * , include: Optional[List[str]] = None, exclude: Optional[List[str]]) -> Union[pd.DataFrame, None]:
         """
         Build an `UnescapedDataFrame` containing rows from each child of this `Tier`. Columns are inferred from contents
         of meta files.
@@ -581,10 +584,10 @@ class TierBase(metaclass=TierMeta):
         df = df[priority_columns + [col for col in df.columns if col not in priority_columns]]
 
         if include:
-            df = df[include]
+            df = df.loc[:, include]
 
         if exclude:
-            df = df.drop(exclude, axis=1)
+            df = df.drop(exclude, axis='columns')
 
         return cast(pd.DataFrame, df)
 
@@ -631,7 +634,7 @@ class TierBase(metaclass=TierMeta):
         """
         open_file(self.folder)
 
-    def get_highlights(self) -> Dict[str, List[Dict[str, Dict[str, Any]]]]:
+    def get_highlights(self) -> Union[Dict[str, List[Dict[str, Dict[str, Any]]]], None]:
         """
         Get dictionary of highlights for this `Tier` _instance.
 
@@ -655,7 +658,7 @@ class TierBase(metaclass=TierMeta):
             ...     for output in outputs:
             ...         IPython.display.publish_display_data(**output)
         """
-        if self.highlights_file.exists():
+        if self.highlights_file and self.highlights_file.exists():
             highlights = json.loads(self.highlights_file.read_text())
             return highlights
         else:
@@ -676,7 +679,13 @@ class TierBase(metaclass=TierMeta):
         overwrite : bool
             If `False` will raise an exception if a highlight of the same `name` exists. Default is `True`
         """
-        highlights = self.get_highlights().copy()
+        highlights = self.get_highlights()
+        
+        if self.highlights_file and highlights:
+            highlights = highlights.copy()
+        else:
+            return 
+        
         if not overwrite and name in highlights:
             raise KeyError("Attempting to overwrite existing meta value")
         highlights[name] = data
@@ -688,10 +697,14 @@ class TierBase(metaclass=TierMeta):
         the dictionary, then re-writing the highlights... if you're interested!
         """
         highlights = self.get_highlights()
+
+        if not highlights or not self.highlights_file:
+            return
+        
         del highlights[name]
         self.highlights_file.write_text(json.dumps(highlights))
 
-    def get_cached(self) -> Dict[str, List[Dict[str, Dict[str, Any]]]]:
+    def get_cached(self) -> Union[Dict[str, List[Dict[str, Dict[str, Any]]]], None]:
         """
         Retrieve cached output from `self.cache_file`.
 
@@ -703,7 +716,7 @@ class TierBase(metaclass=TierMeta):
             dictionary with all the cached outputs. In the same form as `self.get_highlights()`. Returns an empty dict
             if no `cache_file` exists.
         """
-        if self.cache_file.exists():
+        if self.cache_file and self.cache_file.exists():
             cache = json.loads(self.cache_file.read_text())
             return cache
         else:
@@ -724,9 +737,19 @@ class TierBase(metaclass=TierMeta):
         overwrite : bool
             If `False` will raise an exception if a cached result of the same `name` exists. Default is `True`
         """
-        cache = self.get_cached().copy()
+        if not self.cache_file:
+            return
+        
+        cache = self.get_cached()
+        
+        if cache:
+            cache = cache.copy()
+        else:
+            return
+        
         if not overwrite and name in cache:
             raise KeyError("Attempting to overwrite existing meta value")
+        
         cache[name] = data
         self.cache_file.write_text(json.dumps(cache))
 
@@ -747,7 +770,7 @@ class TierBase(metaclass=TierMeta):
         """
         return self.get_child(item)
 
-    def __iter__(self) -> Iterator[TierBase]:
+    def __iter__(self) -> Iterator[Any]:
         """
         Iterates over all children (in no particular order). Children are found by looking through the child meta
         folder.
