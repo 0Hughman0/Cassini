@@ -1,6 +1,6 @@
 import html
 
-from typing import Any, Callable, Dict, Union, Sequence, Optional
+from typing import Any, Callable, Dict, Union, Sequence, Mapping, Hashable
 
 import pandas as pd
 import pandas.api.types as pd_types
@@ -65,7 +65,7 @@ class UnescapedDataFrame(pd.DataFrame):
     """
 
     @staticmethod
-    def try_html_repr(obj: Any) -> str:
+    def try_html_repr(obj: object) -> str:
         """
         Get text form of obj, first try `obj._repr_html_`, fallback on `str(obj)`.
 
@@ -82,8 +82,8 @@ class UnescapedDataFrame(pd.DataFrame):
         return UnescapedDataFrame
 
     def _repr_html_(self) -> str:
-        formatters = {name: (self.try_html_repr if pd_types.is_object_dtype(dtype) else None)
-                      for name, dtype in self.dtypes.items()}
+        formatters: Mapping[Hashable, Callable[[object], str]] = {name: self.try_html_repr
+                      for name, dtype in self.dtypes.items() if pd_types.is_object_dtype(dtype)}
         return self.to_html(escape=False, formatters=formatters)
 
 
@@ -235,7 +235,7 @@ class BaseTierGui:
 
         Overload this method to customise the appearance of your `Tier` header.
         """
-        components = dict()
+        components: Dict[str, Callable[[], Any]] = dict()
         components['Description'] = self._build_description
         components['Highlights'] = self._build_highlights_accordion
         components['Conclusion'] = self._build_conclusion
