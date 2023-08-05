@@ -172,7 +172,7 @@ class TierBase(metaclass=TierMeta):
     gui_cls = BaseTierGui
 
     @cached_class_prop
-    def hierarchy(self: Any) -> List[Type[TierBase]]:
+    def hierarchy(cls) -> List[Type[TierBase]]:
         """
         Gets the hierarchy from `env.project`.
         """
@@ -181,14 +181,14 @@ class TierBase(metaclass=TierMeta):
 
 
     @cached_class_prop
-    def pretty_type(cls: Any) -> str:
+    def pretty_type(cls) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
         return cls.__name__
-
+    
     @cached_class_prop
-    def short_type(cls: Any) -> str:
+    def short_type(cls) -> str:
         """
         Name used to programmatically refer to instances of this `Tier`.
 
@@ -197,14 +197,14 @@ class TierBase(metaclass=TierMeta):
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys('aeiou')))
 
     @cached_class_prop
-    def name_part_template(cls: Any) -> str:
+    def name_part_template(cls) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + '{}'
 
     @cached_class_prop
-    def name_part_regex(cls: Any) -> str:
+    def name_part_regex(cls) -> str:
         """
         Regex where first group matches `id` part of string. Default is fill in `cls.name_part_template` with
         `cls.id_regex`.
@@ -212,7 +212,7 @@ class TierBase(metaclass=TierMeta):
         return cls.name_part_template.format(cls.id_regex)
 
     @cached_class_prop
-    def parent_cls(cls: Any) -> Union[Type[TierBase], None]:
+    def parent_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
         """
@@ -223,7 +223,7 @@ class TierBase(metaclass=TierMeta):
         return cls.hierarchy[cls.rank - 1]
 
     @cached_class_prop
-    def child_cls(cls: Any) -> Union[Type[TierBase], None]:
+    def child_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
         """
@@ -234,14 +234,14 @@ class TierBase(metaclass=TierMeta):
         return cls.hierarchy[cls.rank + 1]
 
     @cached_class_prop
-    def default_template(cls: Any) -> Union[Path, None]:
+    def default_template(cls) -> Union[Path, None]:
         """
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f'{cls.pretty_type}.tmplt.ipynb'
 
     @cached_class_prop
-    def _meta_folder_name(cls: Any) -> str:
+    def _meta_folder_name(cls) -> str:
         """
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
         """
@@ -256,7 +256,7 @@ class TierBase(metaclass=TierMeta):
         return obj
 
     @classmethod
-    def parse_name(cls, name: str) -> Tuple[str]:
+    def parse_name(cls, name: str) -> Tuple[str, ...]:
         """
         Ask `env.project` to parse name.
         """
@@ -265,7 +265,7 @@ class TierBase(metaclass=TierMeta):
         return env.project.parse_name(name)
 
     @classmethod
-    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str]]:
+    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
         for meta_file in os.scandir(path):
             if not meta_file.is_file() or not meta_file.name.endswith('.json'):
                 continue
@@ -785,4 +785,3 @@ class TierBase(metaclass=TierMeta):
 
         if self.meta_file:
             self.meta_file.unlink()
-

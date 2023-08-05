@@ -1,6 +1,6 @@
 import functools
 
-from typing import Callable, Union, Any, cast, Dict, TypeVar, Generic, Optional, Type, overload
+from typing import Callable, Union, Any, cast, Dict, TypeVar, Generic, Optional, Type, overload, ClassVar
 from typing_extensions import Self
 
 T = TypeVar('T')
@@ -86,11 +86,11 @@ class _SoftProp(Generic[T, V]):
         return self
 
 
-def soft_prop(wraps: Callable[[T], V]) -> _SoftProp[T, V]:
+def soft_prop(wraps: Callable[[Any], V]) -> V:
     """
     Create an over-writable property
     """
-    return _SoftProp(wraps)
+    return cast(V, functools.wraps(wraps)(_SoftProp(wraps)))
 
 
 class _CachedProp(Generic[T, V]):
@@ -105,32 +105,34 @@ class _CachedProp(Generic[T, V]):
         self.cache: Dict[T, V]  = {}
 
     @overload
-    def __get__(self, instance: None, owner: Type[T]) -> Self: pass
+    def __get__(self, instance: None, owner: Type[T]) -> Self:
+        pass
 
     @overload
-    def __get__(self, instance: T, owner: Type[T]) -> V: pass
+    def __get__(self, instance: T, owner: Type[T]) -> V:
+        pass
 
     def __get__(self, instance: Optional[T], owner: Type[T]) -> Union[V, Self]:
         if instance is None:
             return self
-        
+
         if instance in self.cache:
             return self.cache[instance]
-        
+
         val = self.func(instance)
         self.cache[instance] = val
-        
+
         return val
 
     def __set__(self, instance, value):
         raise AttributeError("Trying to set a cached property - naughty!")
 
 
-def cached_prop(wraps: Callable[[T], V]) -> Union[_CachedProp[T, V], V]:
+def cached_prop(wraps: Callable[[Any], V]) -> V:
     """
     Decorator for turning functions/ methods into `_CachedProp`s.
     """
-    return _CachedProp(wraps)
+    return cast(V, functools.wraps(wraps)(_CachedProp(wraps)))
 
 
 class _CachedClassProp(Generic[T, V]):
@@ -146,7 +148,7 @@ class _CachedClassProp(Generic[T, V]):
         self.func = func
         self.cache: Dict[Type[T], V] = {}
 
-    def __get__(self, instance: Optional[T], owner: Type[T]) -> V:
+    def __get__(self, instance: T, owner: Type[T]) -> V:
         if owner in self.cache:
             return self.cache[owner]
         
@@ -159,10 +161,10 @@ class _CachedClassProp(Generic[T, V]):
         raise AttributeError("Trying to set a cached class property - naughty!")
 
 
-def cached_class_prop(wraps: Callable[[Type[T]], V]) -> Union[_CachedClassProp[T, V], V]:
+def cached_class_prop(wraps: Callable[[Any], V]) -> V:
     """
     Decorator for turning functions/ methods into `_CachedClassProp`s.
 
     First argument of wraps will be `self.__class__` rather than `self`.
     """
-    return _CachedClassProp(wraps)
+    return cast(V, functools.wraps(wraps)(_CachedClassProp(wraps)))

@@ -25,7 +25,7 @@ class PathLibEnv(jinja2.Environment):
     Subclass of `jinja2.Environment` to enable using `pathlib.Path` for template names.
     """
 
-    def get_template(self, name: Union[Path, str], parent=None, globals=None):
+    def get_template(self, name: Union[Path, str], parent=None, globals=None): # type: ignore[override]
         return super().get_template(name.as_posix() if isinstance(name, Path) else name, parent=None, globals=None)
 
 
