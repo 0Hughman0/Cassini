@@ -13,7 +13,7 @@ from typing import Any, KeysView, List, Type, Tuple, Iterator, Union, Dict, Clas
 import pandas as pd  # type: ignore
 
 from .ipygui import BaseTierGui
-from .accessors import MetaAttr, cached_prop, cached_class_prop
+from .accessors import MetaAttr, cached_prop, cached_class_prop, _CachedClassProp
 from .utils import FileMaker, open_file
 from .environment import env, _Env, Project
 from .config import config
@@ -171,7 +171,9 @@ class TierBase(metaclass=TierMeta):
 
     gui_cls = BaseTierGui
 
-    @cached_class_prop
+    hierarchy: ClassVar[List[Type[TierBase]]]
+
+    @cached_class_prop # type: ignore[no-redef]
     def hierarchy(cls) -> List[Type[TierBase]]:
         """
         Gets the hierarchy from `env.project`.
@@ -179,15 +181,18 @@ class TierBase(metaclass=TierMeta):
         assert env.project
         return env.project.hierarchy
 
+    pretty_type: ClassVar[str]
 
-    @cached_class_prop
+    @cached_class_prop # type: ignore[no-redef]
     def pretty_type(cls) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
         return cls.__name__
     
-    @cached_class_prop
+    short_type: ClassVar[str]
+    
+    @cached_class_prop # type: ignore[no-redef]
     def short_type(cls) -> str:
         """
         Name used to programmatically refer to instances of this `Tier`.
@@ -196,22 +201,28 @@ class TierBase(metaclass=TierMeta):
         """
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys('aeiou')))
 
-    @cached_class_prop
+    name_part_template: ClassVar[str]
+
+    @cached_class_prop # type: ignore[no-redef]
     def name_part_template(cls) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + '{}'
+    
+    name_part_regex: ClassVar[str]
 
-    @cached_class_prop
+    @cached_class_prop # type: ignore[no-redef]
     def name_part_regex(cls) -> str:
         """
         Regex where first group matches `id` part of string. Default is fill in `cls.name_part_template` with
         `cls.id_regex`.
         """
         return cls.name_part_template.format(cls.id_regex)
+    
+    parent_cls: ClassVar[Union[Type[TierBase], None]]
 
-    @cached_class_prop
+    @cached_class_prop # type: ignore[no-redef]
     def parent_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
@@ -222,7 +233,9 @@ class TierBase(metaclass=TierMeta):
             return None
         return cls.hierarchy[cls.rank - 1]
 
-    @cached_class_prop
+    child_cls: ClassVar[Union[Type[TierBase], None]]
+
+    @cached_class_prop # type: ignore[no-redef]
     def child_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
@@ -233,14 +246,18 @@ class TierBase(metaclass=TierMeta):
             return None
         return cls.hierarchy[cls.rank + 1]
 
-    @cached_class_prop
+    default_template: ClassVar[Union[Path, None]]
+
+    @cached_class_prop # type: ignore[no-redef]
     def default_template(cls) -> Union[Path, None]:
         """
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f'{cls.pretty_type}.tmplt.ipynb'
 
-    @cached_class_prop
+    _meta_folder_name: ClassVar[str]
+
+    @cached_class_prop # type: ignore[no-redef]
     def _meta_folder_name(cls) -> str:
         """
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).

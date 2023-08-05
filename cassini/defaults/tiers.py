@@ -106,6 +106,7 @@ class WorkPackage(TierBase):
     """
 
     name_part_template = "WP{}"
+    
     short_type = 'wp'
 
     @property
@@ -159,7 +160,9 @@ class Experiment(TierBase):
 
     Each `Experiment` has a number of samples.
     """
+
     name_part_template = '.{}'
+
     short_type = 'exp'
 
     gui_cls = ExperimentGui
@@ -355,4 +358,3 @@ class DataSet(TierBase):
 
 
 DEFAULT_TIERS = [Home, WorkPackage, Experiment, Sample, DataSet]
-

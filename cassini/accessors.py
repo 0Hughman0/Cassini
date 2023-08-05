@@ -128,11 +128,11 @@ class _CachedProp(Generic[T, V]):
         raise AttributeError("Trying to set a cached property - naughty!")
 
 
-def cached_prop(wraps: Callable[[Any], V]) -> V:
+def cached_prop(wrapped: Callable[[Any], V]) -> V:
     """
     Decorator for turning functions/ methods into `_CachedProp`s.
     """
-    return cast(V, functools.wraps(wraps)(_CachedProp(wraps)))
+    return cast(V, functools.wraps(wrapped)(_CachedProp(wrapped)))
 
 
 class _CachedClassProp(Generic[T, V]):
@@ -161,10 +161,10 @@ class _CachedClassProp(Generic[T, V]):
         raise AttributeError("Trying to set a cached class property - naughty!")
 
 
-def cached_class_prop(wraps: Callable[[Any], V]) -> V:
+def cached_class_prop(wrapped: Callable[[Any], V]) -> V:
     """
     Decorator for turning functions/ methods into `_CachedClassProp`s.
 
-    First argument of wraps will be `self.__class__` rather than `self`.
+    First argument of wrapped will be `self.__class__` rather than `self`.
     """
-    return cast(V, functools.wraps(wraps)(_CachedClassProp(wraps)))
+    return cast(V, functools.wraps(wrapped)(_CachedClassProp(wrapped)))
