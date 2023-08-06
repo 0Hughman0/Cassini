@@ -63,7 +63,11 @@ class Home(TierBase):
     def file(self):
         assert env.project
         return env.project.project_folder / f"{self.name}.ipynb"
-        
+    
+    @cached_prop
+    def highlights_file(self):
+        return None
+
     @cached_prop
     def meta_file(self):
         return None
