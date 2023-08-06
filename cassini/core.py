@@ -467,7 +467,6 @@ class TierBase(metaclass=TierMeta):
         assert self.parent
         return self.parent.folder / (self.name + '.ipynb')
 
-
     @cached_prop
     def parent(self) -> Union[TierBase, None]:
         """

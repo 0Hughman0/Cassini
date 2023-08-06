@@ -321,7 +321,7 @@ class DataSet(TierBase):
     def exists(self):
         return self.folder.exists()
 
-    def setup_files(self):
+    def setup_files(self, template=None):
         print(f"Creating Folder for Data: {self}")
 
         with FileMaker() as maker:
@@ -343,6 +343,13 @@ class DataSet(TierBase):
         `DataSet`s have no file
         """
         return None
+    
+    @classmethod
+    def get_templates(cls):
+        """
+        Datasets have no templates.
+        """
+        return []
 
     def __truediv__(self, other):
         return self.folder / other

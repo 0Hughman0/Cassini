@@ -6,6 +6,7 @@ import re
 import os
 
 from jupyterlab.labapp import LabApp # type: ignore
+from jupyterlab_server import LabConfig
 
 from typing import Union, Tuple, List, TYPE_CHECKING, Type, TypeVar
 from typing_extensions import TypeGuard
@@ -27,6 +28,21 @@ class PathLibEnv(jinja2.Environment):
 
     def get_template(self, name: Union[Path, str], parent=None, globals=None): # type: ignore[override]
         return super().get_template(name.as_posix() if isinstance(name, Path) else name, parent=None, globals=None)
+
+
+class CassiniLabApp(LabApp):
+    """
+    Subclass of `jupyterlab.labapp.LabApp` that ensures `ContentsManager.allow_hidden = True` (needed for jupyter_cassini_server)
+    """
+
+    @classmethod
+    def initialize_server(cls, argv=None):
+        """
+        Patch serverapp to ensure hidden files are allowed, needed for jupyter_cassini_server
+        """
+        serverapp = super().initialize_server(argv)
+        serverapp.contents_manager.allow_hidden = True
+        return serverapp
 
 
 class Project:
@@ -187,9 +203,11 @@ class Project:
             os.environ['PYTHONPATH'] = py_path + os.pathsep + project_path if py_path else project_path
 
         if app is None:
-            app = LabApp()
-
+            app = CassiniLabApp()
+        
         app.launch_instance()
+        
+        return app
 
     def parse_name(self, name: str) -> Union[Tuple[str, ...], Tuple]:
         """
