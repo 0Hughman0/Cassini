@@ -1,6 +1,6 @@
 import json
 
-import pytest
+import pytest # type: ignore[import]
 from cassini.core import Meta
 from cassini.accessors import MetaAttr
 

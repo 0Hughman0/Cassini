@@ -1,6 +1,6 @@
 import html
 
-from typing import Any, Callable, Dict, Union, Sequence, Mapping, Hashable
+from typing import Any, Callable, Dict, Union, List, Mapping, Hashable, TYPE_CHECKING
 
 import pandas as pd
 import pandas.api.types as pd_types
@@ -9,6 +9,11 @@ from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layou
 from IPython.display import display, Markdown, publish_display_data
 
 from .environment import env
+
+if TYPE_CHECKING:
+    from .core import TierBase
+
+
 
 
 class WHTML:
@@ -216,8 +221,8 @@ class BaseTierGui:
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
-    def __init__(self, tier):
-        self.tier: 'BaseTier' = tier
+    def __init__(self, tier: 'TierBase'):
+        self.tier = tier
 
     def _get_header_components(self) -> Dict[str, Callable[[], DOMWidget]]:
         """
@@ -315,7 +320,7 @@ class BaseTierGui:
         children_df = self.children_df()
         return widgetify(children_df)
 
-    def header(self, *, include: Union[Sequence[str], None] = None, exclude: Union[Sequence[str], None] = None) -> DOMWidget:
+    def header(self, *, include: Union[List[str], None] = None, exclude: Union[List[str], None] = None) -> DOMWidget:
         """
         Builds header widget from its components.
 
@@ -362,7 +367,7 @@ class BaseTierGui:
         """
         return display(self._build_highlights_accordion())
 
-    def children_df(self, *, include: Union[Sequence[str], None] = None, exclude: Union[Sequence[str], None] = None) -> Union[UnescapedDataFrame, None]:
+    def children_df(self, *, include: Union[List[str], None] = None, exclude: Union[List[str], None] = None) -> Union[UnescapedDataFrame, None]:
         """
         Calls `tier.children_df` but returns an `UnescapedDataFrame` instead.
         """
@@ -373,6 +378,10 @@ class BaseTierGui:
         Widget for creating new child for this `Tier`.
         """
         child = self.tier.child_cls
+
+        if not child:
+            return
+        
         options = child.get_templates()
 
         mapping = {path.name: path for path in options}
