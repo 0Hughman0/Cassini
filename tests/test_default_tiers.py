@@ -66,8 +66,9 @@ def test_work_package(mk_project):
     exp2 = wp['2']
     exp2.setup_files()
 
-    assert list(wp) == [exp, exp2]
-    assert wp.exps == [exp, exp2]
+    # order may be different depending on caching etc.
+    assert set(wp) == set([exp, exp2])
+    assert set(wp.exps) == set([exp, exp2])
 
 
 def test_experiment(mk_project):
@@ -126,8 +127,8 @@ def test_sample(mk_project):
 
     assert dataset1.exists()
 
-    assert smpl1.datasets == [dataset1]
-    assert list(smpl1) == [dataset1]
+    assert set(smpl1.datasets) == set([dataset1])
+    assert set(smpl1) == set([dataset1])
 
 
 def test_datasets(mk_project):
