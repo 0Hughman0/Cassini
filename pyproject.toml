@@ -21,6 +21,12 @@ pandas-stubs = "^2.0.2.230605"
 flake8 = "^6.1.0"
 black = "^23.7.0"
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^3.1"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
