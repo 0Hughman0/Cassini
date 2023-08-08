@@ -61,6 +61,7 @@ __pycache__*
 
 # pytest cache
 .pytest_cache/
+.coverage
 
 # poetry stuff
 dist/
@@ -69,3 +70,6 @@ cassini.egg-info/
 
 # Jupyter Stuff
 .ipynb_checkpoints*
+
+# vs code
+.vscode/

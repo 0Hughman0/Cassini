@@ -38,10 +38,13 @@ class MetaAttr:
 
     """
 
-    def __init__(self,
-                 post_get: JSONProcessor = _null_func, pre_set: JSONProcessor = _null_func,
-                 name: str = None,
-                 default: Any = None):
+    def __init__(
+        self,
+        post_get: JSONProcessor = _null_func,
+        pre_set: JSONProcessor = _null_func,
+        name: str = None,
+        default: Any = None,
+    ):
         self.name = name
         self.post_get = post_get
         self.pre_set = pre_set

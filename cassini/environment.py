@@ -4,7 +4,10 @@ from pathlib import Path
 from warnings import warn
 import re
 
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .core import TierBase
 
 import jinja2
 
@@ -13,13 +16,19 @@ from .utils import FileMaker
 from .config import config
 
 
+
+
 class PathLibEnv(jinja2.Environment):
     """
     Subclass of `jinja2.Environment` to enable using `pathlib.Path` for template names.
     """
 
     def get_template(self, name: Union[Path, str], parent=None, globals=None):
-        return super().get_template(name.as_posix() if isinstance(name, Path) else name, parent=None, globals=None)
+        return super().get_template(
+            name.as_posix() if isinstance(name, Path) else name,
+            parent=None,
+            globals=None,
+        )
 
 
 class Project:
@@ -44,21 +53,27 @@ class Project:
 
     def __new__(cls, *args, **kwargs):
         if cls._instance:
-            raise RuntimeError("Attempted to create new Project instance, only 1 instance permitted per interpreter")
+            raise RuntimeError(
+                "Attempted to create new Project instance, only 1 instance permitted per interpreter"
+            )
         instance = object.__new__(cls)
         cls._instance = instance
         env.project = instance
         return instance
 
-    def __init__(self, hierarchy: List['BaseTier'], project_folder: Union[str, Path]):
+    def __init__(self, hierarchy: List['TierBase'], project_folder: Union[str, Path]):
         self.rank_map = {}
         self.hierarchy = hierarchy
 
         project_folder = Path(project_folder)
-        self.project_folder = project_folder if project_folder.is_dir() else project_folder.parent
+        self.project_folder = (
+            project_folder if project_folder.is_dir() else project_folder.parent
+        )
 
-        self.template_env = PathLibEnv(autoescape=jinja2.select_autoescape(['html', 'xml']),
-                                       loader=jinja2.FileSystemLoader(self.template_folder))
+        self.template_env = PathLibEnv(
+            autoescape=jinja2.select_autoescape(["html", "xml"]),
+            loader=jinja2.FileSystemLoader(self.template_folder),
+        )
 
         for rank, tier_cls in enumerate(hierarchy):
             tier_cls.rank = rank
@@ -71,7 +86,7 @@ class Project:
         """
         return self.hierarchy[0]()
 
-    def env(self, name: str) -> 'BaseTier':
+    def env(self, name: str) -> 'TierBase':
         """
         Initialise the global environment to a particular `Tier` that is retrieved by parsing `name`.
 
@@ -85,14 +100,18 @@ class Project:
         obj = self.__getitem__(name)
 
         if env.o and name != env.o.name:
-            warn((f"Overwriting the global Tier {env.o} for this interpreter. This may cause unexpected behaviour. "
-                  f"If you wish to create Tier objects that aren't the current Tier I recommend initialising them "
-                  f"directly e.g. obj = MyTier('id1', 'id2')"))
+            warn(
+                (
+                    f"Overwriting the global Tier {env.o} for this interpreter. This may cause unexpected behaviour. "
+                    f"If you wish to create Tier objects that aren't the current Tier I recommend initialising them "
+                    f"directly e.g. obj = MyTier('id1', 'id2')"
+                )
+            )
 
         env.update(obj)
         return obj
 
-    def __getitem__(self, name: str) -> 'TierBase':
+    def __getitem__(self, name: str) -> "TierBase":
         """
         Retrieve a tier object from the project by name.
 
@@ -121,7 +140,7 @@ class Project:
         """
         Overwritable property providing where templates will be stored for this project.
         """
-        return self.project_folder / 'templates'
+        return self.project_folder / "templates"
 
     def setup_files(self):
         """
@@ -145,7 +164,10 @@ class Project:
                     continue
                 maker.mkdir(self.template_folder / tier_cls.pretty_type)
                 print("Copying over default template")
-                maker.copy_file(config.BASE_TEMPLATE, self.template_folder / tier_cls.default_template)
+                maker.copy_file(
+                    config.BASE_TEMPLATE,
+                    self.template_folder / tier_cls.default_template,
+                )
                 print("Done")
 
         print(f"Setting up Home Tier")
@@ -218,7 +240,7 @@ class Project:
             match = re.search(pattern, name)
             if match and match.start(0) == 0:
                 ids.append(match.group(1))
-                name = name[match.end(0):]
+                name = name[match.end(0) :]
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!
@@ -253,7 +275,9 @@ class _Env:
 
     def __new__(cls, *args, **kwargs):
         if cls.instance:
-            raise RuntimeError("Attempted to create new _Env instance, only 1 _instance permitted per interpreter")
+            raise RuntimeError(
+                "Attempted to create new _Env instance, only 1 _instance permitted per interpreter"
+            )
         instance = object.__new__(cls)
         cls.instance = instance
         return instance
@@ -263,13 +287,13 @@ class _Env:
         self._o = None
 
     @property
-    def o(self) -> 'TierBase':
+    def o(self) -> "TierBase":
         """
         Reference to current Tier object.
         """
         return self._o
 
-    def update(self, obj: 'TierBase'):
+    def update(self, obj: "TierBase"):
         self._o = obj
 
 

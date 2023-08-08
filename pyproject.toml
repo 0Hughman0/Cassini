@@ -7,12 +7,19 @@ license = "GPL-3.0-only"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8.1"
 pandas = "^1.0"
 ipywidgets = "^7.5"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^5.4"
+flake8 = "^6.1.0"
+black = "^23.7.0"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
 sphinx = "^3.1"
 
 [build-system]

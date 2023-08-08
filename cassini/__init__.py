@@ -6,6 +6,7 @@ from cassini.defaults.tiers import Home
 try:
     __IPYTHON__
     from .magics import register
+
     register()
 except NameError:
     pass
