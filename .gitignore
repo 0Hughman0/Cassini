@@ -71,6 +71,5 @@ cassini.egg-info/
 # Jupyter Stuff
 .ipynb_checkpoints*
 
-# VScode
-
-.vscode
+# vs code
+.vscode/
