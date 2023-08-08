@@ -11,9 +11,9 @@ def hlt(line, cell):
     outputs = []
 
     def capture_display(msg):
-        if msg['content']['data'] in outputs:  # display only once
+        if msg["content"]["data"] in outputs:  # display only once
             return None
-        outputs.append(msg['content'])
+        outputs.append(msg["content"])
         return msg
 
     cell = cell.strip()
@@ -28,16 +28,18 @@ def hlt(line, cell):
     # Capture any output that is displayed before output (like matplotlib plots)
     shell.display_pub.register_hook(capture_display)
 
-    header = f'## {line}'
+    header = f"## {line}"
 
     try:
-        publish_display_data({'text/markdown': header})
+        publish_display_data({"text/markdown": header})
 
         result = shell.run_cell(cell).result
-        outputs.append(dict(zip(('data', 'metadata'), shell.display_formatter.format(result))))
+        outputs.append(
+            dict(zip(("data", "metadata"), shell.display_formatter.format(result)))
+        )
 
         if annotation:
-            publish_display_data({'text/markdown': annotation})
+            publish_display_data({"text/markdown": annotation})
     finally:
         shell.display_pub.unregister_hook(capture_display)
 
@@ -61,9 +63,9 @@ def cache(line, cell):
     outputs = []
 
     def capture_display(msg):
-        if msg['content']['data'] in outputs:  # display only once
+        if msg["content"]["data"] in outputs:  # display only once
             return None
-        outputs.append(msg['content'])
+        outputs.append(msg["content"])
         return msg
 
     shell = InteractiveShell.instance()
@@ -75,7 +77,9 @@ def cache(line, cell):
         result = output.result
         if output.error_in_exec:
             raise RuntimeError("Error in cell output, not caching")
-        outputs.append(dict(zip(('data', 'metadata'), shell.display_formatter.format(result))))
+        outputs.append(
+            dict(zip(("data", "metadata"), shell.display_formatter.format(result)))
+        )
     finally:
         shell.display_pub.unregister_hook(capture_display)
 
@@ -87,8 +91,10 @@ def cache(line, cell):
 
 
 def conc(line, cell):
-    if env.o.conclusion and line != 'force':
-        raise RuntimeError(f"Conclusion for {env.o} already set, use %%conc force to force update")
+    if env.o.conclusion and line != "force":
+        raise RuntimeError(
+            f"Conclusion for {env.o} already set, use %%conc force to force update"
+        )
     env.o.conclusion = cell
     return Markdown(cell)
 
