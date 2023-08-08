@@ -1,11 +1,25 @@
 import html
 
-from typing import Any, Callable, Dict, Union, Sequence
+from typing import Any, Callable, Dict, Union, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .core import TierBase
 
 import pandas as pd
 import pandas.api.types as pd_types
 
-from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layout, Accordion, DOMWidget
+from ipywidgets import (
+    Select,
+    VBox,
+    Button,
+    Output,
+    Text,
+    Textarea,
+    HBox,
+    Layout,
+    Accordion,
+    DOMWidget,
+)
 from IPython.display import display, Markdown, publish_display_data
 
 from .environment import env
@@ -33,7 +47,7 @@ def widgetify(obj: Any) -> Output:
     """
     Allows any object to be treated like an `ipywidget` so it can be used in `ipywidget` layouts - handy!
     """
-    output = Output(height='auto', width='auto')
+    output = Output(height="auto", width="auto")
     with output:
         display(obj)
     return output
@@ -73,7 +87,7 @@ class UnescapedDataFrame(pd.DataFrame):
         --------
         This method does not escape `obj._repr_html_`. So make sure your reprs are trustworthy!
         """
-        if hasattr(obj, '_repr_html_'):
+        if hasattr(obj, "_repr_html_"):
             return obj._repr_html_()
         return html.escape(str(obj))
 
@@ -82,8 +96,10 @@ class UnescapedDataFrame(pd.DataFrame):
         return UnescapedDataFrame
 
     def _repr_html_(self) -> str:
-        formatters = {name: (self.try_html_repr if pd_types.is_object_dtype(dtype) else None)
-                      for name, dtype in self.dtypes.items()}
+        formatters = {
+            name: (self.try_html_repr if pd_types.is_object_dtype(dtype) else None)
+            for name, dtype in self.dtypes.items()
+        }
         return self.to_html(escape=False, formatters=formatters)
 
 
@@ -99,7 +115,7 @@ class InputSequence:
         widgets to display in order. When confirm clicked, these widget objects are passed to done_action.
     """
 
-    stored_traits = ['value', 'disabled']
+    stored_traits = ["value", "disabled"]
 
     def __init__(self, done_action: Callable, *children: DOMWidget):
         self.done_action = done_action
@@ -110,16 +126,18 @@ class InputSequence:
         self.new = Button(description="New")
         self.status = Output()
 
-        self.output = Output(layout=Layout(width='auto'))
+        self.output = Output(layout=Layout(width="auto"))
 
         self.confirm.on_click(self._do_done)
         self.new.on_click(self.reset)
 
         for child in self.children:
-            child.layout.width = 'auto'
-            child.style.description_width = '10%'
-            self.initial_traits[child] = {k: v for k, v in child.get_state().items() if k in self.stored_traits}
-            child.observe(self.child_updated, 'value')
+            child.layout.width = "auto"
+            child.style.description_width = "10%"
+            self.initial_traits[child] = {
+                k: v for k, v in child.get_state().items() if k in self.stored_traits
+            }
+            child.observe(self.child_updated, "value")
 
     def reset(self, change):
         """
@@ -181,15 +199,14 @@ class InputSequence:
 
 
 class SearchWidget:
-
     def __init__(self):
-        self.search = Text(placeholder='Name')
-        self.go_btn = Button(description='Search')
-        self.clear_btn = Button(description='Clear')
+        self.search = Text(placeholder="Name")
+        self.go_btn = Button(description="Search")
+        self.clear_btn = Button(description="Clear")
         self.out = Output()
 
         self.search.continuous_update = False
-        self.search.observe(self.do_search, 'value')
+        self.search.observe(self.do_search, "value")
         self.go_btn.on_click(self.do_search)
         self.clear_btn.on_click(self.do_clear)
 
@@ -216,8 +233,9 @@ class BaseTierGui:
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
+
     def __init__(self, tier):
-        self.tier : 'BaseTier' = tier
+        self.tier: 'TierBase' = tier
 
     def _get_header_components(self) -> Dict[str, Callable[[], DOMWidget]]:
         """
@@ -236,15 +254,15 @@ class BaseTierGui:
         Overload this method to customise the appearance of your `Tier` header.
         """
         components = dict()
-        components['Description'] = self._build_description
-        components['Highlights'] = self._build_highlights_accordion
-        components['Conclusion'] = self._build_conclusion
+        components["Description"] = self._build_description
+        components["Highlights"] = self._build_highlights_accordion
+        components["Conclusion"] = self._build_conclusion
 
         child = self.tier.child_cls
         if child:
             child_name = child.pretty_type
-            components[f'{child_name}s'] = self._build_children
-            components[f'New {child_name}'] = self.new_child
+            components[f"{child_name}s"] = self._build_children
+            components[f"New {child_name}"] = self.new_child
 
         return components
 
@@ -266,7 +284,7 @@ class BaseTierGui:
         if parts:
             text += f"({'->'.join(parts[::-1])})"
 
-        text += '</h3>'
+        text += "</h3>"
         return VBox((widgetify_html(text), open_btn))
 
     def _build_description(self) -> DOMWidget:
@@ -315,7 +333,9 @@ class BaseTierGui:
         children_df = self.children_df()
         return widgetify(children_df)
 
-    def header(self, *, include: Sequence[str] = None, exclude: Sequence[str] = None) -> DOMWidget:
+    def header(
+        self, *, include: Sequence[str] = None, exclude: Sequence[str] = None
+    ) -> DOMWidget:
         """
         Builds header widget from its components.
 
@@ -341,17 +361,21 @@ class BaseTierGui:
         component_makers = self._get_header_components()
 
         if include:
-            component_makers = {k: v for k, v in component_makers.items() if k in include}
+            component_makers = {
+                k: v for k, v in component_makers.items() if k in include
+            }
 
         if exclude:
-            component_makers = {k: v for k, v in component_makers.items() if k not in exclude}
+            component_makers = {
+                k: v for k, v in component_makers.items() if k not in exclude
+            }
 
         components = [self._build_header_title()]
 
         for name, component_builder in component_makers.items():
             component = component_builder()
             if component:
-                components.append(widgetify_html(f'<h3>{name}</h3>'))
+                components.append(widgetify_html(f"<h3>{name}</h3>"))
                 components.append(component)
 
         return VBox(components)
@@ -362,11 +386,15 @@ class BaseTierGui:
         """
         return display(self._build_highlights_accordion())
 
-    def children_df(self, * , include: Sequence[str] = None, exclude: Sequence[str] = None) -> Union[UnescapedDataFrame, None]:
+    def children_df(
+        self, *, include: Sequence[str] = None, exclude: Sequence[str] = None
+    ) -> Union[UnescapedDataFrame, None]:
         """
         Calls `tier.children_df` but returns an `UnescapedDataFrame` instead.
         """
-        return UnescapedDataFrame(self.tier.children_df(include=include, exclude=exclude))
+        return UnescapedDataFrame(
+            self.tier.children_df(include=include, exclude=exclude)
+        )
 
     def new_child(self) -> DOMWidget:
         """
@@ -377,9 +405,7 @@ class BaseTierGui:
 
         mapping = {path.name: path for path in options}
 
-        selection = Select(
-            options=mapping.keys(),
-            description='Template')
+        selection = Select(options=mapping.keys(), description="Template")
 
         def create(name, template, description):
             with form.status:
@@ -388,9 +414,11 @@ class BaseTierGui:
                 obj.description = description
                 display(widgetify_html(obj._repr_html_()))
 
-        form = InputSequence(create,
-                             Text(description=f'Identifier', placeholder=f'{child.id_regex}'),
-                             selection,
-                             Textarea(description='Motivation'))
+        form = InputSequence(
+            create,
+            Text(description=f"Identifier", placeholder=f"{child.id_regex}"),
+            selection,
+            Textarea(description="Motivation"),
+        )
 
         return form.as_widget()
