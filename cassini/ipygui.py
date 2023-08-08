@@ -1,6 +1,9 @@
 import html
 
-from typing import Any, Callable, Dict, Union, Sequence
+from typing import Any, Callable, Dict, Union, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .core import TierBase
 
 import pandas as pd
 import pandas.api.types as pd_types
@@ -232,7 +235,7 @@ class BaseTierGui:
     """
 
     def __init__(self, tier):
-        self.tier: "BaseTier" = tier
+        self.tier: 'TierBase' = tier
 
     def _get_header_components(self) -> Dict[str, Callable[[], DOMWidget]]:
         """

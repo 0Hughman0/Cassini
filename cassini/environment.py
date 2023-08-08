@@ -4,13 +4,18 @@ from pathlib import Path
 from warnings import warn
 import re
 
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .core import TierBase
 
 import jinja2
 
 from .accessors import soft_prop
 from .utils import FileMaker
 from .config import config
+
+
 
 
 class PathLibEnv(jinja2.Environment):
@@ -56,7 +61,7 @@ class Project:
         env.project = instance
         return instance
 
-    def __init__(self, hierarchy: List["BaseTier"], project_folder: Union[str, Path]):
+    def __init__(self, hierarchy: List['TierBase'], project_folder: Union[str, Path]):
         self.rank_map = {}
         self.hierarchy = hierarchy
 
@@ -81,7 +86,7 @@ class Project:
         """
         return self.hierarchy[0]()
 
-    def env(self, name: str) -> "BaseTier":
+    def env(self, name: str) -> 'TierBase':
         """
         Initialise the global environment to a particular `Tier` that is retrieved by parsing `name`.
 
