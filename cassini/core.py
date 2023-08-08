@@ -697,13 +697,14 @@ class TierBase(metaclass=TierMeta):
         """
         highlights = self.get_highlights()
         
-        if self.highlights_file and highlights:
+        if self.highlights_file and highlights is not None:
             highlights = highlights.copy()
         else:
             return 
         
         if not overwrite and name in highlights:
             raise KeyError("Attempting to overwrite existing meta value")
+        
         highlights[name] = data
         self.highlights_file.write_text(json.dumps(highlights))
 

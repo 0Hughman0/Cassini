@@ -84,7 +84,7 @@ class Home(TierBase):
         return data
 
     def exists(self):
-        return self.folder.exists()
+        return self.file.exists()
 
     def setup_files(self):
         assert self.child_cls
@@ -338,6 +338,13 @@ class DataSet(TierBase):
     def meta_file(self):
         """
         `DataSet`s have no meta.
+        """
+        return None
+    
+    @cached_prop
+    def highlights_file(self):
+        """
+        `DataSet`s have no highlights.
         """
         return None
 
