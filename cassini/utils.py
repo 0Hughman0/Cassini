@@ -29,7 +29,9 @@ class FileMaker:
             return None
         raise FileExistsError(path)
 
-    def write_file(self, path: Path, contents: str = '', exist_ok: bool = False) -> Union[Path, None]:
+    def write_file(
+        self, path: Path, contents: str = "", exist_ok: bool = False
+    ) -> Union[Path, None]:
         if not path.exists():
             path.write_text(contents)
             self.files_made.append(path)
