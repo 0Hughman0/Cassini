@@ -39,7 +39,7 @@ jobs:
         POETRY_VERSION=$(poetry version --short)
         echo "$POETRY_VERSION"
         echo "$GITHUB_REF"
-        if [ "$GITHUB_REF" != "refs/tags/$POETRY_VERSION" ]; then
+        if [ "$GITHUB_REF" != "refs/tags/v$POETRY_VERSION" ]; then
           echo "Versions don't match, best not to publish"
           exit 1 
         fi
