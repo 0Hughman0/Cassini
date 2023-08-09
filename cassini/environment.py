@@ -5,7 +5,7 @@ from warnings import warn
 import re
 import os
 
-from jupyterlab.labapp import LabApp # type: ignore
+from jupyterlab.labapp import LabApp  # type: ignore
 from jupyterlab_server import LabConfig
 
 from typing import Union, Tuple, List, TYPE_CHECKING, Type, TypeVar
@@ -26,8 +26,12 @@ class PathLibEnv(jinja2.Environment):
     Subclass of `jinja2.Environment` to enable using `pathlib.Path` for template names.
     """
 
-    def get_template(self, name: Union[Path, str], parent=None, globals=None): # type: ignore[override]
-        return super().get_template(name.as_posix() if isinstance(name, Path) else name, parent=None, globals=None)
+    def get_template(self, name: Union[Path, str], parent=None, globals=None):  # type: ignore[override]
+        return super().get_template(
+            name.as_posix() if isinstance(name, Path) else name,
+            parent=None,
+            globals=None,
+        )
 
 
 class CassiniLabApp(LabApp):
@@ -67,21 +71,29 @@ class Project:
 
     def __new__(cls, *args, **kwargs):
         if cls._instance:
-            raise RuntimeError("Attempted to create new Project instance, only 1 instance permitted per interpreter")
+            raise RuntimeError(
+                "Attempted to create new Project instance, only 1 instance permitted per interpreter"
+            )
         instance = object.__new__(cls)
         cls._instance = instance
         env.project = instance
         return instance
 
-    def __init__(self, hierarchy: List[Type[TierBase]], project_folder: Union[str, Path]):
+    def __init__(
+        self, hierarchy: List[Type[TierBase]], project_folder: Union[str, Path]
+    ):
         self.rank_map = {}
         self.hierarchy = hierarchy
 
         project_folder = Path(project_folder).resolve()
-        self.project_folder = project_folder if project_folder.is_dir() else project_folder.parent
+        self.project_folder = (
+            project_folder if project_folder.is_dir() else project_folder.parent
+        )
 
-        self.template_env = PathLibEnv(autoescape=jinja2.select_autoescape(['html', 'xml']),
-                                       loader=jinja2.FileSystemLoader(self.template_folder))
+        self.template_env = PathLibEnv(
+            autoescape=jinja2.select_autoescape(["html", "xml"]),
+            loader=jinja2.FileSystemLoader(self.template_folder),
+        )
 
         for rank, tier_cls in enumerate(hierarchy):
             tier_cls.rank = rank
@@ -108,9 +120,13 @@ class Project:
         obj = self.__getitem__(name)
 
         if env.o and name != env.o.name:
-            warn((f"Overwriting the global Tier {env.o} for this interpreter. This may cause unexpected behaviour. "
-                  f"If you wish to create Tier objects that aren't the current Tier I recommend initialising them "
-                  f"directly e.g. obj = MyTier('id1', 'id2')"))
+            warn(
+                (
+                    f"Overwriting the global Tier {env.o} for this interpreter. This may cause unexpected behaviour. "
+                    f"If you wish to create Tier objects that aren't the current Tier I recommend initialising them "
+                    f"directly e.g. obj = MyTier('id1', 'id2')"
+                )
+            )
 
         env.update(obj)
         return obj
@@ -144,11 +160,11 @@ class Project:
         """
         Overwritable property providing where templates will be stored for this project.
         """
-        return self.project_folder / 'templates'
+        return self.project_folder / "templates"
 
     @soft_prop
     def caslib_folder(self) -> Path:
-        return self.project_folder / 'caslib'
+        return self.project_folder / "caslib"
 
     def setup_files(self):
         """
@@ -172,7 +188,10 @@ class Project:
                     continue
                 maker.mkdir(self.template_folder / tier_cls.pretty_type)
                 print("Copying over default template")
-                maker.copy_file(config.BASE_TEMPLATE, self.template_folder / tier_cls.default_template)
+                maker.copy_file(
+                    config.BASE_TEMPLATE,
+                    self.template_folder / tier_cls.default_template,
+                )
                 print("Done")
 
         print(f"Setting up Home Tier")
@@ -198,15 +217,17 @@ class Project:
         self.setup_files()
 
         if patch_pythonpath:
-            py_path = os.environ.get('PYTHONPATH', '')
+            py_path = os.environ.get("PYTHONPATH", "")
             project_path = str(self.project_folder.resolve())
-            os.environ['PYTHONPATH'] = py_path + os.pathsep + project_path if py_path else project_path
+            os.environ["PYTHONPATH"] = (
+                py_path + os.pathsep + project_path if py_path else project_path
+            )
 
         if app is None:
             app = CassiniLabApp()
-        
+
         app.launch_instance()
-        
+
         return app
 
     def parse_name(self, name: str) -> Union[Tuple[str, ...], Tuple]:
@@ -237,7 +258,7 @@ class Project:
         that regex:
 
             >>> WorkPackage.name_part_regex
-            WP(\d+)
+            WP(\\d+)
             >>> match = re.search(WorkPackage.name_part_regex, name)
 
         If there's no match, it will return `()`, if there is, it stores the `id` part:
@@ -255,7 +276,7 @@ class Project:
         Then it moves on to the next tier
 
             >>> Experiment.name_part_regex
-            '\.(\d+)'
+            '\\.(\\d+)'
             >>> match = re.search(WorkPackage.name_part_regex, name)
 
         If there's a match it extracts the id, and substracts the whole string from name and moves on, continuing this
@@ -275,7 +296,7 @@ class Project:
             match = re.search(pattern, name)
             if match and match.start(0) == 0:
                 ids.append(match.group(1))
-                name = name[match.end(0):]
+                name = name[match.end(0) :]
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!
@@ -287,7 +308,8 @@ class Project:
         return f"<Project at: '{self.project_folder}' hierarchy: '{self.hierarchy}' ({env})>"
 
 
-ValWithInstance = TypeVar('ValWithInstance')
+ValWithInstance = TypeVar("ValWithInstance")
+
 
 class _Env:
     """
@@ -312,7 +334,9 @@ class _Env:
 
     def __new__(cls, *args, **kwargs):
         if cls.instance:
-            raise RuntimeError("Attempted to create new _Env instance, only 1 _instance permitted per interpreter")
+            raise RuntimeError(
+                "Attempted to create new _Env instance, only 1 _instance permitted per interpreter"
+            )
         instance = object.__new__(cls)
         cls.instance = instance
         return instance
@@ -321,7 +345,9 @@ class _Env:
         self.project: Union[Project, None] = None
         self._o: Union[TierBase, None] = None
 
-    def _has_instance(self, val: Union[ValWithInstance, None]) -> TypeGuard[ValWithInstance]:
+    def _has_instance(
+        self, val: Union[ValWithInstance, None]
+    ) -> TypeGuard[ValWithInstance]:
         return self.instance is not None
 
     @property
@@ -331,7 +357,7 @@ class _Env:
         """
         if self._has_instance(self._o):
             return self._o
-        
+
         return None
 
     def update(self, obj: TierBase):

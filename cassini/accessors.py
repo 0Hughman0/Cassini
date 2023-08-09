@@ -1,10 +1,22 @@
 import functools
 
-from typing import Callable, Union, Any, cast, Dict, TypeVar, Generic, Optional, Type, overload, ClassVar
+from typing import (
+    Callable,
+    Union,
+    Any,
+    cast,
+    Dict,
+    TypeVar,
+    Generic,
+    Optional,
+    Type,
+    overload,
+    ClassVar,
+)
 from typing_extensions import Self
 
-T = TypeVar('T')
-V = TypeVar('V')
+T = TypeVar("T")
+V = TypeVar("V")
 
 
 def _null_func(val):
@@ -43,10 +55,13 @@ class MetaAttr:
 
     """
 
-    def __init__(self,
-                 post_get: JSONProcessor = _null_func, pre_set: JSONProcessor = _null_func,
-                 name: Union[str, None] = None,
-                 default: Any = None):
+    def __init__(
+        self,
+        post_get: JSONProcessor = _null_func,
+        pre_set: JSONProcessor = _null_func,
+        name: Union[str, None] = None,
+        default: Any = None,
+    ):
         self.name: str = cast(str, name)
         self.post_get = post_get
         self.pre_set = pre_set
@@ -75,10 +90,12 @@ class _SoftProp(Generic[T, V]):
         self.func = func
 
     @overload
-    def __get__(self, instance: None, owner: Type[T]) -> Self: pass
+    def __get__(self, instance: None, owner: Type[T]) -> Self:
+        pass
 
     @overload
-    def __get__(self, instance: T, owner: Type[T]) -> V: pass
+    def __get__(self, instance: T, owner: Type[T]) -> V:
+        pass
 
     def __get__(self, instance: Optional[T], owner: Type[T]) -> Union[V, Self]:
         if instance:
@@ -102,7 +119,7 @@ class _CachedProp(Generic[T, V]):
 
     def __init__(self, func: Callable[[T], V]):
         self.func = func
-        self.cache: Dict[T, V]  = {}
+        self.cache: Dict[T, V] = {}
 
     @overload
     def __get__(self, instance: None, owner: Type[T]) -> Self:
@@ -151,10 +168,10 @@ class _CachedClassProp(Generic[T, V]):
     def __get__(self, instance: T, owner: Type[T]) -> V:
         if owner in self.cache:
             return self.cache[owner]
-        
+
         val = self.func(owner)
         self.cache[owner] = val
-        
+
         return val
 
     def __set__(self, instance, value):

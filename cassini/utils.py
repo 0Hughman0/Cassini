@@ -75,10 +75,10 @@ class XPlatform:
         """
         if self._func:
             return self._func
-        
+
         assert self._default
 
-        return self._default        
+        return self._default
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
@@ -98,6 +98,7 @@ class XPlatform:
             Callable that will always call the appropriate function for the current platform.
 
         """
+
         def wrapper(func):
             if sys.platform == platform:
                 self._func = func
@@ -106,7 +107,7 @@ class XPlatform:
 
         return wrapper
 
-    def default(self, func: Callable) -> 'XPlatform':
+    def default(self, func: Callable) -> "XPlatform":
         """
         Fallback functional called if no matching function added for current platform.
 
@@ -126,15 +127,15 @@ class XPlatform:
 open_file = XPlatform()
 
 
-@open_file.add('win32')
+@open_file.add("win32")
 def win_open_file(filename: str):
     """
     Windows open file implementation.
     """
     # mypy doesn't understand XPlatform implementation... maybe this is working too hard to please?
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         raise RuntimeError("Calling win32 specific method in wrong platform")
-    
+
     os.startfile(filename)
 
 
@@ -144,5 +145,6 @@ def nix_open_file(filename: str):
     *Nix open file implementation.
     """
     import subprocess
+
     opener = "open" if sys.platform == "darwin" else "xdg-open"
     subprocess.call([opener, filename])
