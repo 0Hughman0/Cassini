@@ -39,7 +39,7 @@ jobs:
         POETRY_VERSION=$(poetry version --short)
         echo "$POETRY_VERSION"
         echo "$GITHUB_REF"
-        if ["$GITHUB_REF" != "refs/tags/$POETRY_VERSION"] then 
+        if [ "$GITHUB_REF" != "refs/tags/$POETRY_VERSION" ]; then 
           set -eo pipefail 
         fi
     - name: Lint with flake8
