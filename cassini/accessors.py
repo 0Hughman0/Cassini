@@ -23,7 +23,8 @@ def _null_func(val):
     return val
 
 
-JSONProcessor = Callable[[Union[dict, list, str, int, float, bool, None]], Any]
+JSONType = Union[dict, list, str, int, float, bool, None]
+JSONProcessor = Callable[[JSONType], Any]
 
 
 class MetaAttr:
@@ -58,7 +59,7 @@ class MetaAttr:
     def __init__(
         self,
         post_get: JSONProcessor = _null_func,
-        pre_set: JSONProcessor = _null_func,
+        pre_set: Callable[[Any], JSONType] = _null_func,
         name: Union[str, None] = None,
         default: Any = None,
     ):

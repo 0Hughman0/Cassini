@@ -4,6 +4,19 @@ import sys
 import functools
 from typing import Union, Callable, Any
 from typing_extensions import Self
+import datetime
+
+from .config import config
+from .accessors import JSONType
+
+
+def str_to_date(val: JSONType) -> datetime.datetime:
+    assert isinstance(val, str)
+    return datetime.datetime.strptime(val, config.DATE_FORMAT)
+
+
+def date_to_str(date: datetime.datetime) -> str:
+    return date.strftime(config.DATE_FORMAT)
 
 
 class FileMaker:

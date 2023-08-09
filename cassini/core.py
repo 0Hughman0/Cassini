@@ -27,7 +27,7 @@ import pandas as pd  # type: ignore
 
 from .ipygui import BaseTierGui
 from .accessors import MetaAttr, cached_prop, cached_class_prop, _CachedClassProp
-from .utils import FileMaker, open_file
+from .utils import FileMaker, open_file, str_to_date, date_to_str
 from .environment import env, _Env, Project
 from .config import config
 
@@ -372,10 +372,7 @@ class TierBase(metaclass=TierMeta):
 
     description = MetaAttr()
     conclusion = MetaAttr()
-    started = MetaAttr(
-        lambda val: datetime.datetime.strptime(val, config.DATE_FORMAT),  # type: ignore
-        lambda val: val.strftime(config.DATE_FORMAT),
-    )  # type: ignore
+    started = MetaAttr(str_to_date, date_to_str)
 
     @cached_prop
     def identifiers(self) -> Tuple[str, ...]:
