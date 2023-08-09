@@ -101,7 +101,7 @@ class XPlatform:
         def wrapper(func):
             if sys.platform == platform:
                 self._func = func
-            functools.update_wrapper(self, func)
+                functools.update_wrapper(self, func)
             return self
 
         return wrapper
@@ -131,6 +131,10 @@ def win_open_file(filename: str):
     """
     Windows open file implementation.
     """
+    # mypy doesn't understand XPlatform implementation... maybe this is working too hard to please?
+    if sys.platform != 'win32':
+        raise RuntimeError("Calling win32 specific method in wrong platform")
+    
     os.startfile(filename)
 
 
