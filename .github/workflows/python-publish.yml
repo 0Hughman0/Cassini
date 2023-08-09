@@ -39,8 +39,9 @@ jobs:
         POETRY_VERSION=$(poetry version --short)
         echo "$POETRY_VERSION"
         echo "$GITHUB_REF"
-        if [ "$GITHUB_REF" != "refs/tags/$POETRY_VERSION" ]; then 
-          set -eo pipefail 
+        if [ "$GITHUB_REF" != "refs/tags/$POETRY_VERSION" ]; then
+          echo "Versions don't match, best not to publish"
+          exit 1 
         fi
     - name: Lint with flake8
       run: |
@@ -74,8 +75,3 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-    - name: tag commit
-      run: |
-        VERSION = "${poetry version --short}"
-        git tag "v${VERSION}"
-        
