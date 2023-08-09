@@ -36,8 +36,9 @@ jobs:
     - name: check tag and release version match
       shell: bash
       run: |
-        POETRY_VERSION=${poetry version --short}
+        POETRY_VERSION=$(poetry version --short)
         echo "$POETRY_VERSION"
+        echo "$GITHUB_REF"
         if ["$GITHUB_REF" != "refs/tags/$POETRY_VERSION"] then set -eo pipefail
     - name: Lint with flake8
       run: |
