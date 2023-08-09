@@ -7,18 +7,17 @@ from .ipygui import BaseTierGui
 
 
 class JLGui(BaseTierGui):
-
     def __init__(self, tier):
         self.tier = tier
-        
+
     def header(self):
-        publish_display_data({'application/cassini.header+json': {}})
+        publish_display_data({"application/cassini.header+json": {}})
 
     def meta_editor(self, name: Union[str, List[str]]):
         if isinstance(name, str):
             name = [name]
-        
-        publish_display_data({'application/cassini.metaeditor+json': {'values': name}})
+
+        publish_display_data({"application/cassini.metaeditor+json": {"values": name}})
 
 
 def extend_project(project: Project):

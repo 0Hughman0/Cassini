@@ -4,9 +4,9 @@ import html
 
 from typing import Iterator, List, overload
 
-import pandas as pd # type: ignore[import]
+import pandas as pd  # type: ignore[import]
 from IPython.display import display
-from ipywidgets import SelectMultiple, Text, HBox, Button # type: ignore[import]
+from ipywidgets import SelectMultiple, Text, HBox, Button  # type: ignore[import]
 
 from ..core import TierBase
 from ..accessors import cached_prop, cached_class_prop
@@ -16,23 +16,22 @@ from ..environment import env
 
 
 def ignore_dir(name):
-    if name.startswith('.'):
+    if name.startswith("."):
         return True
-    if name.startswith('_'):
+    if name.startswith("_"):
         return True
     return False
 
 
 class HomeGui(BaseTierGui):
-
     def _get_header_components(self):
         components = dict()
-        components['Search'] = lambda: SearchWidget().as_widget()
+        components["Search"] = lambda: SearchWidget().as_widget()
         child = self.tier.child_cls
         if child:
             child_name = child.pretty_type
-            components[f'{child_name}s'] = self._build_children
-            components[f'New {child_name}'] = self.new_child
+            components[f"{child_name}s"] = self._build_children
+            components[f"New {child_name}"] = self.new_child
 
         return components
 
@@ -57,13 +56,13 @@ class Home(TierBase):
     def folder(self):
         assert env.project
         assert self.child_cls
-        return env.project.project_folder / (self.child_cls.pretty_type + 's')
+        return env.project.project_folder / (self.child_cls.pretty_type + "s")
 
     @cached_prop
     def file(self):
         assert env.project
         return env.project.project_folder / f"{self.name}.ipynb"
-    
+
     @cached_prop
     def highlights_file(self):
         return None
@@ -71,16 +70,16 @@ class Home(TierBase):
     @cached_prop
     def meta_file(self):
         return None
-    
+
     def serialize(self) -> dict:
         data = {}
-        
-        data['identifiers'] = self.name
-        data['name'] = self.name
-        data['file'] = str(self.file)
-        data['parents'] = []
-        data['children'] = [child.name for child in self]
-        
+
+        data["identifiers"] = self.name
+        data["name"] = self.name
+        data["file"] = str(self.file)
+        data["parents"] = []
+        data["children"] = [child.name for child in self]
+
         return data
 
     def exists(self):
@@ -110,8 +109,8 @@ class WorkPackage(TierBase):
     """
 
     name_part_template = "WP{}"
-    
-    short_type = 'wp'
+
+    short_type = "wp"
 
     @property
     def exps(self):
@@ -122,7 +121,6 @@ class WorkPackage(TierBase):
 
 
 class ExperimentGui(BaseTierGui):
-
     def new_dataset(self):
         """
         A handy widget for creating new `DataSets`.
@@ -130,9 +128,7 @@ class ExperimentGui(BaseTierGui):
         samples = list(self.tier)
         option_map = {sample.name: sample for sample in samples}
 
-        selection = SelectMultiple(
-            options=option_map.keys(),
-            description='Auto Add')
+        selection = SelectMultiple(options=option_map.keys(), description="Auto Add")
 
         def create(name, auto_add):
             with form.status:
@@ -143,15 +139,15 @@ class ExperimentGui(BaseTierGui):
                         o.setup_files()
                         display(widgetify_html(o._repr_html_()))
 
-        form = InputSequence(create,
-                             Text(description=f'Name:', placeholder='e.g. XRD'),
-                             selection)
+        form = InputSequence(
+            create, Text(description=f"Name:", placeholder="e.g. XRD"), selection
+        )
 
         return form.as_widget()
 
     def _get_header_components(self):
         components = super()._get_header_components()
-        components['New Data'] = self.new_dataset
+        components["New Data"] = self.new_dataset
         return components
 
 
@@ -165,9 +161,9 @@ class Experiment(TierBase):
     Each `Experiment` has a number of samples.
     """
 
-    name_part_template = '.{}'
+    name_part_template = ".{}"
 
-    short_type = 'exp'
+    short_type = "exp"
 
     gui_cls = ExperimentGui
 
@@ -211,8 +207,9 @@ class Experiment(TierBase):
         if df is None:
             return None
 
-        df['datasets'] = pd.Series({smpl.name: list(dataset.id for dataset in smpl.datasets)
-                                    for smpl in self})
+        df["datasets"] = pd.Series(
+            {smpl.name: list(dataset.id for dataset in smpl.datasets) for smpl in self}
+        )
         return df
 
     @property
@@ -224,16 +221,13 @@ class Experiment(TierBase):
 
 
 class SampleGui(BaseTierGui):
-
     def new_child(self):
-
         def create(name):
             with form.status:
                 o = self.tier[name]
                 o.setup_files()
 
-        form = InputSequence(create,
-                             Text(description=f'Name:', placeholder='e.g. XRD'))
+        form = InputSequence(create, Text(description=f"Name:", placeholder="e.g. XRD"))
 
         return form.as_widget()
 
@@ -245,6 +239,7 @@ class SampleGui(BaseTierGui):
             def make_callback(dataset):
                 def open_folder(change):
                     dataset.open_folder()
+
                 return open_folder
 
             b.on_click(make_callback(dataset))
@@ -268,8 +263,9 @@ class Sample(TierBase):
     -----
     A `Sample` id can't start with a number and can't contain `'-'` (dashes), as these confuse the name parser.
     """
-    name_part_template = '{}'
-    id_regex = r'([^0-9^-][^-]*)'
+
+    name_part_template = "{}"
+    id_regex = r"([^0-9^-][^-]*)"
 
     gui_cls = SampleGui
 
@@ -303,10 +299,11 @@ class DataSet(TierBase):
 
     The final tier, intended to represent a folder containing a collection of files relating to a particular `Sample`.
     """
-    short_type = 'dset'
 
-    name_part_template = '-{}'
-    id_regex = r'(.+)'
+    short_type = "dset"
+
+    name_part_template = "-{}"
+    id_regex = r"(.+)"
 
     @cached_class_prop
     def default_template(cls):
@@ -320,7 +317,10 @@ class DataSet(TierBase):
 
     @cached_prop
     def href(self):
-        return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix()) + '/'
+        return (
+            html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
+            + "/"
+        )
 
     def exists(self):
         return self.folder.exists()
@@ -340,7 +340,7 @@ class DataSet(TierBase):
         `DataSet`s have no meta.
         """
         return None
-    
+
     @cached_prop
     def highlights_file(self):
         """
@@ -354,7 +354,7 @@ class DataSet(TierBase):
         `DataSet`s have no file
         """
         return None
-    
+
     @classmethod
     def get_templates(cls):
         """
