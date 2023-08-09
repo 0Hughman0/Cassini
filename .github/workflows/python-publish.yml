@@ -8,7 +8,9 @@
 
 name: Upload Python Package
 
-on: workflow_dispatch
+on: 
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -27,6 +29,12 @@ jobs:
         python -m pip install --upgrade pip
         curl -sSL https://install.python-poetry.org | python3 -
         poetry install
+    - name: check tag and release version match
+      shell: bash
+      run: |
+        POETRY_VERSION=${poetry version --short}
+        echo "$POETRY_VERSION"
+        if ["$GITHUB_REF" != "refs/tags/$POETRY_VERSION"] then set -eo pipefail
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -46,7 +54,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: '3.x'
+        python-version: '3.8'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
