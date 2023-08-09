@@ -14,6 +14,13 @@ jupyterlab = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.4"
+flake8 = "^6.1.0"
+black = "^23.7.0"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
 sphinx = "^3.1"
 mypy = "^1.4.1"
 pytest-cov = "^4.1.0"
