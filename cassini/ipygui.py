@@ -1,28 +1,17 @@
 import html
 
-from typing import Any, Callable, Dict, Union, Sequence, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .core import TierBase
+from typing import Any, Callable, Dict, Union, List, Mapping, Hashable, TYPE_CHECKING
 
 import pandas as pd
 import pandas.api.types as pd_types
 
-from ipywidgets import (
-    Select,
-    VBox,
-    Button,
-    Output,
-    Text,
-    Textarea,
-    HBox,
-    Layout,
-    Accordion,
-    DOMWidget,
-)
+from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layout, Accordion, DOMWidget  # type: ignore[import]
 from IPython.display import display, Markdown, publish_display_data
 
 from .environment import env
+
+if TYPE_CHECKING:
+    from .core import TierBase
 
 
 class WHTML:
@@ -79,7 +68,7 @@ class UnescapedDataFrame(pd.DataFrame):
     """
 
     @staticmethod
-    def try_html_repr(obj: Any) -> str:
+    def try_html_repr(obj: object) -> str:
         """
         Get text form of obj, first try `obj._repr_html_`, fallback on `str(obj)`.
 
@@ -96,9 +85,10 @@ class UnescapedDataFrame(pd.DataFrame):
         return UnescapedDataFrame
 
     def _repr_html_(self) -> str:
-        formatters = {
-            name: (self.try_html_repr if pd_types.is_object_dtype(dtype) else None)
+        formatters: Mapping[Hashable, Callable[[object], str]] = {
+            name: self.try_html_repr
             for name, dtype in self.dtypes.items()
+            if pd_types.is_object_dtype(dtype)
         }
         return self.to_html(escape=False, formatters=formatters)
 
@@ -234,8 +224,8 @@ class BaseTierGui:
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
 
-    def __init__(self, tier):
-        self.tier: 'TierBase' = tier
+    def __init__(self, tier: "TierBase"):
+        self.tier = tier
 
     def _get_header_components(self) -> Dict[str, Callable[[], DOMWidget]]:
         """
@@ -253,7 +243,7 @@ class BaseTierGui:
 
         Overload this method to customise the appearance of your `Tier` header.
         """
-        components = dict()
+        components: Dict[str, Callable[[], Any]] = dict()
         components["Description"] = self._build_description
         components["Highlights"] = self._build_highlights_accordion
         components["Conclusion"] = self._build_conclusion
@@ -266,7 +256,7 @@ class BaseTierGui:
 
         return components
 
-    def _build_header_title(self) -> DOMWidget:
+    def _build_header_title(self, *, parent=None) -> DOMWidget:
         """
         Creates a widget that displays the title a `Tier` along side clickable links and buttons to its components
         """
@@ -287,7 +277,7 @@ class BaseTierGui:
         text += "</h3>"
         return VBox((widgetify_html(text), open_btn))
 
-    def _build_description(self) -> DOMWidget:
+    def _build_description(self, *, parent=None) -> Union[DOMWidget, None]:
         """
         Creates a widget that displays the motivation for a `Tier`.
         """
@@ -296,7 +286,7 @@ class BaseTierGui:
             return None
         return widgetify(Markdown(description))
 
-    def _build_highlights_accordion(self) -> DOMWidget:
+    def _build_highlights_accordion(self, *, parent=None) -> Union[DOMWidget, None]:
         """
         Creates a widget that displays highlights for this `Tier` in an `ipywidgets.Accordion` - which is nice!
         """
@@ -317,7 +307,7 @@ class BaseTierGui:
         widget.selected_index = None
         return widget
 
-    def _build_conclusion(self) -> DOMWidget:
+    def _build_conclusion(self, *, parent=None) -> Union[DOMWidget, None]:
         """
         Build widget to display conclusion of this `Tier` object.
         """
@@ -326,7 +316,7 @@ class BaseTierGui:
             return None
         return widgetify(Markdown(self.tier.conclusion))
 
-    def _build_children(self) -> DOMWidget:
+    def _build_children(self, *, parent=None) -> DOMWidget:
         """
         Build a widget to display an `UnescapedDataFrame` containing this `Tier`'s children.
         """
@@ -334,7 +324,10 @@ class BaseTierGui:
         return widgetify(children_df)
 
     def header(
-        self, *, include: Sequence[str] = None, exclude: Sequence[str] = None
+        self,
+        *,
+        include: Union[List[str], None] = None,
+        exclude: Union[List[str], None] = None,
     ) -> DOMWidget:
         """
         Builds header widget from its components.
@@ -387,7 +380,10 @@ class BaseTierGui:
         return display(self._build_highlights_accordion())
 
     def children_df(
-        self, *, include: Sequence[str] = None, exclude: Sequence[str] = None
+        self,
+        *,
+        include: Union[List[str], None] = None,
+        exclude: Union[List[str], None] = None,
     ) -> Union[UnescapedDataFrame, None]:
         """
         Calls `tier.children_df` but returns an `UnescapedDataFrame` instead.
@@ -396,11 +392,15 @@ class BaseTierGui:
             self.tier.children_df(include=include, exclude=exclude)
         )
 
-    def new_child(self) -> DOMWidget:
+    def new_child(self, *, parent=None) -> DOMWidget:
         """
         Widget for creating new child for this `Tier`.
         """
         child = self.tier.child_cls
+
+        if not child:
+            return
+
         options = child.get_templates()
 
         mapping = {path.name: path for path in options}
@@ -413,6 +413,7 @@ class BaseTierGui:
                 obj.setup_files(mapping[template])
                 obj.description = description
                 display(widgetify_html(obj._repr_html_()))
+            parent.update("Children")
 
         form = InputSequence(
             create,

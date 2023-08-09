@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
     <title>Cassini API &#8212; Cassini 0.1.0 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Customizing Cassini" href="customising.html" />
@@ -32,13 +32,13 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="cassini-api">
+  <section id="cassini-api">
 <h1>Cassini API<a class="headerlink" href="#cassini-api" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-cassini.core">
+<section id="module-cassini.core">
 <span id="core"></span><h2>Core<a class="headerlink" href="#module-cassini.core" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="cassini.core.Meta">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.core.</code><code class="sig-name descname">Meta</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span><span class="p">:</span> <span class="n">pathlib.Path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.Meta" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.core.</span></code><code class="sig-name descname"><span class="pre">Meta</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.Meta" title="Permalink to this definition">¶</a></dt>
 <dd><p>Like a dictionary, except linked to a json file on disk. Caches the value of the json in itself.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -47,13 +47,13 @@
 </dl>
 <dl class="py method">
 <dt id="cassini.core.Meta.age">
-<em class="property">property </em><code class="sig-name descname">age</code><a class="headerlink" href="#cassini.core.Meta.age" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">age</span></code><a class="headerlink" href="#cassini.core.Meta.age" title="Permalink to this definition">¶</a></dt>
 <dd><p>time in secs since last fetch</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.Meta.fetch">
-<code class="sig-name descname">fetch</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#cassini.core.Meta.fetch" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fetch</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">dict</span><a class="headerlink" href="#cassini.core.Meta.fetch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fetches values from the meta file and updates them into <cite>self._cache</cite>.</p>
 <p class="rubric">Notes</p>
 <p>This doesn’t <em>overwrite</em> <cite>self._cache</cite> with meta contents, but updates it. Meaning new stuff to file won’t be
@@ -62,25 +62,25 @@ overwritten, it’ll just be loaded.</p>
 
 <dl class="py method">
 <dt id="cassini.core.Meta.get">
-<code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">default</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Any<a class="headerlink" href="#cassini.core.Meta.get" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Any</span><a class="headerlink" href="#cassini.core.Meta.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Like <cite>dict.get</cite></p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.Meta.keys">
-<code class="sig-name descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; KeysView<a class="headerlink" href="#cassini.core.Meta.keys" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">keys</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">KeysView</span><a class="headerlink" href="#cassini.core.Meta.keys" title="Permalink to this definition">¶</a></dt>
 <dd><p>like <cite>dict.keys</cite></p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.Meta.refresh">
-<code class="sig-name descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.Meta.refresh" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">refresh</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.Meta.refresh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check age of cache, if stale then re-fetch</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.Meta.write">
-<code class="sig-name descname">write</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.Meta.write" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">write</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.Meta.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overwrite contents of cache into file</p>
 </dd></dl>
 
@@ -88,7 +88,7 @@ overwritten, it’ll just be loaded.</p>
 
 <dl class="py class">
 <dt id="cassini.core.TierBase">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.core.</code><code class="sig-name descname">TierBase</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.core.</span></code><code class="sig-name descname"><span class="pre">TierBase</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for creating Tiers</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -97,7 +97,7 @@ overwritten, it’ll just be loaded.</p>
 </dl>
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.rank">
-<code class="sig-name descname">rank</code><a class="headerlink" href="#cassini.core.TierBase.rank" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">rank</span></code><a class="headerlink" href="#cassini.core.TierBase.rank" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class attribute, specifying the rank of this <cite>Tier</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -108,7 +108,7 @@ overwritten, it’ll just be loaded.</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.id_regex">
-<code class="sig-name descname">id_regex</code><a class="headerlink" href="#cassini.core.TierBase.id_regex" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">id_regex</span></code><a class="headerlink" href="#cassini.core.TierBase.id_regex" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class attribute, regex that defines a group that matches the id of a <cite>Tier</cite> object from a name… except the name isn’t the full
 name, but with parent names stripped, see examples basically!</p>
 <dl class="field-list simple">
@@ -120,7 +120,7 @@ name, but with parent names stripped, see examples basically!</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.hierarchy">
-<code class="sig-name descname">hierarchy</code><a class="headerlink" href="#cassini.core.TierBase.hierarchy" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">hierarchy</span></code><a class="headerlink" href="#cassini.core.TierBase.hierarchy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class attribute, hierarchy of <a href="#id1"><span class="problematic" id="id2">`</span></a>Tier`s.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -131,7 +131,7 @@ name, but with parent names stripped, see examples basically!</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.description">
-<code class="sig-name descname">description</code><a class="headerlink" href="#cassini.core.TierBase.description" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">description</span></code><a class="headerlink" href="#cassini.core.TierBase.description" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns the description found in a <cite>Tier</cite> _instance’s meta file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -142,7 +142,7 @@ name, but with parent names stripped, see examples basically!</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.started">
-<code class="sig-name descname">started</code><a class="headerlink" href="#cassini.core.TierBase.started" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">started</span></code><a class="headerlink" href="#cassini.core.TierBase.started" title="Permalink to this definition">¶</a></dt>
 <dd><p>return a datetime parsed using <cite>config.DATE_FORMAT</cite> found in meta file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -153,7 +153,7 @@ name, but with parent names stripped, see examples basically!</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.conclusion">
-<code class="sig-name descname">conclusion</code><a class="headerlink" href="#cassini.core.TierBase.conclusion" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">conclusion</span></code><a class="headerlink" href="#cassini.core.TierBase.conclusion" title="Permalink to this definition">¶</a></dt>
 <dd><p>return the conclusion found in a <cite>Tier</cite> _instance’s meta file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -164,7 +164,7 @@ name, but with parent names stripped, see examples basically!</p>
 
 <dl class="py attribute">
 <dt id="id0">
-<code class="sig-name descname">rank</code><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">rank</span></code><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
 <dd><p>(class attribute) rank of this <cite>Tier</cite> class (not to be set directly)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -175,7 +175,7 @@ name, but with parent names stripped, see examples basically!</p>
 
 <dl class="py attribute">
 <dt id="id3">
-<code class="sig-name descname">id_regex</code><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">id_regex</span></code><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
 <dd><p>(class attribute) regex used to restrict form of <cite>Tier</cite> object ids. Should contain 1 group that captures the id.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -186,7 +186,7 @@ name, but with parent names stripped, see examples basically!</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.gui_cls">
-<code class="sig-name descname">gui_cls</code><a class="headerlink" href="#cassini.core.TierBase.gui_cls" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">gui_cls</span></code><a class="headerlink" href="#cassini.core.TierBase.gui_cls" title="Permalink to this definition">¶</a></dt>
 <dd><p>(class attribute) The class called upon initialisation to use as gui for this object. Constructor should take <cite>self</cite> as first
 argument.</p>
 <dl class="field-list simple">
@@ -198,7 +198,7 @@ argument.</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.add_highlight">
-<code class="sig-name descname">add_highlight</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">overwrite</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.add_highlight" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">add_highlight</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.add_highlight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a highlight to <cite>self.highlights_file</cite>.</p>
 <p>This is usually done behind the scenes using the <cite>%%hlt My Title</cite> magic.</p>
 <dl class="field-list simple">
@@ -214,7 +214,7 @@ argument.</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.cache_file">
-<code class="sig-name descname">cache_file</code><a class="headerlink" href="#cassini.core.TierBase.cache_file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">cache_file</span></code><a class="headerlink" href="#cassini.core.TierBase.cache_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to where cache file for this <cite>Tier</cite> object will be.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -228,7 +228,7 @@ argument.</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.cache_result">
-<code class="sig-name descname">cache_result</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">overwrite</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.cache_result" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">cache_result</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.cache_result" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cache a result in <cite>self.cache_file</cite>.</p>
 <p>This is usually done behind the scenes using the <cite>%%cache</cite> magic.</p>
 <dl class="field-list simple">
@@ -244,7 +244,7 @@ argument.</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.children_df">
-<code class="sig-name descname">children_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">include</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Sequence<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">exclude</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Sequence<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>pandas.core.frame.DataFrame<span class="p">]</span><a class="headerlink" href="#cassini.core.TierBase.children_df" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">children_df</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#cassini.core.TierBase.children_df" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build an <cite>UnescapedDataFrame</cite> containing rows from each child of this <cite>Tier</cite>. Columns are inferred from contents
 of meta files.</p>
 <dl class="field-list simple">
@@ -269,13 +269,13 @@ of meta files.</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.exists">
-<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#cassini.core.TierBase.exists" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">exists</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">bool</span><a class="headerlink" href="#cassini.core.TierBase.exists" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns True if this <cite>Tier</cite> object has already been setup (e.g. by <cite>self.setup_files</cite>)</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.file">
-<code class="sig-name descname">file</code><a class="headerlink" href="#cassini.core.TierBase.file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">file</span></code><a class="headerlink" href="#cassini.core.TierBase.file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to where <cite>.ipynb</cite> file for this <cite>Tier</cite> instance will be.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -289,14 +289,14 @@ of meta files.</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.folder">
-<code class="sig-name descname">folder</code><a class="headerlink" href="#cassini.core.TierBase.folder" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">folder</span></code><a class="headerlink" href="#cassini.core.TierBase.folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to folder where the contents of this <cite>Tier</cite> lives.</p>
 <p>Defaults to <cite>self.parent.folder / self.name</cite>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.get_cached">
-<code class="sig-name descname">get_cached</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span><span class="p">]</span><span class="p">]</span><a class="headerlink" href="#cassini.core.TierBase.get_cached" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_cached</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#cassini.core.TierBase.get_cached" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve cached output from <cite>self.cache_file</cite>.</p>
 <p>Keys are a hash of text from cell that created this output.</p>
 <dl class="field-list simple">
@@ -312,7 +312,7 @@ if no <cite>cache_file</cite> exists.</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.get_child">
-<code class="sig-name descname">get_child</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">id</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#cassini.core.TierBase" title="cassini.core.TierBase">cassini.core.TierBase</a><a class="headerlink" href="#cassini.core.TierBase.get_child" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_child</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#cassini.core.TierBase" title="cassini.core.TierBase"><span class="pre">cassini.core.TierBase</span></a><a class="headerlink" href="#cassini.core.TierBase.get_child" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a child according to the given <cite>id</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -329,7 +329,7 @@ if no <cite>cache_file</cite> exists.</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.get_highlights">
-<code class="sig-name descname">get_highlights</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span><span class="p">]</span><span class="p">]</span><a class="headerlink" href="#cassini.core.TierBase.get_highlights" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_highlights</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#cassini.core.TierBase.get_highlights" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get dictionary of highlights for this <cite>Tier</cite> _instance.</p>
 <p>This dictionary is in a form that can be rendered in the notebook using <cite>IPython.display.publish_display_data</cite>
 see Examples.</p>
@@ -355,25 +355,25 @@ empty dict.</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.get_templates">
-<em class="property">classmethod </em><code class="sig-name descname">get_templates</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>pathlib.Path<span class="p">]</span><a class="headerlink" href="#cassini.core.TierBase.get_templates" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">get_templates</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#cassini.core.TierBase.get_templates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get all the templates for this <cite>Tier</cite>.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="id4">
-<code class="sig-name descname">gui_cls</code><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">gui_cls</span></code><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <a class="reference internal" href="#cassini.ipygui.BaseTierGui" title="cassini.ipygui.BaseTierGui"><code class="xref py py-class docutils literal notranslate"><span class="pre">cassini.ipygui.BaseTierGui</span></code></a></p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="id5">
-<code class="sig-name descname">hierarchy</code><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">hierarchy</span></code><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the hierarchy from <cite>env.project</cite>.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.highlights_file">
-<code class="sig-name descname">highlights_file</code><a class="headerlink" href="#cassini.core.TierBase.highlights_file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">highlights_file</span></code><a class="headerlink" href="#cassini.core.TierBase.highlights_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to where highlights file for this <cite>Tier</cite> object should be.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -387,7 +387,7 @@ empty dict.</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.href">
-<code class="sig-name descname">href</code><a class="headerlink" href="#cassini.core.TierBase.href" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">href</span></code><a class="headerlink" href="#cassini.core.TierBase.href" title="Permalink to this definition">¶</a></dt>
 <dd><p>href usable in notebook HTML giving link to <cite>self.file</cite>.</p>
 <p>Assumes that <cite>os.getcwd()</cite> reflects the directory of the currently opened <cite>.ipynb</cite> (usually true, unless you’re
 changing working dir).</p>
@@ -404,7 +404,7 @@ changing working dir).</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.id">
-<code class="sig-name descname">id</code><a class="headerlink" href="#cassini.core.TierBase.id" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">id</span></code><a class="headerlink" href="#cassini.core.TierBase.id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shortcut for getting final identifier.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">my_project</span> <span class="kn">import</span> <span class="n">project</span>
@@ -419,13 +419,13 @@ changing working dir).</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.identifiers">
-<code class="sig-name descname">identifiers</code><a class="headerlink" href="#cassini.core.TierBase.identifiers" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">identifiers</span></code><a class="headerlink" href="#cassini.core.TierBase.identifiers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read only copy of identifiers that make up this <cite>Tier</cite> object.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.meta_file">
-<code class="sig-name descname">meta_file</code><a class="headerlink" href="#cassini.core.TierBase.meta_file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">meta_file</span></code><a class="headerlink" href="#cassini.core.TierBase.meta_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to where meta file for this <cite>Tier</cite> object should be.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -439,7 +439,7 @@ changing working dir).</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.name">
-<code class="sig-name descname">name</code><a class="headerlink" href="#cassini.core.TierBase.name" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">name</span></code><a class="headerlink" href="#cassini.core.TierBase.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Full name of <cite>Tier</cite> object. Made by concatenating each parent’s <cite>self.name_part_template</cite> filled with each parent’s
 <cite>self.id</cite>.</p>
 <p class="rubric">Examples</p>
@@ -460,7 +460,7 @@ changing working dir).</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.open_folder">
-<code class="sig-name descname">open_folder</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.open_folder" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">open_folder</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.open_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open <cite>self.folder</cite> in explorer</p>
 <p class="rubric">Notes</p>
 <p>Only works on Windows machines.</p>
@@ -470,7 +470,7 @@ the window won’t open for you!</p>
 
 <dl class="py attribute">
 <dt id="cassini.core.TierBase.parent">
-<code class="sig-name descname">parent</code><a class="headerlink" href="#cassini.core.TierBase.parent" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">parent</span></code><a class="headerlink" href="#cassini.core.TierBase.parent" title="Permalink to this definition">¶</a></dt>
 <dd><p>‘(</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -481,32 +481,32 @@ the window won’t open for you!</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.parse_name">
-<em class="property">classmethod </em><code class="sig-name descname">parse_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>str<span class="p">]</span><a class="headerlink" href="#cassini.core.TierBase.parse_name" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">parse_name</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#cassini.core.TierBase.parse_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ask <cite>env.project</cite> to parse name.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.remove_cached">
-<code class="sig-name descname">remove_cached</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.remove_cached" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">remove_cached</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.remove_cached" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove cached output according to the <cite>name</cite> provided.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.remove_files">
-<code class="sig-name descname">remove_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.remove_files" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">remove_files</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.remove_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes files associated with a <cite>Tier</cite></p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.remove_highlight">
-<code class="sig-name descname">remove_highlight</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.remove_highlight" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">remove_highlight</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.remove_highlight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove highlight from highlight file. Performed by calling <cite>get_highlights()</cite>, then deleting the key <cite>name</cite> from
 the dictionary, then re-writing the highlights… if you’re interested!</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.render_template">
-<code class="sig-name descname">render_template</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">template</span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#cassini.core.TierBase.render_template" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">render_template</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">str</span><a class="headerlink" href="#cassini.core.TierBase.render_template" title="Permalink to this definition">¶</a></dt>
 <dd><p>Render template file passing <cite>self</cite> as <cite>self.short_type</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -523,7 +523,7 @@ the dictionary, then re-writing the highlights… if you’re interested!</p>
 
 <dl class="py method">
 <dt id="cassini.core.TierBase.setup_files">
-<code class="sig-name descname">setup_files</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">template</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>pathlib.Path<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.setup_files" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">setup_files</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierBase.setup_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create all the files needed for a valid <cite>Tier</cite> object to exist.</p>
 <p>This includes its <cite>.ipynb</cite> file, its parent folder, its own folder and its <cite>Meta</cite> file.</p>
 <p>Will render <cite>.ipynb</cite> file as Jinja template engine, passing to the template <cite>self</cite> with names given by
@@ -539,20 +539,20 @@ the dictionary, then re-writing the highlights… if you’re interested!</p>
 
 <dl class="py class">
 <dt id="cassini.core.TierMeta">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.core.</code><code class="sig-name descname">TierMeta</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">bases</span></em>, <em class="sig-param"><span class="n">dct</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierMeta" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.core.</span></code><code class="sig-name descname"><span class="pre">TierMeta</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bases</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dct</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.core.TierMeta" title="Permalink to this definition">¶</a></dt>
 <dd><p>Metaclass mixin for the TierBase. Needed to ensure that each Tier Class has its own cache.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="module-cassini.environment">
+</section>
+<section id="module-cassini.environment">
 <span id="environment"></span><h2>Environment<a class="headerlink" href="#module-cassini.environment" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="cassini.environment.PathLibEnv">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.environment.</code><code class="sig-name descname">PathLibEnv</code><span class="sig-paren">(</span><em class="sig-param">block_start_string='{%'</em>, <em class="sig-param">block_end_string='%}'</em>, <em class="sig-param">variable_start_string='{{'</em>, <em class="sig-param">variable_end_string='}}'</em>, <em class="sig-param">comment_start_string='{#'</em>, <em class="sig-param">comment_end_string='#}'</em>, <em class="sig-param">line_statement_prefix=None</em>, <em class="sig-param">line_comment_prefix=None</em>, <em class="sig-param">trim_blocks=False</em>, <em class="sig-param">lstrip_blocks=False</em>, <em class="sig-param">newline_sequence='\n'</em>, <em class="sig-param">keep_trailing_newline=False</em>, <em class="sig-param">extensions=()</em>, <em class="sig-param">optimized=True</em>, <em class="sig-param">undefined=&lt;class 'jinja2.runtime.Undefined'&gt;</em>, <em class="sig-param">finalize=None</em>, <em class="sig-param">autoescape=False</em>, <em class="sig-param">loader=None</em>, <em class="sig-param">cache_size=400</em>, <em class="sig-param">auto_reload=True</em>, <em class="sig-param">bytecode_cache=None</em>, <em class="sig-param">enable_async=False</em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.PathLibEnv" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.environment.</span></code><code class="sig-name descname"><span class="pre">PathLibEnv</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">block_start_string='{%'</span></em>, <em class="sig-param"><span class="pre">block_end_string='%}'</span></em>, <em class="sig-param"><span class="pre">variable_start_string='{{'</span></em>, <em class="sig-param"><span class="pre">variable_end_string='}}'</span></em>, <em class="sig-param"><span class="pre">comment_start_string='{#'</span></em>, <em class="sig-param"><span class="pre">comment_end_string='#}'</span></em>, <em class="sig-param"><span class="pre">line_statement_prefix=None</span></em>, <em class="sig-param"><span class="pre">line_comment_prefix=None</span></em>, <em class="sig-param"><span class="pre">trim_blocks=False</span></em>, <em class="sig-param"><span class="pre">lstrip_blocks=False</span></em>, <em class="sig-param"><span class="pre">newline_sequence='\n'</span></em>, <em class="sig-param"><span class="pre">keep_trailing_newline=False</span></em>, <em class="sig-param"><span class="pre">extensions=()</span></em>, <em class="sig-param"><span class="pre">optimized=True</span></em>, <em class="sig-param"><span class="pre">undefined=&lt;class</span> <span class="pre">'jinja2.runtime.Undefined'&gt;</span></em>, <em class="sig-param"><span class="pre">finalize=None</span></em>, <em class="sig-param"><span class="pre">autoescape=False</span></em>, <em class="sig-param"><span class="pre">loader=None</span></em>, <em class="sig-param"><span class="pre">cache_size=400</span></em>, <em class="sig-param"><span class="pre">auto_reload=True</span></em>, <em class="sig-param"><span class="pre">bytecode_cache=None</span></em>, <em class="sig-param"><span class="pre">enable_async=False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.PathLibEnv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Subclass of <cite>jinja2.Environment</cite> to enable using <cite>pathlib.Path</cite> for template names.</p>
 <dl class="py method">
 <dt id="cassini.environment.PathLibEnv.get_template">
-<code class="sig-name descname">get_template</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>pathlib.Path<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">parent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">globals</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.PathLibEnv.get_template" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_template</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">globals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.PathLibEnv.get_template" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a template from the loader.  If a loader is configured this
 method asks the loader for the template and returns a <code class="xref py py-class docutils literal notranslate"><span class="pre">Template</span></code>.
 If the <cite>parent</cite> parameter is not <cite>None</cite>, <code class="xref py py-meth docutils literal notranslate"><span class="pre">join_path()</span></code> is called
@@ -571,7 +571,7 @@ function unchanged.</p>
 
 <dl class="py class">
 <dt id="cassini.environment.Project">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.environment.</code><code class="sig-name descname">Project</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.Project" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.environment.</span></code><code class="sig-name descname"><span class="pre">Project</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.Project" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents your project. Understands your naming convention, and your project hierarchy.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -587,7 +587,7 @@ case. This enables <cite>__file__</cite> to be used if you want <cite>project_fo
 <p>This class is a singleton i.e. only 1 instance per interpreter can be created.</p>
 <dl class="py method">
 <dt id="cassini.environment.Project.env">
-<code class="sig-name descname">env</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; BaseTier<a class="headerlink" href="#cassini.environment.Project.env" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">env</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">BaseTier</span><a class="headerlink" href="#cassini.environment.Project.env" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialise the global environment to a particular <cite>Tier</cite> that is retrieved by parsing <cite>name</cite>.</p>
 <p>This will set the value of <cite>env.o</cite>.</p>
 <div class="admonition warning">
@@ -599,13 +599,30 @@ behaviour.</p>
 
 <dl class="py method">
 <dt id="cassini.environment.Project.home">
-<em class="property">property </em><code class="sig-name descname">home</code><a class="headerlink" href="#cassini.environment.Project.home" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">home</span></code><a class="headerlink" href="#cassini.environment.Project.home" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the home <cite>Tier</cite>.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cassini.environment.Project.launch">
+<code class="sig-name descname"><span class="pre">launch</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_pythonpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.Project.launch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Jump off point for a cassini project.</p>
+<p>Sets up required files for your project, monkeypatches <cite>PYTHONPATH</cite> to make your project available throughout
+and launches a jupyterlab server.</p>
+<p>This explicitly associates an instance of the Jupyter server with a particular project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<em>LabApp</em>) – A ready made Jupyter Lab app (By defuault will just create a new one).</p></li>
+<li><p><strong>patch_pythonpath</strong> (<em>bool</em>) – Add <cite>self.project_folder</cite> to the <cite>PYTHONPATH</cite>? (defaults to <cite>True</cite>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cassini.environment.Project.parse_name">
-<code class="sig-name descname">parse_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Union<span class="p">[</span>Tuple<span class="p">[</span>str<span class="p">]</span><span class="p">, </span>Tuple<span class="p">]</span><a class="headerlink" href="#cassini.environment.Project.parse_name" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">parse_name</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#cassini.environment.Project.parse_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a string that corresponds to a <cite>Tier</cite> and returns a list of its identifiers.</p>
 <p>returns an empty tuple if not a valid name.</p>
 <dl class="field-list simple">
@@ -663,41 +680,41 @@ loop until it’s gone through the whole hierarchy.</p>
 
 <dl class="py method">
 <dt id="cassini.environment.Project.setup_files">
-<code class="sig-name descname">setup_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.Project.setup_files" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">setup_files</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.Project.setup_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup files needed for this project.</p>
 <p>Will put everything you need in <cite>project_folder</cite> to get going.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.environment.Project.template_folder">
-<code class="sig-name descname">template_folder</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.Project.template_folder" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">template_folder</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.environment.Project.template_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overwritable property providing where templates will be stored for this project.</p>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-<div class="section" id="module-cassini.ipygui">
+</section>
+<section id="module-cassini.ipygui">
 <span id="ipygui"></span><h2>IPyGui<a class="headerlink" href="#module-cassini.ipygui" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="cassini.ipygui.BaseTierGui">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.ipygui.</code><code class="sig-name descname">BaseTierGui</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tier</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.BaseTierGui" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.ipygui.</span></code><code class="sig-name descname"><span class="pre">BaseTierGui</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tier</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.BaseTierGui" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mixin to provide nice notebook outputs for Jupyter Notebooks.</p>
 <dl class="py method">
 <dt id="cassini.ipygui.BaseTierGui.children_df">
-<code class="sig-name descname">children_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">include</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">exclude</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span><a class="reference internal" href="#cassini.ipygui.UnescapedDataFrame" title="cassini.ipygui.UnescapedDataFrame">cassini.ipygui.UnescapedDataFrame</a><span class="p">]</span><a class="headerlink" href="#cassini.ipygui.BaseTierGui.children_df" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">children_df</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#cassini.ipygui.UnescapedDataFrame" title="cassini.ipygui.UnescapedDataFrame"><span class="pre">cassini.ipygui.UnescapedDataFrame</span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#cassini.ipygui.BaseTierGui.children_df" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calls <cite>tier.children_df</cite> but returns an <cite>UnescapedDataFrame</cite> instead.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.ipygui.BaseTierGui.display_highlights">
-<code class="sig-name descname">display_highlights</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.BaseTierGui.display_highlights" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">display_highlights</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.BaseTierGui.display_highlights" title="Permalink to this definition">¶</a></dt>
 <dd><p>Display an <cite>ipywidgets.Accordian</cite> with this <cite>Tier</cite>’s highlights.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.ipygui.BaseTierGui.header">
-<code class="sig-name descname">header</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">include</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">exclude</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; ipywidgets.widgets.domwidget.DOMWidget<a class="headerlink" href="#cassini.ipygui.BaseTierGui.header" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">header</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">ipywidgets.widgets.domwidget.DOMWidget</span><a class="headerlink" href="#cassini.ipygui.BaseTierGui.header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds header widget from its components.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -721,7 +738,7 @@ loop until it’s gone through the whole hierarchy.</p>
 
 <dl class="py method">
 <dt id="cassini.ipygui.BaseTierGui.new_child">
-<code class="sig-name descname">new_child</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; ipywidgets.widgets.domwidget.DOMWidget<a class="headerlink" href="#cassini.ipygui.BaseTierGui.new_child" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">new_child</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">ipywidgets.widgets.domwidget.DOMWidget</span><a class="headerlink" href="#cassini.ipygui.BaseTierGui.new_child" title="Permalink to this definition">¶</a></dt>
 <dd><p>Widget for creating new child for this <cite>Tier</cite>.</p>
 </dd></dl>
 
@@ -729,7 +746,7 @@ loop until it’s gone through the whole hierarchy.</p>
 
 <dl class="py class">
 <dt id="cassini.ipygui.InputSequence">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.ipygui.</code><code class="sig-name descname">InputSequence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">done_action</span><span class="p">:</span> <span class="n">Callable</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">children</span><span class="p">:</span> <span class="n">ipywidgets.widgets.domwidget.DOMWidget</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.InputSequence" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.ipygui.</span></code><code class="sig-name descname"><span class="pre">InputSequence</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">done_action</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">children</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">ipywidgets.widgets.domwidget.DOMWidget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.InputSequence" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper class for creating ‘input sequences’ i.e. a sequency of widgets that you fill in, and then click confirm.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -741,7 +758,7 @@ loop until it’s gone through the whole hierarchy.</p>
 </dl>
 <dl class="py method">
 <dt id="cassini.ipygui.InputSequence.as_widget">
-<code class="sig-name descname">as_widget</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; ipywidgets.widgets.domwidget.DOMWidget<a class="headerlink" href="#cassini.ipygui.InputSequence.as_widget" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">as_widget</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">ipywidgets.widgets.domwidget.DOMWidget</span><a class="headerlink" href="#cassini.ipygui.InputSequence.as_widget" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build <cite>self</cite> into <cite>ipywidget</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -755,14 +772,14 @@ loop until it’s gone through the whole hierarchy.</p>
 
 <dl class="py method">
 <dt id="cassini.ipygui.InputSequence.child_updated">
-<code class="sig-name descname">child_updated</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">change</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.InputSequence.child_updated" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">child_updated</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">change</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.InputSequence.child_updated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called when a child is updated, meant to stop you pressing confirm until you’ve entered something into every
 widget… don’t think it actually works tho!</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.ipygui.InputSequence.display">
-<code class="sig-name descname">display</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.InputSequence.display" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">display</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.InputSequence.display" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays <cite>self.as_widget()</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -776,7 +793,7 @@ widget… don’t think it actually works tho!</p>
 
 <dl class="py method">
 <dt id="cassini.ipygui.InputSequence.reset">
-<code class="sig-name descname">reset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">change</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.InputSequence.reset" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">change</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.InputSequence.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the state of the InputSequence. Called when <cite>new</cite> button clicked.</p>
 </dd></dl>
 
@@ -784,7 +801,7 @@ widget… don’t think it actually works tho!</p>
 
 <dl class="py class">
 <dt id="cassini.ipygui.UnescapedDataFrame">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.ipygui.</code><code class="sig-name descname">UnescapedDataFrame</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">index</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Collection<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">columns</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Collection<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">dtype</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>numpy.dtype<span class="p">, </span>ExtensionDtype<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">copy</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.UnescapedDataFrame" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.ipygui.</span></code><code class="sig-name descname"><span class="pre">UnescapedDataFrame</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Collection</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Collection</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ExtensionDtype</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">,</span> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">complex</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.UnescapedDataFrame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Subclass of <cite>pd.DataFrame</cite> that slightly dangerously does not escape any html in its <cite>self._repr_html_</cite> method.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -792,7 +809,7 @@ widget… don’t think it actually works tho!</p>
 </div>
 <dl class="py method">
 <dt id="cassini.ipygui.UnescapedDataFrame.try_html_repr">
-<em class="property">static </em><code class="sig-name descname">try_html_repr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#cassini.ipygui.UnescapedDataFrame.try_html_repr" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">try_html_repr</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">str</span><a class="headerlink" href="#cassini.ipygui.UnescapedDataFrame.try_html_repr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get text form of obj, first try <cite>obj._repr_html_</cite>, fallback on <cite>str(obj)</cite>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -804,7 +821,7 @@ widget… don’t think it actually works tho!</p>
 
 <dl class="py class">
 <dt id="cassini.ipygui.WHTML">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.ipygui.</code><code class="sig-name descname">WHTML</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">html</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.WHTML" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.ipygui.</span></code><code class="sig-name descname"><span class="pre">WHTML</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.ipygui.WHTML" title="Permalink to this definition">¶</a></dt>
 <dd><p>Magic class that takes html text and creates an object that is rendered with that text.</p>
 <p><cite>ipywidget.HTML</cite> widgets do not get their links XSRF protected, but <cite>obj._repr_html_</cite> does!</p>
 <div class="admonition warning">
@@ -815,13 +832,13 @@ widget… don’t think it actually works tho!</p>
 
 <dl class="py function">
 <dt id="cassini.ipygui.widgetify">
-<code class="sig-prename descclassname">cassini.ipygui.</code><code class="sig-name descname">widgetify</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span> &#x2192; ipywidgets.widgets.widget_output.Output<a class="headerlink" href="#cassini.ipygui.widgetify" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cassini.ipygui.</span></code><code class="sig-name descname"><span class="pre">widgetify</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">ipywidgets.widgets.widget_output.Output</span><a class="headerlink" href="#cassini.ipygui.widgetify" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allows any object to be treated like an <cite>ipywidget</cite> so it can be used in <cite>ipywidget</cite> layouts - handy!</p>
 </dd></dl>
 
 <dl class="py function">
 <dt id="cassini.ipygui.widgetify_html">
-<code class="sig-prename descclassname">cassini.ipygui.</code><code class="sig-name descname">widgetify_html</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">html</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; ipywidgets.widgets.widget_output.Output<a class="headerlink" href="#cassini.ipygui.widgetify_html" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cassini.ipygui.</span></code><code class="sig-name descname"><span class="pre">widgetify_html</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">ipywidgets.widgets.widget_output.Output</span><a class="headerlink" href="#cassini.ipygui.widgetify_html" title="Permalink to this definition">¶</a></dt>
 <dd><p>Required for html which has links rather than ipywidgets HTML widget.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -836,35 +853,35 @@ widget… don’t think it actually works tho!</p>
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="module-cassini.defaults.tiers">
+</section>
+<section id="module-cassini.defaults.tiers">
 <span id="defaults"></span><h2>Defaults<a class="headerlink" href="#module-cassini.defaults.tiers" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="cassini.defaults.tiers.DataSet">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.defaults.tiers.</code><code class="sig-name descname">DataSet</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.DataSet" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.defaults.tiers.</span></code><code class="sig-name descname"><span class="pre">DataSet</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.DataSet" title="Permalink to this definition">¶</a></dt>
 <dd><p><cite>DataSet</cite> Tier.</p>
 <p>The final tier, intended to represent a folder containing a collection of files relating to a particular <cite>Sample</cite>.</p>
 <dl class="py method">
 <dt id="cassini.defaults.tiers.DataSet.exists">
-<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.DataSet.exists" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">exists</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.DataSet.exists" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns True if this <cite>Tier</cite> object has already been setup (e.g. by <cite>self.setup_files</cite>)</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="cassini.defaults.tiers.DataSet.file">
-<code class="sig-name descname">file</code><a class="headerlink" href="#cassini.defaults.tiers.DataSet.file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">file</span></code><a class="headerlink" href="#cassini.defaults.tiers.DataSet.file" title="Permalink to this definition">¶</a></dt>
 <dd><p><a href="#id6"><span class="problematic" id="id7">`</span></a>DataSet`s have no file</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="cassini.defaults.tiers.DataSet.meta_file">
-<code class="sig-name descname">meta_file</code><a class="headerlink" href="#cassini.defaults.tiers.DataSet.meta_file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">meta_file</span></code><a class="headerlink" href="#cassini.defaults.tiers.DataSet.meta_file" title="Permalink to this definition">¶</a></dt>
 <dd><p><a href="#id8"><span class="problematic" id="id9">`</span></a>DataSet`s have no meta.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.defaults.tiers.DataSet.setup_files">
-<code class="sig-name descname">setup_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.DataSet.setup_files" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">setup_files</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.DataSet.setup_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create all the files needed for a valid <cite>Tier</cite> object to exist.</p>
 <p>This includes its <cite>.ipynb</cite> file, its parent folder, its own folder and its <cite>Meta</cite> file.</p>
 <p>Will render <cite>.ipynb</cite> file as Jinja template engine, passing to the template <cite>self</cite> with names given by
@@ -880,14 +897,14 @@ widget… don’t think it actually works tho!</p>
 
 <dl class="py class">
 <dt id="cassini.defaults.tiers.Experiment">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.defaults.tiers.</code><code class="sig-name descname">Experiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Experiment" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.defaults.tiers.</span></code><code class="sig-name descname"><span class="pre">Experiment</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Experiment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Experiment <cite>Tier</cite>.</p>
 <p>Just below <cite>WorkPackage</cite>, experiments are intended to be collections of samples and datasets that work towards the
 goal of the parent <cite>WorkPackage</cite>.</p>
 <p>Each <cite>Experiment</cite> has a number of samples.</p>
 <dl class="py method">
 <dt id="cassini.defaults.tiers.Experiment.children_df">
-<code class="sig-name descname">children_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">include</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">exclude</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Experiment.children_df" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">children_df</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Experiment.children_df" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build an <cite>UnescapedDataFrame</cite> containing rows from each child of this <cite>Tier</cite>. Columns are inferred from contents
 of meta files.</p>
 <dl class="field-list simple">
@@ -912,13 +929,13 @@ of meta files.</p>
 
 <dl class="py attribute">
 <dt id="cassini.defaults.tiers.Experiment.gui_cls">
-<code class="sig-name descname">gui_cls</code><a class="headerlink" href="#cassini.defaults.tiers.Experiment.gui_cls" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#cassini.defaults.tiers.ExperimentGui" title="cassini.defaults.tiers.ExperimentGui"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExperimentGui</span></code></a></p>
+<code class="sig-name descname"><span class="pre">gui_cls</span></code><a class="headerlink" href="#cassini.defaults.tiers.Experiment.gui_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#cassini.defaults.tiers.ExperimentGui" title="cassini.defaults.tiers.ExperimentGui"><code class="xref py py-class docutils literal notranslate"><span class="pre">cassini.defaults.tiers.ExperimentGui</span></code></a></p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.defaults.tiers.Experiment.setup_technique">
-<code class="sig-name descname">setup_technique</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Experiment.setup_technique" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">setup_technique</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Experiment.setup_technique" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience method for adding a new technique to this experiment.</p>
 <p>Essentially just creates a new folder for it in the appropriate location.</p>
 <p>This folder can then be filled with <a href="#id10"><span class="problematic" id="id11">`</span></a>DataSet`s</p>
@@ -926,13 +943,13 @@ of meta files.</p>
 
 <dl class="py method">
 <dt id="cassini.defaults.tiers.Experiment.smpls">
-<em class="property">property </em><code class="sig-name descname">smpls</code><a class="headerlink" href="#cassini.defaults.tiers.Experiment.smpls" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">smpls</span></code><a class="headerlink" href="#cassini.defaults.tiers.Experiment.smpls" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of this <a href="#id12"><span class="problematic" id="id13">`</span></a>Experiment`s samples.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.defaults.tiers.Experiment.techniques">
-<em class="property">property </em><code class="sig-name descname">techniques</code><a class="headerlink" href="#cassini.defaults.tiers.Experiment.techniques" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">techniques</span></code><a class="headerlink" href="#cassini.defaults.tiers.Experiment.techniques" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience property for looking up all the techniques that have been performed on samples in this experiment.</p>
 <p class="rubric">Notes</p>
 <p>This just checks for the existence of DataSet folders, and not if they have anything in them!</p>
@@ -942,10 +959,10 @@ of meta files.</p>
 
 <dl class="py class">
 <dt id="cassini.defaults.tiers.ExperimentGui">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.defaults.tiers.</code><code class="sig-name descname">ExperimentGui</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tier</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.ExperimentGui" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.defaults.tiers.</span></code><code class="sig-name descname"><span class="pre">ExperimentGui</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tier</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.ExperimentGui" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt id="cassini.defaults.tiers.ExperimentGui.new_dataset">
-<code class="sig-name descname">new_dataset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.ExperimentGui.new_dataset" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">new_dataset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.ExperimentGui.new_dataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>A handy widget for creating new <cite>DataSets</cite>.</p>
 </dd></dl>
 
@@ -953,26 +970,26 @@ of meta files.</p>
 
 <dl class="py class">
 <dt id="cassini.defaults.tiers.Home">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.defaults.tiers.</code><code class="sig-name descname">Home</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Home" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.defaults.tiers.</span></code><code class="sig-name descname"><span class="pre">Home</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Home" title="Permalink to this definition">¶</a></dt>
 <dd><p>Home <cite>Tier</cite>.</p>
 <p>This, or a subclass of this should generally be the first entry in your hierarchy, essentially represents the top
 level folder in your hierarchy.</p>
 <p>Creates the <cite>Home.ipynb</cite> notebook that allows easy navigation of your project.</p>
 <dl class="py method">
 <dt id="cassini.defaults.tiers.Home.exists">
-<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Home.exists" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">exists</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Home.exists" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns True if this <cite>Tier</cite> object has already been setup (e.g. by <cite>self.setup_files</cite>)</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="cassini.defaults.tiers.Home.gui_cls">
-<code class="sig-name descname">gui_cls</code><a class="headerlink" href="#cassini.defaults.tiers.Home.gui_cls" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#cassini.defaults.tiers.HomeGui" title="cassini.defaults.tiers.HomeGui"><code class="xref py py-class docutils literal notranslate"><span class="pre">HomeGui</span></code></a></p>
+<code class="sig-name descname"><span class="pre">gui_cls</span></code><a class="headerlink" href="#cassini.defaults.tiers.Home.gui_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#cassini.defaults.tiers.HomeGui" title="cassini.defaults.tiers.HomeGui"><code class="xref py py-class docutils literal notranslate"><span class="pre">cassini.defaults.tiers.HomeGui</span></code></a></p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cassini.defaults.tiers.Home.setup_files">
-<code class="sig-name descname">setup_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Home.setup_files" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">setup_files</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Home.setup_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create all the files needed for a valid <cite>Tier</cite> object to exist.</p>
 <p>This includes its <cite>.ipynb</cite> file, its parent folder, its own folder and its <cite>Meta</cite> file.</p>
 <p>Will render <cite>.ipynb</cite> file as Jinja template engine, passing to the template <cite>self</cite> with names given by
@@ -988,37 +1005,37 @@ level folder in your hierarchy.</p>
 
 <dl class="py class">
 <dt id="cassini.defaults.tiers.HomeGui">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.defaults.tiers.</code><code class="sig-name descname">HomeGui</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tier</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.HomeGui" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.defaults.tiers.</span></code><code class="sig-name descname"><span class="pre">HomeGui</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tier</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.HomeGui" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py class">
 <dt id="cassini.defaults.tiers.Sample">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.defaults.tiers.</code><code class="sig-name descname">Sample</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Sample" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.defaults.tiers.</span></code><code class="sig-name descname"><span class="pre">Sample</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.Sample" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sample <cite>Tier</cite>.</p>
 <p>A <cite>Sample</cite> is intended to represent some object that you collect data on.</p>
 <p>As such, each sample has its own <a href="#id14"><span class="problematic" id="id15">`</span></a>DataSet`s.</p>
 <p class="rubric">Notes</p>
-<p>A <cite>Sample</cite> id can’t start with a number and can’t contain <cite>‘-‘</cite> (dashes), as these confuse the name parser.</p>
+<p>A <cite>Sample</cite> id can’t start with a number and can’t contain <cite>‘-’</cite> (dashes), as these confuse the name parser.</p>
 <dl class="py method">
 <dt id="cassini.defaults.tiers.Sample.datasets">
-<em class="property">property </em><code class="sig-name descname">datasets</code><a class="headerlink" href="#cassini.defaults.tiers.Sample.datasets" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">datasets</span></code><a class="headerlink" href="#cassini.defaults.tiers.Sample.datasets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenient way of getting a list of <a href="#id16"><span class="problematic" id="id17">`</span></a>DataSet`s this sample has.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt id="cassini.defaults.tiers.Sample.gui_cls">
-<code class="sig-name descname">gui_cls</code><a class="headerlink" href="#cassini.defaults.tiers.Sample.gui_cls" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#cassini.defaults.tiers.SampleGui" title="cassini.defaults.tiers.SampleGui"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleGui</span></code></a></p>
+<code class="sig-name descname"><span class="pre">gui_cls</span></code><a class="headerlink" href="#cassini.defaults.tiers.Sample.gui_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#cassini.defaults.tiers.SampleGui" title="cassini.defaults.tiers.SampleGui"><code class="xref py py-class docutils literal notranslate"><span class="pre">cassini.defaults.tiers.SampleGui</span></code></a></p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt id="cassini.defaults.tiers.SampleGui">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.defaults.tiers.</code><code class="sig-name descname">SampleGui</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tier</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.SampleGui" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.defaults.tiers.</span></code><code class="sig-name descname"><span class="pre">SampleGui</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tier</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.SampleGui" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt id="cassini.defaults.tiers.SampleGui.new_child">
-<code class="sig-name descname">new_child</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.SampleGui.new_child" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">new_child</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.SampleGui.new_child" title="Permalink to this definition">¶</a></dt>
 <dd><p>Widget for creating new child for this <cite>Tier</cite>.</p>
 </dd></dl>
 
@@ -1026,20 +1043,20 @@ level folder in your hierarchy.</p>
 
 <dl class="py class">
 <dt id="cassini.defaults.tiers.WorkPackage">
-<em class="property">class </em><code class="sig-prename descclassname">cassini.defaults.tiers.</code><code class="sig-name descname">WorkPackage</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.WorkPackage" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cassini.defaults.tiers.</span></code><code class="sig-name descname"><span class="pre">WorkPackage</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cassini.defaults.tiers.WorkPackage" title="Permalink to this definition">¶</a></dt>
 <dd><p>WorkPackage Tier.</p>
 <p>Intended to contain all the work towards a particular goal. i.e. prove that we can do this.</p>
 <p>Next level down are <a href="#id18"><span class="problematic" id="id19">`</span></a>Experiment`s.</p>
 <dl class="py method">
 <dt id="cassini.defaults.tiers.WorkPackage.exps">
-<em class="property">property </em><code class="sig-name descname">exps</code><a class="headerlink" href="#cassini.defaults.tiers.WorkPackage.exps" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">exps</span></code><a class="headerlink" href="#cassini.defaults.tiers.WorkPackage.exps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets a list of all this <a href="#id20"><span class="problematic" id="id21">`</span></a>WorkPackage`s experiments.</p>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -1058,7 +1075,7 @@ level folder in your hierarchy.</p>
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="features.html">Features</a></li>
@@ -1106,7 +1123,7 @@ level folder in your hierarchy.</p>
       &copy;2020, Hugh Ramsden.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

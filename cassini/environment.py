@@ -3,8 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from warnings import warn
 import re
+import os
 
-from typing import Union, Tuple, List, TYPE_CHECKING
+from jupyterlab.labapp import LabApp  # type: ignore
+from jupyterlab_server import LabConfig
+
+from typing import Union, Tuple, List, TYPE_CHECKING, Type, TypeVar
+from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
     from .core import TierBase
@@ -16,19 +21,32 @@ from .utils import FileMaker
 from .config import config
 
 
-
-
 class PathLibEnv(jinja2.Environment):
     """
     Subclass of `jinja2.Environment` to enable using `pathlib.Path` for template names.
     """
 
-    def get_template(self, name: Union[Path, str], parent=None, globals=None):
+    def get_template(self, name: Union[Path, str], parent=None, globals=None):  # type: ignore[override]
         return super().get_template(
             name.as_posix() if isinstance(name, Path) else name,
             parent=None,
             globals=None,
         )
+
+
+class CassiniLabApp(LabApp):
+    """
+    Subclass of `jupyterlab.labapp.LabApp` that ensures `ContentsManager.allow_hidden = True` (needed for jupyter_cassini_server)
+    """
+
+    @classmethod
+    def initialize_server(cls, argv=None):
+        """
+        Patch serverapp to ensure hidden files are allowed, needed for jupyter_cassini_server
+        """
+        serverapp = super().initialize_server(argv)
+        serverapp.contents_manager.allow_hidden = True
+        return serverapp
 
 
 class Project:
@@ -49,7 +67,7 @@ class Project:
     This class is a singleton i.e. only 1 instance per interpreter can be created.
     """
 
-    _instance = None
+    _instance: Union[Project, None] = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance:
@@ -61,11 +79,13 @@ class Project:
         env.project = instance
         return instance
 
-    def __init__(self, hierarchy: List['TierBase'], project_folder: Union[str, Path]):
+    def __init__(
+        self, hierarchy: List[Type[TierBase]], project_folder: Union[str, Path]
+    ):
         self.rank_map = {}
         self.hierarchy = hierarchy
 
-        project_folder = Path(project_folder)
+        project_folder = Path(project_folder).resolve()
         self.project_folder = (
             project_folder if project_folder.is_dir() else project_folder.parent
         )
@@ -86,7 +106,7 @@ class Project:
         """
         return self.hierarchy[0]()
 
-    def env(self, name: str) -> 'TierBase':
+    def env(self, name: str) -> TierBase:
         """
         Initialise the global environment to a particular `Tier` that is retrieved by parsing `name`.
 
@@ -111,7 +131,7 @@ class Project:
         env.update(obj)
         return obj
 
-    def __getitem__(self, name: str) -> "TierBase":
+    def __getitem__(self, name: str) -> TierBase:
         """
         Retrieve a tier object from the project by name.
 
@@ -141,6 +161,10 @@ class Project:
         Overwritable property providing where templates will be stored for this project.
         """
         return self.project_folder / "templates"
+
+    @soft_prop
+    def caslib_folder(self) -> Path:
+        return self.project_folder / "caslib"
 
     def setup_files(self):
         """
@@ -174,7 +198,39 @@ class Project:
         home.setup_files()
         print("Success")
 
-    def parse_name(self, name: str) -> Union[Tuple[str], Tuple]:
+    def launch(self, app=None, patch_pythonpath=True):
+        """
+        Jump off point for a cassini project.
+
+        Sets up required files for your project, monkeypatches `PYTHONPATH` to make your project available throughout
+        and launches a jupyterlab server.
+
+        This explicitly associates an instance of the Jupyter server with a particular project.
+
+        Parameters
+        ----------
+        app : LabApp
+            A ready made Jupyter Lab app (By defuault will just create a new one).
+        patch_pythonpath : bool
+            Add `self.project_folder` to the `PYTHONPATH`? (defaults to `True`)
+        """
+        self.setup_files()
+
+        if patch_pythonpath:
+            py_path = os.environ.get("PYTHONPATH", "")
+            project_path = str(self.project_folder.resolve())
+            os.environ["PYTHONPATH"] = (
+                py_path + os.pathsep + project_path if py_path else project_path
+            )
+
+        if app is None:
+            app = CassiniLabApp()
+
+        app.launch_instance()
+
+        return app
+
+    def parse_name(self, name: str) -> Union[Tuple[str, ...], Tuple]:
         """
         Parses a string that corresponds to a `Tier` and returns a list of its identifiers.
 
@@ -202,7 +258,7 @@ class Project:
         that regex:
 
             >>> WorkPackage.name_part_regex
-            WP(\d+)
+            WP(\\d+)
             >>> match = re.search(WorkPackage.name_part_regex, name)
 
         If there's no match, it will return `()`, if there is, it stores the `id` part:
@@ -220,7 +276,7 @@ class Project:
         Then it moves on to the next tier
 
             >>> Experiment.name_part_regex
-            '\.(\d+)'
+            '\\.(\\d+)'
             >>> match = re.search(WorkPackage.name_part_regex, name)
 
         If there's a match it extracts the id, and substracts the whole string from name and moves on, continuing this
@@ -244,12 +300,15 @@ class Project:
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!
-            return ()
+            return tuple()
         else:
             return tuple(ids)
 
     def __repr__(self):
         return f"<Project at: '{self.project_folder}' hierarchy: '{self.hierarchy}' ({env})>"
+
+
+ValWithInstance = TypeVar("ValWithInstance")
 
 
 class _Env:
@@ -271,7 +330,7 @@ class _Env:
     This object shouldn't be created directly, instead you should call `project.env('...')` to set its value.
     """
 
-    instance = None
+    instance: Union[_Env, None] = None
 
     def __new__(cls, *args, **kwargs):
         if cls.instance:
@@ -282,18 +341,26 @@ class _Env:
         cls.instance = instance
         return instance
 
-    def __init__(self):
-        self.project = None
-        self._o = None
+    def __init__(self) -> None:
+        self.project: Union[Project, None] = None
+        self._o: Union[TierBase, None] = None
+
+    def _has_instance(
+        self, val: Union[ValWithInstance, None]
+    ) -> TypeGuard[ValWithInstance]:
+        return self.instance is not None
 
     @property
-    def o(self) -> "TierBase":
+    def o(self) -> Union[TierBase, None]:
         """
         Reference to current Tier object.
         """
-        return self._o
+        if self._has_instance(self._o):
+            return self._o
 
-    def update(self, obj: "TierBase"):
+        return None
+
+    def update(self, obj: TierBase):
         self._o = obj
 
 

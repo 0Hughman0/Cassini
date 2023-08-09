@@ -2,11 +2,11 @@ from pathlib import Path
 import os
 import html
 
-from typing import Iterator, List
+from typing import Iterator, List, overload
 
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 from IPython.display import display
-from ipywidgets import SelectMultiple, Text, HBox, Button
+from ipywidgets import SelectMultiple, Text, HBox, Button  # type: ignore[import]
 
 from ..core import TierBase
 from ..accessors import cached_prop, cached_class_prop
@@ -46,8 +46,6 @@ class Home(TierBase):
     Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
 
-    name_template = None
-
     gui_cls = HomeGui
 
     @cached_prop
@@ -56,20 +54,40 @@ class Home(TierBase):
 
     @cached_prop
     def folder(self):
+        assert env.project
+        assert self.child_cls
         return env.project.project_folder / (self.child_cls.pretty_type + "s")
 
     @cached_prop
-    def file(self) -> Path:
+    def file(self):
+        assert env.project
         return env.project.project_folder / f"{self.name}.ipynb"
+
+    @cached_prop
+    def highlights_file(self):
+        return None
 
     @cached_prop
     def meta_file(self):
         return None
 
+    def serialize(self) -> dict:
+        data = {}
+
+        data["identifiers"] = self.name
+        data["name"] = self.name
+        data["file"] = str(self.file)
+        data["parents"] = []
+        data["children"] = [child.name for child in self]
+
+        return data
+
     def exists(self):
-        return self.folder.exists()
+        return self.file.exists()
 
     def setup_files(self):
+        assert self.child_cls
+
         with FileMaker() as maker:
             print(f"Creating {self.child_cls.pretty_type} folder")
             maker.mkdir(self.folder)
@@ -91,6 +109,7 @@ class WorkPackage(TierBase):
     """
 
     name_part_template = "WP{}"
+
     short_type = "wp"
 
     @property
@@ -143,6 +162,7 @@ class Experiment(TierBase):
     """
 
     name_part_template = ".{}"
+
     short_type = "exp"
 
     gui_cls = ExperimentGui
@@ -251,6 +271,7 @@ class Sample(TierBase):
 
     @cached_prop
     def folder(self):
+        assert self.parent
         return self.parent.folder
 
     @property
@@ -258,6 +279,9 @@ class Sample(TierBase):
         """
         Convenient way of getting a list of `DataSet`s this sample has.
         """
+        assert self.parent
+        assert self.child_cls
+
         techs = []
         for technique in self.parent.techniques:
             dataset = self.child_cls(*self.identifiers, technique)
@@ -287,6 +311,8 @@ class DataSet(TierBase):
 
     @cached_prop
     def folder(self):
+        assert self.parent
+
         return self.parent / self.id / self.parent.id
 
     @cached_prop
@@ -299,7 +325,7 @@ class DataSet(TierBase):
     def exists(self):
         return self.folder.exists()
 
-    def setup_files(self):
+    def setup_files(self, template=None):
         print(f"Creating Folder for Data: {self}")
 
         with FileMaker() as maker:
@@ -316,11 +342,25 @@ class DataSet(TierBase):
         return None
 
     @cached_prop
+    def highlights_file(self):
+        """
+        `DataSet`s have no highlights.
+        """
+        return None
+
+    @cached_prop
     def file(self):
         """
         `DataSet`s have no file
         """
         return None
+
+    @classmethod
+    def get_templates(cls):
+        """
+        Datasets have no templates.
+        """
+        return []
 
     def __truediv__(self, other):
         return self.folder / other

@@ -16,4 +16,4 @@ class Page(TierBase):
 project = Project([Book, Chapter, Page], __file__)
 
 if __name__ == '__main__':
-    project.setup_files()
+    project.launch()

@@ -13,21 +13,22 @@ from typing import (
     KeysView,
     List,
     Type,
-    TypeVar,
     Tuple,
     Iterator,
     Union,
     Dict,
     ClassVar,
     Sequence,
+    Optional,
+    cast,
 )
 
-import pandas as pd
+import pandas as pd  # type: ignore
 
 from .ipygui import BaseTierGui
-from .accessors import MetaAttr, cached_prop, cached_class_prop
-from .utils import FileMaker
-from .environment import env
+from .accessors import MetaAttr, cached_prop, cached_class_prop, _CachedClassProp
+from .utils import FileMaker, open_file, str_to_date, date_to_str
+from .environment import env, _Env, Project
 from .config import config
 
 
@@ -138,6 +139,8 @@ class TierMeta(type):
     Metaclass mixin for the TierBase. Needed to ensure that each Tier Class has its own cache.
     """
 
+    cache: Dict[Tuple[str, ...], TierBase]
+
     def __new__(cls, name, bases, dct):
         kls = super().__new__(cls, name, bases, dct)
         kls.cache = {}  # ensures each TierBase class has its own cache
@@ -177,26 +180,33 @@ class TierBase(metaclass=TierMeta):
         argument.
     """
 
-    rank: ClassVar[int] = None
+    rank: ClassVar[int] = -1
     id_regex: ClassVar[str] = r"(\d+)"
 
     gui_cls = BaseTierGui
 
-    @cached_class_prop
-    def hierarchy(self) -> List[TierType]:
+    hierarchy: ClassVar[List[Type[TierBase]]]
+
+    @cached_class_prop  # type: ignore[no-redef]
+    def hierarchy(cls) -> List[Type[TierBase]]:
         """
         Gets the hierarchy from `env.project`.
         """
+        assert env.project
         return env.project.hierarchy
 
-    @cached_class_prop
+    pretty_type: ClassVar[str]
+
+    @cached_class_prop  # type: ignore[no-redef]
     def pretty_type(cls) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
         return cls.__name__
 
-    @cached_class_prop
+    short_type: ClassVar[str]
+
+    @cached_class_prop  # type: ignore[no-redef]
     def short_type(cls) -> str:
         """
         Name used to programmatically refer to instances of this `Tier`.
@@ -205,14 +215,18 @@ class TierBase(metaclass=TierMeta):
         """
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys("aeiou")))
 
-    @cached_class_prop
+    name_part_template: ClassVar[str]
+
+    @cached_class_prop  # type: ignore[no-redef]
     def name_part_template(cls) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + "{}"
 
-    @cached_class_prop
+    name_part_regex: ClassVar[str]
+
+    @cached_class_prop  # type: ignore[no-redef]
     def name_part_regex(cls) -> str:
         """
         Regex where first group matches `id` part of string. Default is fill in `cls.name_part_template` with
@@ -220,39 +234,51 @@ class TierBase(metaclass=TierMeta):
         """
         return cls.name_part_template.format(cls.id_regex)
 
-    @cached_class_prop
-    def parent_cls(cls) -> Union[TierBase, None]:
+    parent_cls: ClassVar[Union[Type[TierBase], None]]
+
+    @cached_class_prop  # type: ignore[no-redef]
+    def parent_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
         """
+        assert env.project
+
         if cls.rank is None or cls.rank <= 0:
             return None
         return cls.hierarchy[cls.rank - 1]
 
-    @cached_class_prop
-    def child_cls(cls) -> Union[TierBase, None]:
+    child_cls: ClassVar[Union[Type[TierBase], None]]
+
+    @cached_class_prop  # type: ignore[no-redef]
+    def child_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
         """
+        assert env.project
+
         if cls.rank is None or cls.rank >= (len(cls.hierarchy) - 1):
             return None
         return cls.hierarchy[cls.rank + 1]
 
-    @cached_class_prop
-    def default_template(cls):
+    default_template: ClassVar[Union[Path, None]]
+
+    @cached_class_prop  # type: ignore[no-redef]
+    def default_template(cls) -> Union[Path, None]:
         """
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
 
-    @cached_class_prop
+    _meta_folder_name: ClassVar[str]
+
+    @cached_class_prop  # type: ignore[no-redef]
     def _meta_folder_name(cls) -> str:
         """
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
         """
         return config.META_DIR_TEMPLATE.format(cls.short_type)
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: str, **kwargs):
         obj = cls.cache.get(args)
         if obj:
             return obj
@@ -261,7 +287,7 @@ class TierBase(metaclass=TierMeta):
         return obj
 
     @classmethod
-    def parse_name(cls, name: str) -> Tuple[str]:
+    def parse_name(cls, name: str) -> Tuple[str, ...]:
         """
         Ask `env.project` to parse name.
         """
@@ -272,7 +298,7 @@ class TierBase(metaclass=TierMeta):
         return env.project.parse_name(name)
 
     @classmethod
-    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str]]:
+    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
         for meta_file in os.scandir(path):
             if not meta_file.is_file() or not meta_file.name.endswith(".json"):
                 continue
@@ -295,7 +321,7 @@ class TierBase(metaclass=TierMeta):
         if self.meta_file:
             self.meta: Meta = Meta(self.meta_file)
 
-    def setup_files(self, template: Path = None):
+    def setup_files(self, template: Union[Path, None] = None):
         """
         Create all the files needed for a valid `Tier` object to exist.
 
@@ -315,7 +341,7 @@ class TierBase(metaclass=TierMeta):
         if self.exists():
             raise FileExistsError(f"Meta for {self.name} exists already")
 
-        if self.file.exists():
+        if self.file and self.file.exists():
             raise FileExistsError(f"Notebook for {self.name} exists already")
 
         print(f"Creating files for {self.name}")
@@ -346,13 +372,10 @@ class TierBase(metaclass=TierMeta):
 
     description = MetaAttr()
     conclusion = MetaAttr()
-    started = MetaAttr(
-        lambda val: datetime.datetime.strptime(val, config.DATE_FORMAT),
-        lambda val: val.strftime(config.DATE_FORMAT),
-    )
+    started = MetaAttr(str_to_date, date_to_str)
 
     @cached_prop
-    def identifiers(self) -> Tuple[str]:
+    def identifiers(self) -> Tuple[str, ...]:
         """
         Read only copy of identifiers that make up this `Tier` object.
         """
@@ -379,6 +402,7 @@ class TierBase(metaclass=TierMeta):
             >>> smpl.name  # all 3 joined together
             WP2.3c
         """
+
         return "".join(
             cls.name_part_template.format(id)
             for cls, id in zip(self.hierarchy[1:], self.identifiers)
@@ -408,7 +432,10 @@ class TierBase(metaclass=TierMeta):
 
         Defaults to `self.parent.folder / self.name`.
         """
-        return self.parent.folder / self.name
+        if self.parent:
+            return self.parent.folder / self.name
+        else:  # this is bad
+            return Path(self.name)
 
     @cached_prop
     def meta_file(self) -> Path:
@@ -420,10 +447,11 @@ class TierBase(metaclass=TierMeta):
         meta_file : Path
             Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.json')`
         """
+        assert self.parent
         return self.parent.folder / self._meta_folder_name / (self.name + ".json")
 
     @cached_prop
-    def highlights_file(self) -> Path:
+    def highlights_file(self) -> Union[Path, None]:
         """
         Path to where highlights file for this `Tier` object should be.
 
@@ -432,10 +460,11 @@ class TierBase(metaclass=TierMeta):
         highlights_file : Path
             Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.hlts')`
         """
+        assert self.parent
         return self.parent.folder / self._meta_folder_name / (self.name + ".hlts")
 
     @cached_prop
-    def cache_file(self) -> Path:
+    def cache_file(self) -> Union[Path, None]:
         """
         Path to where cache file for this `Tier` object will be.
 
@@ -444,10 +473,11 @@ class TierBase(metaclass=TierMeta):
         cache_file : Path
             Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.cache')`
         """
+        assert self.parent
         return self.parent.folder / self._meta_folder_name / (self.name + ".cache")
 
     @cached_prop
-    def file(self) -> Path:
+    def file(self) -> Union[Path, None]:
         """
         Path to where `.ipynb` file for this `Tier` instance will be.
 
@@ -456,6 +486,7 @@ class TierBase(metaclass=TierMeta):
         file : Path
             Defaults to self.parent.folder / (self.name + '.ipynb').
         """
+        assert self.parent
         return self.parent.folder / (self.name + ".ipynb")
 
     @cached_prop
@@ -468,7 +499,7 @@ class TierBase(metaclass=TierMeta):
         return None
 
     @cached_prop
-    def href(self) -> str:
+    def href(self) -> Union[str, None]:
         """
         href usable in notebook HTML giving link to `self.file`.
 
@@ -482,7 +513,10 @@ class TierBase(metaclass=TierMeta):
         href : str
             href usable in notebook HTML.
         """
-        return html.escape(Path(os.path.relpath(self.file, os.getcwd())).as_posix())
+        if self.file:
+            return html.escape(Path(os.path.relpath(self.file, os.getcwd())).as_posix())
+        else:
+            return None
 
     def exists(self) -> bool:
         """
@@ -504,10 +538,29 @@ class TierBase(metaclass=TierMeta):
         child : Type[TierBase]
             child `Tier` object.
         """
+        assert self.child_cls
         return self.child_cls(*self._identifiers, id)
 
+    def serialize(self):
+        data = dict(self.meta)
+        data["identifiers"] = self.identifiers
+        data["name"] = self.name
+        data["file"] = str(self.file)
+
+        parents = []
+        parent = self.parent
+
+        while parent:
+            parents.append(parent)
+            parent = parent.parent
+
+        data["parents"] = [parent.name for parent in parents][::-1]
+        data["children"] = [child.name for child in self]
+
+        return data
+
     def children_df(
-        self, *, include: Sequence[str] = None, exclude: Sequence[str] = None
+        self, *, include: Optional[List[str]] = None, exclude: Optional[List[str]]
     ) -> Union[pd.DataFrame, None]:
         """
         Build an `UnescapedDataFrame` containing rows from each child of this `Tier`. Columns are inferred from contents
@@ -540,14 +593,14 @@ class TierBase(metaclass=TierMeta):
         if not children:
             return None
 
-        data = defaultdict(list)
-        attributes = set()
+        data: Dict[str, List[Any]] = defaultdict(list)
+        attributes_set: set[str] = set()
 
         for child in children:
-            attributes.update(child.meta.keys())
+            attributes_set.update(child.meta.keys())
             data["Name"].append(child.name)
 
-        attributes = list(attributes)
+        attributes = list(attributes_set)
 
         for child in children:
             for attr in attributes:
@@ -574,18 +627,20 @@ class TierBase(metaclass=TierMeta):
         ]
 
         if include:
-            df = df[include]
+            df = df.loc[:, include]
 
         if exclude:
-            df = df.drop(exclude, axis=1)
+            df = df.drop(exclude, axis="columns")
 
-        return df
+        return cast(pd.DataFrame, df)
 
     @classmethod
     def get_templates(cls) -> List[Path]:
         """
         Get all the templates for this `Tier`.
         """
+        assert env.project
+
         return [
             Path(cls.pretty_type) / entry.name
             for entry in os.scandir(env.project.template_folder / cls.pretty_type)
@@ -606,6 +661,8 @@ class TierBase(metaclass=TierMeta):
         rendered_text : str
             template rendered with `self`.
         """
+        assert env.project
+
         template = env.project.template_env.get_template(template)
         return template.render(**{self.short_type: self, "tier": self})
 
@@ -620,9 +677,9 @@ class TierBase(metaclass=TierMeta):
         Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
         the window won't open for you!
         """
-        os.startfile(self.folder)
+        open_file(self.folder)
 
-    def get_highlights(self) -> Dict[str, List[Dict[str, Dict[str, Any]]]]:
+    def get_highlights(self) -> Union[Dict[str, List[Dict[str, Dict[str, Any]]]], None]:
         """
         Get dictionary of highlights for this `Tier` _instance.
 
@@ -646,7 +703,7 @@ class TierBase(metaclass=TierMeta):
             ...     for output in outputs:
             ...         IPython.display.publish_display_data(**output)
         """
-        if self.highlights_file.exists():
+        if self.highlights_file and self.highlights_file.exists():
             highlights = json.loads(self.highlights_file.read_text())
             return highlights
         else:
@@ -669,9 +726,16 @@ class TierBase(metaclass=TierMeta):
         overwrite : bool
             If `False` will raise an exception if a highlight of the same `name` exists. Default is `True`
         """
-        highlights = self.get_highlights().copy()
+        highlights = self.get_highlights()
+
+        if self.highlights_file and highlights is not None:
+            highlights = highlights.copy()
+        else:
+            return
+
         if not overwrite and name in highlights:
             raise KeyError("Attempting to overwrite existing meta value")
+
         highlights[name] = data
         self.highlights_file.write_text(json.dumps(highlights))
 
@@ -681,10 +745,14 @@ class TierBase(metaclass=TierMeta):
         the dictionary, then re-writing the highlights... if you're interested!
         """
         highlights = self.get_highlights()
+
+        if not highlights or not self.highlights_file:
+            return
+
         del highlights[name]
         self.highlights_file.write_text(json.dumps(highlights))
 
-    def get_cached(self) -> Dict[str, List[Dict[str, Dict[str, Any]]]]:
+    def get_cached(self) -> Union[Dict[str, List[Dict[str, Dict[str, Any]]]], None]:
         """
         Retrieve cached output from `self.cache_file`.
 
@@ -696,7 +764,7 @@ class TierBase(metaclass=TierMeta):
             dictionary with all the cached outputs. In the same form as `self.get_highlights()`. Returns an empty dict
             if no `cache_file` exists.
         """
-        if self.cache_file.exists():
+        if self.cache_file and self.cache_file.exists():
             cache = json.loads(self.cache_file.read_text())
             return cache
         else:
@@ -719,9 +787,19 @@ class TierBase(metaclass=TierMeta):
         overwrite : bool
             If `False` will raise an exception if a cached result of the same `name` exists. Default is `True`
         """
-        cache = self.get_cached().copy()
+        if not self.cache_file:
+            return
+
+        cache = self.get_cached()
+
+        if cache:
+            cache = cache.copy()
+        else:
+            return
+
         if not overwrite and name in cache:
             raise KeyError("Attempting to overwrite existing meta value")
+
         cache[name] = data
         self.cache_file.write_text(json.dumps(cache))
 
@@ -742,13 +820,15 @@ class TierBase(metaclass=TierMeta):
         """
         return self.get_child(item)
 
-    def __iter__(self) -> Iterator[TierBase]:
+    def __iter__(self) -> Iterator[Any]:
         """
         Iterates over all children (in no particular order). Children are found by looking through the child meta
         folder.
 
         Empty iterator if no children.
         """
+        assert self.child_cls
+
         child_cls = self.child_cls
         child_meta_dir = self / child_cls._meta_folder_name
         if child_meta_dir.exists():
@@ -783,6 +863,3 @@ class TierBase(metaclass=TierMeta):
 
         if self.meta_file:
             self.meta_file.unlink()
-
-
-TierType = TypeVar("TierType", bound=TierBase)

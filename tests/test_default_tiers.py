@@ -1,6 +1,6 @@
 import os
 
-import pytest
+import pytest # type: ignore[import]
 
 from cassini import Project, DEFAULT_TIERS, Home
 from cassini.defaults import WorkPackage, Experiment, Sample, DataSet
