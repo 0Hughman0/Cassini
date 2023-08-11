@@ -58,9 +58,16 @@ With these changes, you can then run::
 
     python project.py
 
-From your terminal, which will launch jupyterlab and cassini. It should take you straight to the ``Home`` notebook.
+From your terminal, which will launch jupyterlab and cassini.
 
 To open the cassini browser, open the launcher and scroll down to the bottom and select Browser under the Cassini heading.
+
+You can then create your first WorkPackage by clicking the little plus button in the empty table.
+
+Notebook templates can be found in the templates folder that's created in the same directory as your ``project.py``.
+
+What Next
+---------
 
 To look at other features, head to :doc:`features`, everything should work the same there, except Tier Meta data, changes to a tier's metadata from the notebook should now be
 handled using the new metaeditor gui, which you access via::
