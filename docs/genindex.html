@@ -1,17 +1,15 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Index &#8212; Cassini 0.1.0 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
+    <title>Index &#8212; cassini 0.2.0a3 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=51c43ed6"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
    
@@ -63,7 +61,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#cassini.core.Meta.age">age() (cassini.core.Meta property)</a>
+      <li><a href="api.html#cassini.core.Meta.age">age (cassini.core.Meta property)</a>
 </li>
       <li><a href="api.html#cassini.ipygui.InputSequence.as_widget">as_widget() (cassini.ipygui.InputSequence method)</a>
 </li>
@@ -115,6 +113,8 @@
         <li><a href="api.html#module-cassini.ipygui">module</a>
 </li>
       </ul></li>
+      <li><a href="api.html#cassini.environment.CassiniLabApp">CassiniLabApp (class in cassini.environment)</a>
+</li>
       <li><a href="api.html#cassini.ipygui.InputSequence.child_updated">child_updated() (cassini.ipygui.InputSequence method)</a>
 </li>
       <li><a href="api.html#cassini.core.TierBase.children_df">children_df() (cassini.core.TierBase method)</a>
@@ -135,7 +135,9 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.defaults.tiers.DataSet">DataSet (class in cassini.defaults.tiers)</a>
 </li>
-      <li><a href="api.html#cassini.defaults.tiers.Sample.datasets">datasets() (cassini.defaults.tiers.Sample property)</a>
+      <li><a href="api.html#cassini.defaults.tiers.Sample.datasets">datasets (cassini.defaults.tiers.Sample property)</a>
+</li>
+      <li><a href="api.html#cassini.defaults.tiers.DataSet.default_template">default_template (cassini.defaults.tiers.DataSet attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -167,7 +169,7 @@
 </li>
       <li><a href="api.html#cassini.defaults.tiers.ExperimentGui">ExperimentGui (class in cassini.defaults.tiers)</a>
 </li>
-      <li><a href="api.html#cassini.defaults.tiers.WorkPackage.exps">exps() (cassini.defaults.tiers.WorkPackage property)</a>
+      <li><a href="api.html#cassini.defaults.tiers.WorkPackage.exps">exps (cassini.defaults.tiers.WorkPackage property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -182,11 +184,21 @@
       <ul>
         <li><a href="api.html#cassini.defaults.tiers.DataSet.file">(cassini.defaults.tiers.DataSet attribute)</a>
 </li>
+        <li><a href="api.html#cassini.defaults.tiers.Home.file">(cassini.defaults.tiers.Home attribute)</a>
+</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.core.TierBase.folder">folder (cassini.core.TierBase attribute)</a>
+
+      <ul>
+        <li><a href="api.html#cassini.defaults.tiers.DataSet.folder">(cassini.defaults.tiers.DataSet attribute)</a>
 </li>
+        <li><a href="api.html#cassini.defaults.tiers.Home.folder">(cassini.defaults.tiers.Home attribute)</a>
+</li>
+        <li><a href="api.html#cassini.defaults.tiers.Sample.folder">(cassini.defaults.tiers.Sample attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -206,7 +218,11 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.core.TierBase.get_templates">get_templates() (cassini.core.TierBase class method)</a>
+
+      <ul>
+        <li><a href="api.html#cassini.defaults.tiers.DataSet.get_templates">(cassini.defaults.tiers.DataSet class method)</a>
 </li>
+      </ul></li>
       <li><a href="api.html#cassini.core.TierBase.gui_cls">gui_cls (cassini.core.TierBase attribute)</a>, <a href="api.html#id4">[1]</a>
 
       <ul>
@@ -225,20 +241,30 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.ipygui.BaseTierGui.header">header() (cassini.ipygui.BaseTierGui method)</a>
 </li>
-      <li><a href="api.html#cassini.core.TierBase.hierarchy">hierarchy (cassini.core.TierBase attribute)</a>, <a href="api.html#id5">[1]</a>
+      <li><a href="api.html#cassini.core.TierBase.hierarchy">hierarchy (cassini.core.TierBase attribute)</a>
 </li>
       <li><a href="api.html#cassini.core.TierBase.highlights_file">highlights_file (cassini.core.TierBase attribute)</a>
+
+      <ul>
+        <li><a href="api.html#cassini.defaults.tiers.DataSet.highlights_file">(cassini.defaults.tiers.DataSet attribute)</a>
 </li>
+        <li><a href="api.html#cassini.defaults.tiers.Home.highlights_file">(cassini.defaults.tiers.Home attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#cassini.defaults.tiers.Home">Home (class in cassini.defaults.tiers)</a>
+      <li><a href="api.html#cassini.environment.Project.home">home (cassini.environment.Project property)</a>
 </li>
-      <li><a href="api.html#cassini.environment.Project.home">home() (cassini.environment.Project property)</a>
+      <li><a href="api.html#cassini.defaults.tiers.Home">Home (class in cassini.defaults.tiers)</a>
 </li>
       <li><a href="api.html#cassini.defaults.tiers.HomeGui">HomeGui (class in cassini.defaults.tiers)</a>
 </li>
       <li><a href="api.html#cassini.core.TierBase.href">href (cassini.core.TierBase attribute)</a>
+
+      <ul>
+        <li><a href="api.html#cassini.defaults.tiers.DataSet.href">(cassini.defaults.tiers.DataSet attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -252,6 +278,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.core.TierBase.identifiers">identifiers (cassini.core.TierBase attribute)</a>
+</li>
+      <li><a href="api.html#cassini.environment.CassiniLabApp.initialize_server">initialize_server() (cassini.environment.CassiniLabApp class method)</a>
 </li>
       <li><a href="api.html#cassini.ipygui.InputSequence">InputSequence (class in cassini.ipygui)</a>
 </li>
@@ -284,7 +312,11 @@
       <ul>
         <li><a href="api.html#cassini.defaults.tiers.DataSet.meta_file">(cassini.defaults.tiers.DataSet attribute)</a>
 </li>
+        <li><a href="api.html#cassini.defaults.tiers.Home.meta_file">(cassini.defaults.tiers.Home attribute)</a>
+</li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     module
 
@@ -305,15 +337,19 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.core.TierBase.name">name (cassini.core.TierBase attribute)</a>
+
+      <ul>
+        <li><a href="api.html#cassini.defaults.tiers.Home.name">(cassini.defaults.tiers.Home attribute)</a>
 </li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.defaults.tiers.SampleGui.new_child">new_child() (cassini.defaults.tiers.SampleGui method)</a>
 
       <ul>
         <li><a href="api.html#cassini.ipygui.BaseTierGui.new_child">(cassini.ipygui.BaseTierGui method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.defaults.tiers.ExperimentGui.new_dataset">new_dataset() (cassini.defaults.tiers.ExperimentGui method)</a>
 </li>
   </ul></td>
@@ -390,7 +426,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#cassini.defaults.tiers.Experiment.setup_technique">setup_technique() (cassini.defaults.tiers.Experiment method)</a>
 </li>
-      <li><a href="api.html#cassini.defaults.tiers.Experiment.smpls">smpls() (cassini.defaults.tiers.Experiment property)</a>
+      <li><a href="api.html#cassini.defaults.tiers.Experiment.smpls">smpls (cassini.defaults.tiers.Experiment property)</a>
 </li>
       <li><a href="api.html#cassini.core.TierBase.started">started (cassini.core.TierBase attribute)</a>
 </li>
@@ -400,7 +436,7 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#cassini.defaults.tiers.Experiment.techniques">techniques() (cassini.defaults.tiers.Experiment property)</a>
+      <li><a href="api.html#cassini.defaults.tiers.Experiment.techniques">techniques (cassini.defaults.tiers.Experiment property)</a>
 </li>
       <li><a href="api.html#cassini.environment.Project.template_folder">template_folder() (cassini.environment.Project method)</a>
 </li>
@@ -449,7 +485,7 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">Cassini</a></h1>
+<h1 class="logo"><a href="index.html">cassini</a></h1>
 
 
 
@@ -459,12 +495,13 @@
 
 
 <h3>Navigation</h3>
-<p><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="features.html">Features</a></li>
 <li class="toctree-l1"><a class="reference internal" href="customising.html">Customizing Cassini</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Cassini API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jlgui.html">JupyterLab GUI</a></li>
 </ul>
 
 <div class="relations">
@@ -478,12 +515,12 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -497,11 +534,11 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, Hugh Ramsden.
+      &copy;2023, 0Hughman0 <rammers2@hotmail.co.uk>.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
     </div>
 
