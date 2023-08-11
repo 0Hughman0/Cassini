@@ -1,37 +1,6 @@
 Features
 =================
 
-Templating
-----------
-
-Often you may find yourself repeating the same protocol over multiple samples, tweaking and recording various parameters
-and producing various outputs. To help streamline this process Cassini supports Jinja2 templating of ``.ipynb`` files.
-
-Simply navigate to your project's template folder::
-
-    project.template_folder
-    Path('.../my_project_home/templates')
-
-In here you'll find the basic default templates for each ``Tier``. This can be tweaked as you please, or you can create
-your own. Cassini passes the new ``Tier`` to the template as ``tier``.
-
-For example if I made a template, ``templates/Sample/simple.tmplt.txt``::
-
-    This tier object's name is: {{ tier.name }}
-
-Cassini fills it in::
-
-    >>> sample = project['WP1.2c']
-    >>> sample.render_template('Sample/simple.tmplt.txt')
-    "This tier object's name is: WP1.2c"
-
-For more info on using Jinja2 templates see their documentation.
-
-Your templates will be visible in the Cassini gui for easy use, or you can pass them to ``setup_files`` if you're
-calling that directly.
-
-.. image:: _static/templating.png
-
 Highlights
 ----------
 
@@ -48,61 +17,71 @@ The highlight can also be titled and captioned::
        ...: A caption for WP2.1c
        ...: """
 
-The output can then be retrieved elsewhere, without re-running the cell::
+These highlights can then be viewed in the preview panel of the Cassini Browser, without running the notebook.
 
-    In [1]: sample = project['WP2.1c']
-    In [2]: sample.display_highlights()
+Templating
+----------
 
-.. image:: _static/Highlights.PNG
+Often you may find yourself repeating the same protocol over multiple samples, tweaking and recording various parameters
+and producing various outputs. To help streamline this process Cassini supports Jinja2 templating of ``.ipynb`` files.
 
-It's also automatically added to the that ``Tier``'s highlights widget.
+Cassini creates a templates folder inside your project folder, here you can create 'template' notebooks for each Tier.
+
+When you create a new Tier, cassini fills in the template, using Jinja. 
 
 
 Tier Meta data
 --------------
 
-Easily store and retrieve arbitrary meta data for any WorkPackage, Experiment or Sample to be shared with other programs,
-or just for reference.
+Often there's key parameters that relate to a particular sample or experiments.
 
-Each ``Tier`` object (except ``DataSets``) has a meta attribute::
+Cassini stores these in a Tier's 'meta' data.
 
+In the notebook, different meta values can be set using the ``meta_editor`` gui.
+
+You access this via::
+
+    smpl.gui.meta_editor('temperature')
+
+which will render something like:
+
+.. image:: _static/meta_editor.png
+
+Note that the values for meta must be valid JSON, so strings must be wrapped in quotes. etc.
+
+A summary of a tier's meta can be seen in the preview panel of the cassini browser.
+
+Furthermore, as often a string of samples or experiments will have different meta values, new columns which display the values for a given meta name
+can be added to the cassini browser table by right clicking on one of the headings, or clicking the little edit button.
+
+Lastly, a tier's meta can be accessed on the Python side of your project::
+
+    >>> from project import project
     >>> sample = project['WP2.1c']
     >>> sample.meta
     {'description': 'an experiment', 'started': '17/06/2020'}
+    >>> sample.meta['started']
+    '17/06/2020'
 
-This is just the contents of a ``.json`` file found on your disk::
 
-    >>> sample.meta.file # physically stored on disk
-    Path('.../WP2.1c.json')
+Retrieving Data
+---------------
 
-We can arbitrarily add attributes to ``meta``::
+Cassini understands your project naming convention, so you can grab any tier from anywhere::
 
-    >>> sample.meta.temperature = 100
-    >>> sample.meta
-    {'description': 'an experiment', 'started': '17/06/2020', 'temperature': 100}
-
-These are permanently written to the ``.json`` file::
-
-    >>> sample.meta.file.read_text()  # changes applied to json
-    '{"description": "an experiment", "started": "17/06/2020", "temperature": 100}
-
-Meaning they can be retrieved later.
-
-Paths
------
-
-Work with files and folders intuitively using functionality based on ``pathlib``.
-
-Every ``Tier`` object has a folder::
-
+    >>> from project import project
     >>> sample = project['WP2.1c']
-    >>> sample.folder
-    Path('.../WP2.1/')
 
-Which we can find paths relative to with ease::
+Tiers try to behave a bit like ``pathlib.Path`` objects.
+
+This means we can find paths relative to with ease::
 
     >>> sample / 'diagram.png'
     Path('.../WP2.1/diagram.png')
+
+This is particularly useful for loading data::
+
+    >>> df = pd.read_csv(sample['Raman'] / 'raw_data.csv')
 
 Additionally, iterating over a ``DataSets`` is equivalent to using ``os.scandir``::
 
@@ -122,6 +101,3 @@ custom metadata, allowing you to quickly query your work::
     >>> wp.children_df().query("'temperature' > 90")
 
 The ``wp.gui.children_df()`` provides clickable links to these ``Tiers``.
-
-
-
