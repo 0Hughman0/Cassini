@@ -19,7 +19,7 @@ the base class ``TierBase``::
     project = Project([MyHome, TopTier], __file__)
 
     if __name__ == '__main__':
-        project.setup_files()
+        project.launch()
 
 Check out the API to see the methods and attributes that you might want to overload.
 

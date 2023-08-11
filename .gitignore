@@ -73,3 +73,6 @@ cassini.egg-info/
 
 # vs code
 .vscode/
+
+# docs 
+docs/
