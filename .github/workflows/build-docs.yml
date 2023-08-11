@@ -34,13 +34,13 @@ jobs:
       - name: Set base path
         shell: bash
         run: |
-          branch=${GITHUB_REF##*/}
-          if [ $branch="master" ]; then 
+          branch="${GITHUB_REF##*/}"
+          if [ "${branch}"="master" ]; then 
             base_path="."
           else
-            base_path=$branch
+            base_path="${branch}"
           fi
-          echo base_path
+          echo "${base_path}"
       - name: Set up Python 3.8
         uses: actions/setup-python@v3
         with:
@@ -58,7 +58,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          # Upload entire repository
           path: 'docs'
       - name: Deploy to GitHub Pages
         id: deployment
