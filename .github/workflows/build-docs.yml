@@ -31,6 +31,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Set base path
+        shell: bash
+        run: |
+          branch=${GITHUB_REF##*/}
+          if [ $branch="master" ]; then 
+            base_path="."
+          else
+            base_path=$branch
+          fi
+          echo base_path
       - name: Set up Python 3.8
         uses: actions/setup-python@v3
         with:
@@ -42,20 +52,9 @@ jobs:
           poetry install --with docs
       - name: Build Docs
         run: |
-          poetry run sphinx-build doc_src docs
-      - name: Set base path
-        shell: bash
-        run: |
-          branch=${GITHUB_REF##*/}
-          if [ $branch="master" ]; then 
-            base_path="."
-          else
-            base_path=branch
-          fi
+          poetry run sphinx-build doc_src docs/$base_path
       - name: Setup Pages
         uses: actions/configure-pages@v3
-        with:
-          base_path: "$base_path"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
