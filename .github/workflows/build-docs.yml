@@ -2,9 +2,9 @@
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes targeting the default branch, turns out only master can 
   push:
-    branches: ["master", "0.1.x", "0.2.x"]
+    branches: ["master"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -22,25 +22,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
+  # 
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Set base path
-        shell: bash
-        run: |
-          branch="${GITHUB_REF##*/}"
-          if [ "${branch}"="master" ]; then 
-            base_path="."
-          else
-            base_path="${branch}"
-          fi
-          echo "BASE_PATH=${base_path}" >> $GITHUB_ENV
       - name: Set up Python 3.8
         uses: actions/setup-python@v3
         with:
@@ -49,10 +37,33 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           curl -sSL https://install.python-poetry.org | python3 -
+      - name: Checkout Master
+        uses: actions/checkout@v3
+        with:
+          ref: master
+          clean: false
+      - name: Build Master Docs
+        run: |
           poetry install --with docs
+          poetry run sphinx-build doc_src docs/latest
+      - name: Checkout 0.1.x
+        uses: actions/checkout@v3
+        with:
+          ref: 0.1.x
+          clean: false
       - name: Build Docs
         run: |
-          poetry run sphinx-build doc_src docs/${{ env.BASE_PATH }}
+          poetry install --with docs
+          poetry run sphinx-build doc_src docs/0.1.x
+      - name: Checkout 0.2.x
+        uses: actions/checkout@v3
+        with:
+          ref: 0.2.x
+          clean: false
+      - name: Build Docs
+        run: |
+          poetry install --with docs
+          poetry run sphinx-build doc_src docs/0.2.x
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
