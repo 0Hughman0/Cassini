@@ -13,8 +13,8 @@ Welcome to Cassini's documentation!
    quickstart
    features
    customising
-   api
    jlgui
+   api
 
 Cassini
 -------
