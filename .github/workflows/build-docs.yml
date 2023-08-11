@@ -40,57 +40,27 @@ jobs:
       - name: Checkout Master
         uses: actions/checkout@v3
         with:
-          ref: "branches/master"
-      - name: Set base path
-        shell: bash
-        run: |
-          branch="${GITHUB_REF##*/}"
-          if [ "${branch}"="master" ]; then 
-            base_path="."
-          else
-            base_path="${branch}"
-          fi
-          echo "BASE_PATH=${base_path}" >> $GITHUB_ENV
+          ref: master
       - name: Build Master Docs
         run: |
           poetry install --with docs
-          poetry run sphinx-build doc_src docs/${{ env.BASE_PATH }}
+          poetry run sphinx-build doc_src docs
       - name: Checkout 0.1.x
         uses: actions/checkout@v3
         with:
-          ref: "branches/0.1.x"
-      - name: Set base path
-        shell: bash
-        run: |
-          branch="${GITHUB_REF##*/}"
-          if [ "${branch}"="master" ]; then 
-            base_path="."
-          else
-            base_path="${branch}"
-          fi
-          echo "BASE_PATH=${base_path}" >> $GITHUB_ENV
+          ref: 0.1.x
       - name: Build Docs
         run: |
           poetry install --with docs
-          poetry run sphinx-build doc_src docs/${{ env.BASE_PATH }}
+          poetry run sphinx-build doc_src docs/0.1.x
       - name: Checkout 0.2.x
         uses: actions/checkout@v3
         with:
-          ref: "branches/0.2.x"
-      - name: Set base path
-        shell: bash
-        run: |
-          branch="${GITHUB_REF##*/}"
-          if [ "${branch}"="master" ]; then 
-            base_path="."
-          else
-            base_path="${branch}"
-          fi
-          echo "BASE_PATH=${base_path}" >> $GITHUB_ENV
+          ref: 0.2.x
       - name: Build Docs
         run: |
           poetry install --with docs
-          poetry run sphinx-build doc_src docs/${{ env.BASE_PATH }}
+          poetry run sphinx-build doc_src docs/0.2.x
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
