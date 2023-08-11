@@ -14,6 +14,7 @@ Welcome to Cassini's documentation!
    features
    customising
    api
+   jlgui
 
 Cassini
 -------

@@ -17,12 +17,17 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Cassini'
-copyright = '2020, Hugh Ramsden'
-author = 'Hugh Ramsden'
+import tomli
+import datetime
 
-# The full version, including alpha/beta/rc tags
-release = '0.1.0'
+with open('../pyproject.toml', 'rb') as fs:
+    pyproject = tomli.load(fs)
+    project = pyproject['tool']['poetry']['name']
+    author = ', '.join(pyproject['tool']['poetry']['authors'])
+    
+    copyright = f"{datetime.date.today().strftime('%Y')}, {author}"
+    
+    release = pyproject['tool']['poetry']['version']
 
 
 # -- General configuration ---------------------------------------------------
