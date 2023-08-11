@@ -41,6 +41,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: master
+          clean: false
       - name: Build Master Docs
         run: |
           poetry install --with docs
@@ -49,6 +50,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: 0.1.x
+          clean: false
       - name: Build Docs
         run: |
           poetry install --with docs
@@ -57,6 +59,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: 0.2.x
+          clean: false
       - name: Build Docs
         run: |
           poetry install --with docs
