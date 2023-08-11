@@ -2,9 +2,9 @@
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes targeting the default branch, turns out only master can 
   push:
-    branches: ["master", "0.1.x", "0.2.x"]
+    branches: ["master"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -22,15 +22,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
+  # 
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.8"
+      - name: Setup Page Builder
+        run: |
+          python -m pip install --upgrade pip
+          curl -sSL https://install.python-poetry.org | python3 -
+      - name: Checkout Master
         uses: actions/checkout@v3
+        with:
+          ref: "branches/master"
       - name: Set base path
         shell: bash
         run: |
@@ -41,17 +51,45 @@ jobs:
             base_path="${branch}"
           fi
           echo "BASE_PATH=${base_path}" >> $GITHUB_ENV
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.8"
-      - name: Setup Page Builder
+      - name: Build Master Docs
         run: |
-          python -m pip install --upgrade pip
-          curl -sSL https://install.python-poetry.org | python3 -
           poetry install --with docs
+          poetry run sphinx-build doc_src docs/${{ env.BASE_PATH }}
+      - name: Checkout 0.1.x
+        uses: actions/checkout@v3
+        with:
+          ref: "branches/0.1.x"
+      - name: Set base path
+        shell: bash
+        run: |
+          branch="${GITHUB_REF##*/}"
+          if [ "${branch}"="master" ]; then 
+            base_path="."
+          else
+            base_path="${branch}"
+          fi
+          echo "BASE_PATH=${base_path}" >> $GITHUB_ENV
       - name: Build Docs
         run: |
+          poetry install --with docs
+          poetry run sphinx-build doc_src docs/${{ env.BASE_PATH }}
+      - name: Checkout 0.2.x
+        uses: actions/checkout@v3
+        with:
+          ref: "branches/0.2.x"
+      - name: Set base path
+        shell: bash
+        run: |
+          branch="${GITHUB_REF##*/}"
+          if [ "${branch}"="master" ]; then 
+            base_path="."
+          else
+            base_path="${branch}"
+          fi
+          echo "BASE_PATH=${base_path}" >> $GITHUB_ENV
+      - name: Build Docs
+        run: |
+          poetry install --with docs
           poetry run sphinx-build doc_src docs/${{ env.BASE_PATH }}
       - name: Setup Pages
         uses: actions/configure-pages@v3
