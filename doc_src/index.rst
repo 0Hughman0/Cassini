@@ -25,7 +25,7 @@ Its aim is to help you structure, store and explore your data.
 
 It's fully customisable, but provides a powerful out-of-the-box configuration.
 
-And checkout :doc:`features` to see what you can do.
+Head to :doc:`quickstart` to get going.
 
 Indices and tables
 ==================
