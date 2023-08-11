@@ -44,7 +44,7 @@ jobs:
       - name: Build Master Docs
         run: |
           poetry install --with docs
-          poetry run sphinx-build doc_src docs
+          poetry run sphinx-build doc_src docs/latest
       - name: Checkout 0.1.x
         uses: actions/checkout@v3
         with:
