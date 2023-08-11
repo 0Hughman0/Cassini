@@ -28,6 +28,7 @@ with open('../pyproject.toml', 'rb') as fs:
     copyright = f"{datetime.date.today().strftime('%Y')}, {author}"
     
     release = pyproject['tool']['poetry']['version']
+    version = pyproject['tool']['poetry']['version']
 
 
 # -- General configuration ---------------------------------------------------
