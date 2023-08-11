@@ -17,13 +17,17 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Cassini'
-copyright = '2020, Hugh Ramsden'
-author = 'Hugh Ramsden'
+import tomli
+import datetime
 
-# The full version, including alpha/beta/rc tags
-release = '0.1.0'
-
+with open('../pyproject.toml', 'rb') as fs:
+    pyproject = tomli.load(fs)
+    project = pyproject['tool']['poetry']['name']
+    author = ', '.join(pyproject['tool']['poetry']['authors'])
+    
+    copyright = f"{datetime.date.today().strftime('%Y')}, {author}"
+    
+    release = pyproject['tool']['poetry']['version']
 
 # -- General configuration ---------------------------------------------------
 
@@ -31,7 +35,8 @@ release = '0.1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.napoleon']
+              'sphinx.ext.napoleon',
+              'sphinx_rtd_theme']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -47,7 +52,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

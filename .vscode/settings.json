@@ -1,0 +1,11 @@
+{
+    "python.defaultInterpreterPath": "C:/Users/ramme/AppData/Local/pypoetry/Cache/virtualenvs/cassini-UvyUbc-F-py3.8/Scripts/python.exe",
+    "mypy-type-checker.importStrategy": "useBundled",
+    "python.linting.mypyArgs": [],
+    "flake8.args": [
+        "--max-line-length=127"
+    ],
+    "mypy.targets": [
+        "cassini"
+    ]
+}
