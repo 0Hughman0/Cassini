@@ -40,7 +40,7 @@ jobs:
           else
             base_path="${branch}"
           fi
-          echo "${base_path}"
+          echo "BASE_PATH=${base_path}" >> $GITHUB_ENV
       - name: Set up Python 3.8
         uses: actions/setup-python@v3
         with:
@@ -52,7 +52,7 @@ jobs:
           poetry install --with docs
       - name: Build Docs
         run: |
-          poetry run sphinx-build doc_src docs/$base_path
+          poetry run sphinx-build doc_src docs/${{ env.BASE_PATH }}
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
