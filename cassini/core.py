@@ -22,6 +22,7 @@ from typing import (
     Optional,
     cast,
 )
+from typing_extensions import Protocol
 
 import pandas as pd  # type: ignore
 
@@ -147,7 +148,7 @@ class TierMeta(type):
         return kls
 
 
-class TierBase(metaclass=TierMeta):
+class TierBase(Protocol, metaclass=TierMeta):
     """
     Base class for creating Tiers
 
@@ -183,7 +184,7 @@ class TierBase(metaclass=TierMeta):
     rank: ClassVar[int] = -1
     id_regex: ClassVar[str] = r"(\d+)"
 
-    gui_cls = BaseTierGui
+    gui_cls: Type[BaseTierGui] = BaseTierGui
 
     hierarchy: ClassVar[List[Type[TierBase]]]
 
@@ -304,6 +305,10 @@ class TierBase(metaclass=TierMeta):
                 continue
             yield cls.parse_name(meta_file.name[:-5])
 
+    _identifiers: Tuple[str, ...]
+    gui: BaseTierGui
+    meta: Meta
+
     def __init__(self, *args: str):
         self._identifiers = tuple(filter(None, args))
         self.gui = self.gui_cls(self)
@@ -370,9 +375,9 @@ class TierBase(metaclass=TierMeta):
 
         print("All Done")
 
-    description = MetaAttr()
-    conclusion = MetaAttr()
-    started = MetaAttr(str_to_date, date_to_str)
+    description: MetaAttr = MetaAttr()
+    conclusion: MetaAttr = MetaAttr()
+    started: MetaAttr = MetaAttr(str_to_date, date_to_str)
 
     @cached_prop
     def identifiers(self) -> Tuple[str, ...]:

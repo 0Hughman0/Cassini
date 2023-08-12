@@ -42,4 +42,4 @@ jobs:
         poetry run pytest
     - name: Typecheck with mypy
       run: |
-        poetry run mypy cassini
+        poetry run mypy cassini --enable-error-code=override

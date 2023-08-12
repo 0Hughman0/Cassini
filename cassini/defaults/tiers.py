@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 import html
 
-from typing import Iterator, List, overload
+from typing import Iterator, List, overload, Union
 
 import pandas as pd  # type: ignore[import]
 from IPython.display import display
@@ -325,7 +325,7 @@ class DataSet(TierBase):
     def exists(self):
         return self.folder.exists()
 
-    def setup_files(self, template=None):
+    def setup_files(self, template: Union[Path, None] = None) -> None:
         print(f"Creating Folder for Data: {self}")
 
         with FileMaker() as maker:
