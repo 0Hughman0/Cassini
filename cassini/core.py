@@ -135,20 +135,8 @@ class Meta:
         return self._cache.keys()
 
 
-class TierMeta(type):
-    """
-    Metaclass mixin for the TierBase. Needed to ensure that each Tier Class has its own cache.
-    """
 
-    cache: Dict[Tuple[str, ...], TierBase]
-
-    def __new__(cls, name, bases, dct):
-        kls = super().__new__(cls, name, bases, dct)
-        kls.cache = {}  # ensures each TierBase class has its own cache
-        return kls
-
-
-class TierBase(Protocol, metaclass=TierMeta):
+class TierBase(Protocol):
     """
     Base class for creating Tiers
 
@@ -180,6 +168,12 @@ class TierBase(Protocol, metaclass=TierMeta):
         (class attribute) The class called upon initialisation to use as gui for this object. Constructor should take `self` as first
         argument.
     """
+
+    cache: ClassVar[Dict[Tuple[str, ...], TierBase]]
+
+    def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
+        cls.cache = {}  # ensures each TierBase class has its own cache
 
     rank: ClassVar[int] = -1
     id_regex: ClassVar[str] = r"(\d+)"
