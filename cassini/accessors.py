@@ -6,28 +6,35 @@ from typing import (
     Any,
     cast,
     Dict,
+    List,
+    Tuple,
     TypeVar,
     Generic,
     Optional,
     Type,
     overload,
-    ClassVar,
+    TYPE_CHECKING,
 )
 from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from .core import TierBase
 
 T = TypeVar("T")
 V = TypeVar("V")
 
+JSONPrimative = Union[str, int, float, bool, None]
+JSONType = Union[dict, list, tuple, JSONPrimative]
+JSONProcessor = Callable[[JSONType], T]
 
-def _null_func(val):
-    return val
-
-
-JSONType = Union[dict, list, str, int, float, bool, None]
-JSONProcessor = Callable[[JSONType], Any]
+JOut = TypeVar("JOut", Dict[JSONPrimative, JSONType], List[JSONType], Tuple[JSONType, ...], str, int, float, bool, None)
 
 
-class MetaAttr:
+def _null_func(val: Any) -> Any:
+    return cast(JSONType, val)
+
+
+class MetaAttr(Generic[JOut, T]):
     """
     Accessor for getting values from a Tier class's meta as an attribute.
 
@@ -58,27 +65,27 @@ class MetaAttr:
 
     def __init__(
         self,
-        post_get: JSONProcessor = _null_func,
-        pre_set: Callable[[Any], JSONType] = _null_func,
+        post_get: Callable[[JOut], T] = _null_func,
+        pre_set: Callable[[T], JOut] = _null_func,
         name: Union[str, None] = None,
-        default: Any = None,
+        default: Union[T, None] = None,
     ):
         self.name: str = cast(str, name)
-        self.post_get = post_get
-        self.pre_set = pre_set
+        self.post_get: Callable[[JOut], T] = post_get
+        self.pre_set: Callable[[T], JOut] = pre_set
         self.default = default
 
-    def __set_name__(self, owner, name: str):
+    def __set_name__(self, owner: object, name: str) -> None:
         if self.name is None:
             self.name = name
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: 'TierBase', owner: object) -> Union[T, None]:
         try:
-            return self.post_get(instance.meta[self.name])
+            return self.post_get(cast(JOut, instance.meta[self.name]))
         except KeyError:
             return self.default
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: 'TierBase', value: T) -> None:
         setattr(instance.meta, self.name, self.pre_set(value))
 
 
@@ -142,7 +149,7 @@ class _CachedProp(Generic[T, V]):
 
         return val
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: Optional[T], value: Any) -> None:
         raise AttributeError("Trying to set a cached property - naughty!")
 
 
@@ -175,7 +182,7 @@ class _CachedClassProp(Generic[T, V]):
 
         return val
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: T, value: Any) -> Any:
         raise AttributeError("Trying to set a cached class property - naughty!")
 
 

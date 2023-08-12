@@ -2,8 +2,8 @@ from pathlib import Path
 import os
 import sys
 import functools
-from typing import Union, Callable, Any
-from typing_extensions import Self
+from typing import Union, Callable, Any, List, Tuple, TypeVar, Generic
+from typing_extensions import Self, ParamSpec
 import datetime
 
 from .config import config
@@ -24,11 +24,11 @@ class FileMaker:
     Utility class for making files, and then rolling back if an exception occurs.
     """
 
-    def __init__(self):
-        self.folders_made = []
-        self.files_made = []
+    def __init__(self) -> None:
+        self.folders_made: List[Path] = []
+        self.files_made: List[Path] = []
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.files_made = []
         self.folders_made = []
         return self
@@ -53,11 +53,11 @@ class FileMaker:
             return None
         raise FileExistsError(path)
 
-    def copy_file(self, source, dest):
+    def copy_file(self, source: Path, dest: Path) -> Tuple[Path, Path]:
         self.write_file(dest, source.read_text())
         return source, dest
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if exc_type:
             print(f"{exc_type} occured, rolling back")
             for file in self.files_made:
@@ -72,17 +72,21 @@ class FileMaker:
             raise exc_type(exc_val)
 
 
-class XPlatform:
+R = TypeVar('R')
+P = ParamSpec('P')
+
+
+class XPlatform(Generic[P, R]):
     """
     Class for easily making cross platform functions/ methods(?). Stops nasty if elses.
     """
 
     def __init__(self) -> None:
-        self._func: Union[Callable, None] = None
-        self._default: Union[Callable, None] = None
+        self._func: Union[Callable[P, R], None] = None
+        self._default: Union[Callable[P, R], None] = None
 
     @property
-    def func(self) -> Callable:
+    def func(self) -> Callable[P, R]:
         """
         Returns the platform appropriate function (or default if not known)
         """
@@ -93,10 +97,10 @@ class XPlatform:
 
         return self._default
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.func(*args, **kwargs)
 
-    def add(self, platform: str) -> Callable[[Any], Self]:
+    def add(self, platform: str) -> Callable[[Callable[P, R]], 'XPlatform[P, R]']:
         """
         Add a platform dependent function. To be used as a decorator.
 
@@ -112,7 +116,7 @@ class XPlatform:
 
         """
 
-        def wrapper(func):
+        def wrapper(func: Callable[P, R]) -> 'XPlatform[P, R]':
             if sys.platform == platform:
                 self._func = func
                 functools.update_wrapper(self, func)
@@ -120,7 +124,7 @@ class XPlatform:
 
         return wrapper
 
-    def default(self, func: Callable) -> "XPlatform":
+    def default(self, func: Callable[P, R]) -> 'XPlatform[P, R]':
         """
         Fallback functional called if no matching function added for current platform.
 
@@ -137,11 +141,11 @@ class XPlatform:
         return self
 
 
-open_file = XPlatform()
+open_file = XPlatform[str, None]()
 
 
 @open_file.add("win32")
-def win_open_file(filename: str):
+def win_open_file(filename: str) -> None:
     """
     Windows open file implementation.
     """
@@ -153,7 +157,7 @@ def win_open_file(filename: str):
 
 
 @open_file.default
-def nix_open_file(filename: str):
+def nix_open_file(filename: str) -> None:
     """
     *Nix open file implementation.
     """

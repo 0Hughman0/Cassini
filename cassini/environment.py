@@ -5,10 +5,9 @@ from warnings import warn
 import re
 import os
 
-from jupyterlab.labapp import LabApp  # type: ignore
-from jupyterlab_server import LabConfig
+from jupyterlab.labapp import LabApp, LabServerApp  # type: ignore
 
-from typing import Union, Tuple, List, TYPE_CHECKING, Type, TypeVar
+from typing import Union, Tuple, List, TYPE_CHECKING, Type, TypeVar, MutableMapping, Any
 from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
@@ -26,7 +25,8 @@ class PathLibEnv(jinja2.Environment):
     Subclass of `jinja2.Environment` to enable using `pathlib.Path` for template names.
     """
 
-    def get_template(self, name: Union[Path, str], parent=None, globals=None):  # type: ignore[override]
+    def get_template(self, name: Union[Path, str], parent: Union[str, None] = None,  # type: ignore[override]
+                     globals: Union[MutableMapping[str, Any], None] = None) -> jinja2.Template:
         return super().get_template(
             name.as_posix() if isinstance(name, Path) else name,
             parent=None,
@@ -34,17 +34,18 @@ class PathLibEnv(jinja2.Environment):
         )
 
 
-class CassiniLabApp(LabApp):
+class CassiniLabApp(LabApp):  # type: ignore[misc]
     """
-    Subclass of `jupyterlab.labapp.LabApp` that ensures `ContentsManager.allow_hidden = True` (needed for jupyter_cassini_server)
+    Subclass of `jupyterlab.labapp.LabApp` that ensures `ContentsManager.allow_hidden = True`
+    (needed for jupyter_cassini_server)
     """
 
     @classmethod
-    def initialize_server(cls, argv=None):
+    def initialize_server(cls: Type[LabApp], argv: Union[Any, None] = None) -> LabServerApp:
         """
         Patch serverapp to ensure hidden files are allowed, needed for jupyter_cassini_server
         """
-        serverapp = super().initialize_server(argv)
+        serverapp: LabServerApp = super().initialize_server(argv)
         serverapp.contents_manager.allow_hidden = True
         return serverapp
 
@@ -69,7 +70,7 @@ class Project:
 
     _instance: Union[Project, None] = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> Project:
         if cls._instance:
             raise RuntimeError(
                 "Attempted to create new Project instance, only 1 instance permitted per interpreter"
@@ -100,7 +101,7 @@ class Project:
             self.rank_map[tier_cls.short_type] = rank
 
     @property
-    def home(self):
+    def home(self) -> TierBase:
         """
         Get the home `Tier`.
         """
@@ -156,7 +157,7 @@ class Project:
         return obj
 
     @soft_prop
-    def template_folder(self):
+    def template_folder(self) -> Path:
         """
         Overwritable property providing where templates will be stored for this project.
         """
@@ -166,20 +167,21 @@ class Project:
     def caslib_folder(self) -> Path:
         return self.project_folder / "caslib"
 
-    def setup_files(self):
+    def setup_files(self) -> TierBase:
         """
         Setup files needed for this project.
 
         Will put everything you need in `project_folder` to get going.
         """
         home = self.home
+
         if home.exists():
             return home
 
         print("Setting up project.")
 
         with FileMaker() as maker:
-            print(f"Creating templates folder")
+            print("Creating templates folder")
             maker.mkdir(self.template_folder)
             print("Success")
 
@@ -194,11 +196,13 @@ class Project:
                 )
                 print("Done")
 
-        print(f"Setting up Home Tier")
+        print("Setting up Home Tier")
         home.setup_files()
         print("Success")
 
-    def launch(self, app=None, patch_pythonpath=True):
+        return home
+
+    def launch(self, app: Union[LabApp, None] = None, patch_pythonpath: bool = True) -> LabApp:
         """
         Jump off point for a cassini project.
 
@@ -230,7 +234,7 @@ class Project:
 
         return app
 
-    def parse_name(self, name: str) -> Union[Tuple[str, ...], Tuple]:
+    def parse_name(self, name: str) -> Tuple[str, ...]:
         """
         Parses a string that corresponds to a `Tier` and returns a list of its identifiers.
 
@@ -296,7 +300,7 @@ class Project:
             match = re.search(pattern, name)
             if match and match.start(0) == 0:
                 ids.append(match.group(1))
-                name = name[match.end(0) :]
+                name = name[match.end(0):]
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!
@@ -304,7 +308,7 @@ class Project:
         else:
             return tuple(ids)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Project at: '{self.project_folder}' hierarchy: '{self.hierarchy}' ({env})>"
 
 
@@ -332,7 +336,7 @@ class _Env:
 
     instance: Union[_Env, None] = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> _Env:
         if cls.instance:
             raise RuntimeError(
                 "Attempted to create new _Env instance, only 1 _instance permitted per interpreter"
@@ -360,7 +364,7 @@ class _Env:
 
         return None
 
-    def update(self, obj: TierBase):
+    def update(self, obj: TierBase) -> None:
         self._o = obj
 
 

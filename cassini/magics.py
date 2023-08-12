@@ -5,7 +5,7 @@ from IPython.display import Markdown, publish_display_data
 from .environment import env
 
 
-def hlt(line, cell):
+def hlt(line: str, cell: str):
     if not line:
         raise ValueError("Please provide a title for the highlight")
     outputs = []
