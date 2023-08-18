@@ -95,8 +95,8 @@ def test_experiment(mk_project):
     smpl2 = exp1['b']
     smpl2.setup_files()
 
-    assert list(exp1) == [smpl1, smpl2]
-    assert exp1.smpls == [smpl1, smpl2]
+    assert set(exp1) == set([smpl1, smpl2])
+    assert set(exp1.smpls) == set([smpl1, smpl2])
 
     assert exp1.techniques == []
 

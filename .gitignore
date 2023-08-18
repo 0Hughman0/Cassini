@@ -62,6 +62,7 @@ __pycache__*
 # pytest cache
 .pytest_cache/
 .coverage
+coverage.xml
 
 # poetry stuff
 dist/
