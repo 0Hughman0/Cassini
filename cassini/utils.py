@@ -3,7 +3,7 @@ import os
 import sys
 import functools
 from typing import Union, Callable, Any, List, Tuple, TypeVar, Generic
-from typing_extensions import Self, ParamSpec
+from typing_extensions import Self, ParamSpec, ParamSpecArgs
 import datetime
 
 from .config import config
@@ -79,11 +79,22 @@ P = ParamSpec('P')
 class XPlatform(Generic[P, R]):
     """
     Class for easily making cross platform functions/ methods(?). Stops nasty if elses.
+
+    Fallback functional called if no matching function added for current platform.
+
+    Parameters
+    ----------
+    default: Callable[P, R]
+
+    Returns
+    -------
+    self: XPlatform[P, R]
+        Callable that will always call the appropriate function for the current platform.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, default: Callable[P, R]) -> None:
         self._func: Union[Callable[P, R], None] = None
-        self._default: Union[Callable[P, R], None] = None
+        self._default: Callable[P, R] = default
 
     @property
     def func(self) -> Callable[P, R]:
@@ -92,8 +103,6 @@ class XPlatform(Generic[P, R]):
         """
         if self._func:
             return self._func
-
-        assert self._default
 
         return self._default
 
@@ -113,7 +122,6 @@ class XPlatform(Generic[P, R]):
         -------
         self : XPlatform
             Callable that will always call the appropriate function for the current platform.
-
         """
 
         def wrapper(func: Callable[P, R]) -> 'XPlatform[P, R]':
@@ -124,40 +132,9 @@ class XPlatform(Generic[P, R]):
 
         return wrapper
 
-    def default(self, func: Callable[P, R]) -> 'XPlatform[P, R]':
-        """
-        Fallback functional called if no matching function added for current platform.
 
-        Parameters
-        ----------
-        func: Callable
-
-        Returns
-        -------
-        self: XPlatform
-            Callable that will always call the appropriate function for the current platform.
-        """
-        self._default = func
-        return self
-
-
-open_file = XPlatform[str, None]()
-
-
-@open_file.add("win32")
-def win_open_file(filename: str) -> None:
-    """
-    Windows open file implementation.
-    """
-    # mypy doesn't understand XPlatform implementation... maybe this is working too hard to please?
-    if sys.platform != "win32":
-        raise RuntimeError("Calling win32 specific method in wrong platform")
-
-    os.startfile(filename)
-
-
-@open_file.default
-def nix_open_file(filename: str) -> None:
+@XPlatform
+def open_file(filename: Union[str, Path]) -> None:
     """
     *Nix open file implementation.
     """
@@ -165,3 +142,11 @@ def nix_open_file(filename: str) -> None:
 
     opener = "open" if sys.platform == "darwin" else "xdg-open"
     subprocess.call([opener, filename])
+
+
+@open_file.add("win32")
+def win_open_file(filename: Union[str, Path]) -> None:
+    """
+    Windows open file implementation.
+    """
+    os.startfile(filename)
