@@ -39,7 +39,7 @@ jobs:
         poetry run black --check cassini
     - name: Test with pytest
       run: |
-        poetry run pytest --cov cassini
+        poetry run pytest --cov cassini --cov-report=xml
     - name: Typecheck with mypy
       run: |
         poetry run mypy cassini
