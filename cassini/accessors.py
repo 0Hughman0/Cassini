@@ -27,7 +27,17 @@ JSONPrimative = Union[str, int, float, bool, None]
 JSONType = Union[dict, list, tuple, JSONPrimative]
 JSONProcessor = Callable[[JSONType], T]
 
-JOut = TypeVar("JOut", Dict[JSONPrimative, JSONType], List[JSONType], Tuple[JSONType, ...], str, int, float, bool, None)
+JOut = TypeVar(
+    "JOut",
+    Dict[JSONPrimative, JSONType],
+    List[JSONType],
+    Tuple[JSONType, ...],
+    str,
+    int,
+    float,
+    bool,
+    None,
+)
 
 
 def _null_func(val: Any) -> Any:
@@ -79,13 +89,13 @@ class MetaAttr(Generic[JOut, T]):
         if self.name is None:
             self.name = name
 
-    def __get__(self, instance: 'TierBase', owner: object) -> Union[T, None]:
+    def __get__(self, instance: "TierBase", owner: object) -> Union[T, None]:
         try:
             return self.post_get(cast(JOut, instance.meta[self.name]))
         except KeyError:
             return self.default
 
-    def __set__(self, instance: 'TierBase', value: T) -> None:
+    def __set__(self, instance: "TierBase", value: T) -> None:
         setattr(instance.meta, self.name, self.pre_set(value))
 
 

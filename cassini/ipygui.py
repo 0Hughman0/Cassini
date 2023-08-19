@@ -1,6 +1,17 @@
 import html
 
-from typing import Any, Callable, Dict, Union, List, Mapping, Hashable, TYPE_CHECKING, cast, Type
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Union,
+    List,
+    Mapping,
+    Hashable,
+    TYPE_CHECKING,
+    cast,
+    Type,
+)
 
 import pandas as pd
 import pandas.api.types as pd_types
@@ -81,7 +92,7 @@ class UnescapedDataFrame(pd.DataFrame):
         return html.escape(str(obj))
 
     @property
-    def _constructor(self) -> Type['UnescapedDataFrame']:
+    def _constructor(self) -> Type["UnescapedDataFrame"]:
         return UnescapedDataFrame
 
     def _repr_html_(self) -> str:
@@ -107,7 +118,7 @@ class InputSequence:
 
     stored_traits = ["value", "disabled"]
 
-    def __init__(self, done_action: Callable[[Any], Any], *children: DOMWidget):
+    def __init__(self, done_action: Callable[..., Any], *children: DOMWidget):
         self.done_action = done_action
         self.children = children
         self.initial_traits = {}
@@ -189,7 +200,6 @@ class InputSequence:
 
 
 class SearchWidget:
-    
     def __init__(self) -> None:
         self.search = Text(placeholder="Name")
         self.go_btn = Button(description="Search")
@@ -326,7 +336,12 @@ class BaseTierGui:
         children_df = self.children_df()
         return widgetify(children_df)
 
-    def header(self, *, include: Union[List[str], None] = None, exclude: Union[List[str], None] = None) -> DOMWidget:
+    def header(
+        self,
+        *,
+        include: Union[List[str], None] = None,
+        exclude: Union[List[str], None] = None,
+    ) -> DOMWidget:
         """
         Builds header widget from its components.
 
@@ -394,7 +409,6 @@ class BaseTierGui:
         """
         Widget for creating new child for this `Tier`.
         """
-        assert parent
         child = self.tier.child_cls
 
         if not child:
@@ -408,7 +422,7 @@ class BaseTierGui:
 
         def create(name: str, template: str, description: str) -> None:
             assert child
-        
+
             with form.status:
                 obj = child(*self.tier.identifiers, name)
                 obj.setup_files(mapping[template])

@@ -23,7 +23,7 @@ from typing import (
 )
 from typing_extensions import Protocol
 
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from .ipygui import BaseTierGui
 from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType
@@ -448,7 +448,7 @@ class TierBase(Protocol):
             return Path(self.name)
 
     @cached_prop
-    def meta_file(self) -> Path:
+    def meta_file(self) -> Union[Path, None]:
         """
         Path to where meta file for this `Tier` object should be.
 
@@ -714,7 +714,9 @@ class TierBase(Protocol):
             ...         IPython.display.publish_display_data(**output)
         """
         if self.highlights_file and self.highlights_file.exists():
-            highlights = cast(HighlightsType, json.loads(self.highlights_file.read_text()))
+            highlights = cast(
+                HighlightsType, json.loads(self.highlights_file.read_text())
+            )
             return highlights
         else:
             return {}

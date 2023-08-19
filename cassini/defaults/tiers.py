@@ -4,7 +4,7 @@ import html
 
 from typing import Iterator, List, Any, Union, cast, Dict, Optional
 
-import pandas as pd  # type: ignore[import]
+import pandas as pd
 from IPython.display import display
 from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget  # type: ignore[import]
 
@@ -202,8 +202,11 @@ class Experiment(TierBase):
 
         print("Done")
 
-    def children_df(self, include: Union[List[str], None] = None,
-                    exclude: Union[List[str], None] = None) -> Union[pd.DataFrame, None]:
+    def children_df(
+        self,
+        include: Union[List[str], None] = None,
+        exclude: Union[List[str], None] = None,
+    ) -> Union[pd.DataFrame, None]:
         df = super().children_df(include=include, exclude=exclude)
 
         if df is None:

@@ -7,7 +7,17 @@ import os
 
 from jupyterlab.labapp import LabApp, LabServerApp  # type: ignore
 
-from typing import Union, Tuple, List, TYPE_CHECKING, Type, TypeVar, MutableMapping, Any
+from typing import (
+    Union,
+    Tuple,
+    List,
+    TYPE_CHECKING,
+    Type,
+    TypeVar,
+    MutableMapping,
+    Any,
+    Dict,
+)
 from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
@@ -25,8 +35,12 @@ class PathLibEnv(jinja2.Environment):
     Subclass of `jinja2.Environment` to enable using `pathlib.Path` for template names.
     """
 
-    def get_template(self, name: Union[Path, str], parent: Union[str, None] = None,  # type: ignore[override]
-                     globals: Union[MutableMapping[str, Any], None] = None) -> jinja2.Template:
+    def get_template(
+        self,
+        name: Union[Path, str],
+        parent: Union[str, None] = None,  # type: ignore[override]
+        globals: Union[MutableMapping[str, Any], None] = None,
+    ) -> jinja2.Template:
         return super().get_template(
             name.as_posix() if isinstance(name, Path) else name,
             parent=None,
@@ -41,7 +55,9 @@ class CassiniLabApp(LabApp):  # type: ignore[misc]
     """
 
     @classmethod
-    def initialize_server(cls: Type[LabApp], argv: Union[Any, None] = None) -> LabServerApp:
+    def initialize_server(
+        cls: Type[LabApp], argv: Union[Any, None] = None
+    ) -> LabServerApp:
         """
         Patch serverapp to ensure hidden files are allowed, needed for jupyter_cassini_server
         """
@@ -83,7 +99,7 @@ class Project:
     def __init__(
         self, hierarchy: List[Type[TierBase]], project_folder: Union[str, Path]
     ):
-        self.rank_map = {}
+        self.rank_map: Dict[str, int] = {}
         self.hierarchy = hierarchy
 
         project_folder = Path(project_folder).resolve()
@@ -202,7 +218,9 @@ class Project:
 
         return home
 
-    def launch(self, app: Union[LabApp, None] = None, patch_pythonpath: bool = True) -> LabApp:
+    def launch(
+        self, app: Union[LabApp, None] = None, patch_pythonpath: bool = True
+    ) -> LabApp:
         """
         Jump off point for a cassini project.
 
@@ -300,7 +318,7 @@ class Project:
             match = re.search(pattern, name)
             if match and match.start(0) == 0:
                 ids.append(match.group(1))
-                name = name[match.end(0):]
+                name = name[match.end(0) :]
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!

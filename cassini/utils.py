@@ -3,7 +3,7 @@ import os
 import sys
 import functools
 from typing import Union, Callable, Any, List, Tuple, TypeVar, Generic
-from typing_extensions import Self, ParamSpec, ParamSpecArgs
+from typing_extensions import Self, ParamSpec
 import datetime
 
 from .config import config
@@ -72,8 +72,8 @@ class FileMaker:
             raise exc_type(exc_val)
 
 
-R = TypeVar('R')
-P = ParamSpec('P')
+R = TypeVar("R")
+P = ParamSpec("P")
 
 
 class XPlatform(Generic[P, R]):
@@ -109,7 +109,7 @@ class XPlatform(Generic[P, R]):
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.func(*args, **kwargs)
 
-    def add(self, platform: str) -> Callable[[Callable[P, R]], 'XPlatform[P, R]']:
+    def add(self, platform: str) -> Callable[[Callable[P, R]], "XPlatform[P, R]"]:
         """
         Add a platform dependent function. To be used as a decorator.
 
@@ -124,7 +124,7 @@ class XPlatform(Generic[P, R]):
             Callable that will always call the appropriate function for the current platform.
         """
 
-        def wrapper(func: Callable[P, R]) -> 'XPlatform[P, R]':
+        def wrapper(func: Callable[P, R]) -> "XPlatform[P, R]":
             if sys.platform == platform:
                 self._func = func
                 functools.update_wrapper(self, func)
