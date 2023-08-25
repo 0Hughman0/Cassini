@@ -11,13 +11,15 @@ from typing import (
     TYPE_CHECKING,
     cast,
     Type,
+    Generic,
+    TypeVar
 )
 
 import pandas as pd
 import pandas.api.types as pd_types
 
 from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layout, Accordion, DOMWidget  # type: ignore[import]
-from IPython.display import display, Markdown, publish_display_data
+from IPython.display import display, Markdown, publish_display_data  # type: ignore[attr-defined]
 
 from .environment import env
 
@@ -232,12 +234,15 @@ class SearchWidget:
         return VBox([HBox([self.search, self.go_btn, self.clear_btn]), self.out])
 
 
-class BaseTierGui:
+T = TypeVar('T', bound='TierBase')
+
+
+class BaseTierGui(Generic[T]):
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
 
-    def __init__(self, tier: "TierBase"):
+    def __init__(self, tier: T):
         self.tier = tier
 
     def _get_header_components(self) -> Dict[str, Callable[[], DOMWidget]]:
@@ -422,6 +427,8 @@ class BaseTierGui:
 
         def create(name: str, template: str, description: str) -> None:
             assert child
+
+            form: InputSequence
 
             with form.status:
                 obj = child(*self.tier.identifiers, name)

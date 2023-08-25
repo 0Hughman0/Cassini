@@ -21,7 +21,7 @@ from typing import (
     Optional,
     cast,
 )
-from typing_extensions import Protocol
+from typing_extensions import Protocol, Self
 
 import pandas as pd
 
@@ -186,30 +186,26 @@ class TierBase(Protocol):
     rank: ClassVar[int] = -1
     id_regex: ClassVar[str] = r"(\d+)"
 
-    gui_cls: Type[BaseTierGui] = BaseTierGui
+    gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
 
-    hierarchy: ClassVar[List[Type[TierBase]]]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def hierarchy(cls) -> List[Type[TierBase]]:
         """
         Gets the hierarchy from `env.project`.
         """
-        assert env.project
-        return env.project.hierarchy
+        if env.project:
+            return env.project.hierarchy
+        else:
+            return []
 
-    pretty_type: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def pretty_type(cls) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
         return cast(str, cls.__name__)
 
-    short_type: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def short_type(cls) -> str:
         """
         Name used to programmatically refer to instances of this `Tier`.
@@ -218,18 +214,14 @@ class TierBase(Protocol):
         """
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys("aeiou")))
 
-    name_part_template: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def name_part_template(cls) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + "{}"
 
-    name_part_regex: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def name_part_regex(cls) -> str:
         """
         Regex where first group matches `id` part of string. Default is fill in `cls.name_part_template` with
@@ -237,9 +229,7 @@ class TierBase(Protocol):
         """
         return cls.name_part_template.format(cls.id_regex)
 
-    parent_cls: ClassVar[Union[Type[TierBase], None]]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def parent_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
@@ -250,9 +240,7 @@ class TierBase(Protocol):
             return None
         return cls.hierarchy[cls.rank - 1]
 
-    child_cls: ClassVar[Union[Type[TierBase], None]]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def child_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
@@ -263,18 +251,14 @@ class TierBase(Protocol):
             return None
         return cls.hierarchy[cls.rank + 1]
 
-    default_template: ClassVar[Union[Path, None]]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def default_template(cls) -> Union[Path, None]:
         """
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
 
-    _meta_folder_name: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def _meta_folder_name(cls) -> str:
         """
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
@@ -308,10 +292,10 @@ class TierBase(Protocol):
             yield cls.parse_name(meta_file.name[:-5])
 
     _identifiers: Tuple[str, ...]
-    gui: BaseTierGui
+    gui: BaseTierGui[Self]
     meta: Meta
 
-    def __init__(self, *args: str):
+    def __init__(self: Self, *args: str):
         self._identifiers = tuple(filter(None, args))
         self.gui = self.gui_cls(self)
 
@@ -532,6 +516,7 @@ class TierBase(Protocol):
         """
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
+        assert self.meta_file
         return self.meta_file.exists()
 
     def get_child(self, id: str) -> TierBase:

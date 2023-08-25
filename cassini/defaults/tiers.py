@@ -23,7 +23,7 @@ def ignore_dir(name: str) -> bool:
     return False
 
 
-class HomeGui(BaseTierGui):
+class HomeGui(BaseTierGui['Home']):
     def _get_header_components(self) -> Dict[str, DOMWidget]:
         components = dict()
         components["Search"] = lambda: SearchWidget().as_widget()
@@ -109,9 +109,13 @@ class WorkPackage(TierBase):
     Next level down are `Experiment`s.
     """
 
-    name_part_template = "WP{}"
+    @cached_class_prop
+    def name_part_template(cls) -> str:
+        return "WP{}"
 
-    short_type = "wp"
+    @cached_class_prop
+    def short_type(cls) -> str:
+        return "wp"
 
     @property
     def exps(self) -> List[TierBase]:
@@ -121,7 +125,7 @@ class WorkPackage(TierBase):
         return list(self)
 
 
-class ExperimentGui(BaseTierGui):
+class ExperimentGui(BaseTierGui['Experiment']):
     def new_dataset(self) -> DOMWidget:
         """
         A handy widget for creating new `DataSets`.
@@ -162,9 +166,13 @@ class Experiment(TierBase):
     Each `Experiment` has a number of samples.
     """
 
-    name_part_template = ".{}"
+    @cached_class_prop
+    def name_part_template(cls) -> str:
+        return ".{}"
 
-    short_type = "exp"
+    @cached_class_prop
+    def short_type(cls) -> str:
+        return "exp"
 
     gui_cls = ExperimentGui
 
@@ -225,7 +233,7 @@ class Experiment(TierBase):
         return list(self)
 
 
-class SampleGui(BaseTierGui):
+class SampleGui(BaseTierGui['Sample']):
     def new_child(self) -> DOMWidget:
         def create(name):
             with form.status:
@@ -269,8 +277,13 @@ class Sample(TierBase):
     A `Sample` id can't start with a number and can't contain `'-'` (dashes), as these confuse the name parser.
     """
 
-    name_part_template = "{}"
-    id_regex = r"([^0-9^-][^-]*)"
+    @cached_class_prop
+    def name_part_template(cls) -> str:
+        return "{}"
+
+    @cached_class_prop
+    def id_regex(cls) -> str:
+        return r"([^0-9^-][^-]*)"
 
     gui_cls = SampleGui
 
@@ -305,10 +318,17 @@ class DataSet(TierBase):
     The final tier, intended to represent a folder containing a collection of files relating to a particular `Sample`.
     """
 
-    short_type = "dset"
+    @cached_class_prop
+    def short_type(cls) -> str:
+        return "dset"
 
-    name_part_template = "-{}"
-    id_regex = r"(.+)"
+    @cached_class_prop
+    def name_part_template(cls) -> str:
+        return "-{}"
+
+    @cached_class_prop
+    def id_regex(cls) -> str:
+        return r"(.+)"
 
     @cached_class_prop
     def default_template(cls) -> None:
@@ -370,7 +390,7 @@ class DataSet(TierBase):
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)
 
-    def __iter__(self) -> Iterator[os.DirEntry]:
+    def __iter__(self) -> Iterator['os.DirEntry[Any]']:
         """
         Call `os.scandir` on `self.folder`.
         """

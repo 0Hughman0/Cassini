@@ -37,8 +37,8 @@ class PathLibEnv(jinja2.Environment):
 
     def get_template(
         self,
-        name: Union[Path, str],
-        parent: Union[str, None] = None,  # type: ignore[override]
+        name: Union[Path, str],  # type: ignore[override]
+        parent: Union[str, None] = None,
         globals: Union[MutableMapping[str, Any], None] = None,
     ) -> jinja2.Template:
         return super().get_template(

@@ -1,6 +1,6 @@
 from IPython.core.magic import register_cell_magic
 from IPython.core.interactiveshell import InteractiveShell
-from IPython.display import Markdown, publish_display_data
+from IPython.display import Markdown, publish_display_data  # type: ignore[attr-defined]
 
 from .environment import env
 
