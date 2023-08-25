@@ -23,7 +23,7 @@ def ignore_dir(name: str) -> bool:
     return False
 
 
-class HomeGui(BaseTierGui['Home']):
+class HomeGui(BaseTierGui["Home"]):
     def _get_header_components(self) -> Dict[str, DOMWidget]:
         components = dict()
         components["Search"] = lambda: SearchWidget().as_widget()
@@ -125,7 +125,7 @@ class WorkPackage(TierBase):
         return list(self)
 
 
-class ExperimentGui(BaseTierGui['Experiment']):
+class ExperimentGui(BaseTierGui["Experiment"]):
     def new_dataset(self) -> DOMWidget:
         """
         A handy widget for creating new `DataSets`.
@@ -233,7 +233,7 @@ class Experiment(TierBase):
         return list(self)
 
 
-class SampleGui(BaseTierGui['Sample']):
+class SampleGui(BaseTierGui["Sample"]):
     def new_child(self) -> DOMWidget:
         def create(name):
             with form.status:
@@ -390,7 +390,7 @@ class DataSet(TierBase):
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)
 
-    def __iter__(self) -> Iterator['os.DirEntry[Any]']:
+    def __iter__(self) -> Iterator["os.DirEntry[Any]"]:
         """
         Call `os.scandir` on `self.folder`.
         """

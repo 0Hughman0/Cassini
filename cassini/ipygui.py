@@ -12,7 +12,7 @@ from typing import (
     cast,
     Type,
     Generic,
-    TypeVar
+    TypeVar,
 )
 
 import pandas as pd
@@ -234,7 +234,7 @@ class SearchWidget:
         return VBox([HBox([self.search, self.go_btn, self.clear_btn]), self.out])
 
 
-T = TypeVar('T', bound='TierBase')
+T = TypeVar("T", bound="TierBase")
 
 
 class BaseTierGui(Generic[T]):
