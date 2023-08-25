@@ -149,4 +149,4 @@ def win_open_file(filename: Union[str, Path]) -> None:
     """
     Windows open file implementation.
     """
-    os.startfile(filename)
+    os.startfile(filename)  # type: ignore[attr-defined]
