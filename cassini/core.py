@@ -312,7 +312,9 @@ class TierBase(Protocol):
         if self.meta_file:
             self.meta: Meta = Meta(self.meta_file)
 
-    def setup_files(self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None) -> None:
+    def setup_files(
+        self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
+    ) -> None:
         """
         Create all the files needed for a valid `Tier` object to exist.
 
