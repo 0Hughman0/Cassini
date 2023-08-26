@@ -312,7 +312,7 @@ class TierBase(Protocol):
         if self.meta_file:
             self.meta: Meta = Meta(self.meta_file)
 
-    def setup_files(self, template: Union[Path, None] = None) -> None:
+    def setup_files(self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None) -> None:
         """
         Create all the files needed for a valid `Tier` object to exist.
 
@@ -329,6 +329,9 @@ class TierBase(Protocol):
         if template is None:
             template = self.default_template
 
+        if meta is None:
+            meta = {}
+
         assert template
         assert self.file
 
@@ -344,7 +347,7 @@ class TierBase(Protocol):
 
         with FileMaker() as maker:
             maker.mkdir(self.meta.file.parent, exist_ok=True)
-            maker.write_file(self.meta.file, "{}")
+            maker.write_file(self.meta.file, json.dumps(meta))
 
             print("Writing Meta Data")
 
@@ -649,7 +652,7 @@ class TierBase(Protocol):
         Parameters
         ----------
         template : Path
-            path to template file.
+            path to template file. Must be relative to `project.template_folder`
 
         Returns
         -------
