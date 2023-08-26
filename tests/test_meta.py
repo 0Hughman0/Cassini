@@ -116,4 +116,3 @@ def test_meta_attr(mk_meta):
 
     assert obj.doesnt_have is None
     assert obj.with_default == 'squid'
-
