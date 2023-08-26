@@ -86,7 +86,7 @@ class Meta:
         Overwrite contents of cache into file
         """
         # Danger moment - writing bad cache to file.
-        with self.file.open("w", encoding='utf-8') as f:
+        with self.file.open("w", encoding="utf-8") as f:
             json.dump(self._cache, f)
 
     def __getitem__(self, item: str) -> JSONType:
@@ -739,7 +739,7 @@ class TierBase(Protocol):
             raise KeyError("Attempting to overwrite existing meta value")
 
         highlights[name] = data
-        self.highlights_file.write_text(json.dumps(highlights), encoding='utf-8')
+        self.highlights_file.write_text(json.dumps(highlights), encoding="utf-8")
 
     def remove_highlight(self, name: str) -> None:
         """
@@ -752,7 +752,7 @@ class TierBase(Protocol):
             return
 
         del highlights[name]
-        self.highlights_file.write_text(json.dumps(highlights), encoding='utf-8')
+        self.highlights_file.write_text(json.dumps(highlights), encoding="utf-8")
 
     def get_cached(self) -> Union[CachedType, None]:
         """
@@ -803,7 +803,7 @@ class TierBase(Protocol):
             raise KeyError("Attempting to overwrite existing meta value")
 
         cache[name] = data
-        self.cache_file.write_text(json.dumps(cache), encoding='utf-8')
+        self.cache_file.write_text(json.dumps(cache), encoding="utf-8")
 
     def remove_cached(self, name: str) -> None:
         """
@@ -815,7 +815,7 @@ class TierBase(Protocol):
             return
 
         del cached[name]
-        self.cache_file.write_text(json.dumps(cached), encoding='utf-8')
+        self.cache_file.write_text(json.dumps(cached), encoding="utf-8")
 
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)

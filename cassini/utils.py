@@ -46,7 +46,7 @@ class FileMaker:
         self, path: Path, contents: str = "", exist_ok: bool = False
     ) -> Union[Path, None]:
         if not path.exists():
-            path.write_text(contents, encoding='utf-8')
+            path.write_text(contents, encoding="utf-8")
             self.files_made.append(path)
             return path
         if exist_ok:
