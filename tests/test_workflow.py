@@ -57,7 +57,7 @@ def test_make_child_with_meta(mk_project):
 
     child = home['1']
 
-    meta = {'A': 1, 'B': ["data"]}
+    meta = {'A': 1, 'B': ["🦀"]}
 
     child.setup_files(meta=meta)
 
@@ -72,4 +72,4 @@ def test_make_child_with_meta(mk_project):
 
     child2.setup_files(template=custom_template_path.relative_to(project.template_folder), meta=meta)
 
-    assert child2.file.read_text() == "1 ['data']"
+    assert child2.file.read_text(encoding='utf-8') == "1 ['🦀']"
