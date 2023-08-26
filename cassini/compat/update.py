@@ -19,7 +19,9 @@ class V0_1to0_2(BaseUpdater):
     def __init__(self):
         from .. import env
 
-        self.home = env()
+        assert env.project
+
+        self.home = env.project.home
         self.cell_processors = []
 
         @self.cell_processor
