@@ -86,7 +86,7 @@ class Meta:
         Overwrite contents of cache into file
         """
         # Danger moment - writing bad cache to file.
-        with self.file.open("w") as f:
+        with self.file.open("w", encoding="utf-8") as f:
             json.dump(self._cache, f)
 
     def __getitem__(self, item: str) -> JSONType:
@@ -312,7 +312,9 @@ class TierBase(Protocol):
         if self.meta_file:
             self.meta: Meta = Meta(self.meta_file)
 
-    def setup_files(self, template: Union[Path, None] = None) -> None:
+    def setup_files(
+        self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
+    ) -> None:
         """
         Create all the files needed for a valid `Tier` object to exist.
 
@@ -325,9 +327,14 @@ class TierBase(Protocol):
         ----------
         template : Path
             path to template file to render to create `.ipynb` file.
+        meta : MetaDict
+            Initial meta values to create the tier with.
         """
         if template is None:
             template = self.default_template
+
+        if meta is None:
+            meta = {}
 
         assert template
         assert self.file
@@ -344,7 +351,7 @@ class TierBase(Protocol):
 
         with FileMaker() as maker:
             maker.mkdir(self.meta.file.parent, exist_ok=True)
-            maker.write_file(self.meta.file, "{}")
+            maker.write_file(self.meta.file, json.dumps(meta))
 
             print("Writing Meta Data")
 
@@ -644,12 +651,12 @@ class TierBase(Protocol):
 
     def render_template(self, template_path: Path) -> str:
         """
-        Render template file passing `self` as `self.short_type`.
+        Render template file passing `self` as `self.short_type` and as `tier`.
 
         Parameters
         ----------
         template : Path
-            path to template file.
+            path to template file. Must be relative to `project.template_folder`
 
         Returns
         -------
@@ -734,7 +741,7 @@ class TierBase(Protocol):
             raise KeyError("Attempting to overwrite existing meta value")
 
         highlights[name] = data
-        self.highlights_file.write_text(json.dumps(highlights))
+        self.highlights_file.write_text(json.dumps(highlights), encoding="utf-8")
 
     def remove_highlight(self, name: str) -> None:
         """
@@ -747,7 +754,7 @@ class TierBase(Protocol):
             return
 
         del highlights[name]
-        self.highlights_file.write_text(json.dumps(highlights))
+        self.highlights_file.write_text(json.dumps(highlights), encoding="utf-8")
 
     def get_cached(self) -> Union[CachedType, None]:
         """
@@ -798,7 +805,7 @@ class TierBase(Protocol):
             raise KeyError("Attempting to overwrite existing meta value")
 
         cache[name] = data
-        self.cache_file.write_text(json.dumps(cache))
+        self.cache_file.write_text(json.dumps(cache), encoding="utf-8")
 
     def remove_cached(self, name: str) -> None:
         """
@@ -810,7 +817,7 @@ class TierBase(Protocol):
             return
 
         del cached[name]
-        self.cache_file.write_text(json.dumps(cached))
+        self.cache_file.write_text(json.dumps(cached), encoding="utf-8")
 
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)

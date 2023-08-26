@@ -85,7 +85,7 @@ class Home(TierBase):
     def exists(self) -> bool:
         return self.file.exists()
 
-    def setup_files(self, template: Union[Path, None] = None) -> None:
+    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
         assert self.child_cls
         assert self.default_template
 
@@ -350,7 +350,7 @@ class DataSet(TierBase):
     def exists(self) -> bool:
         return self.folder.exists()
 
-    def setup_files(self, template: Union[Path, None] = None) -> None:
+    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
         print(f"Creating Folder for Data: {self}")
 
         with FileMaker() as maker:
