@@ -1,12 +1,25 @@
 import html
 
-from typing import Any, Callable, Dict, Union, List, Mapping, Hashable, TYPE_CHECKING
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Union,
+    List,
+    Mapping,
+    Hashable,
+    TYPE_CHECKING,
+    cast,
+    Type,
+    Generic,
+    TypeVar,
+)
 
 import pandas as pd
 import pandas.api.types as pd_types
 
 from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layout, Accordion, DOMWidget  # type: ignore[import]
-from IPython.display import display, Markdown, publish_display_data
+from IPython.display import display, Markdown, publish_display_data  # type: ignore[attr-defined]
 
 from .environment import env
 
@@ -28,7 +41,7 @@ class WHTML:
     def __init__(self, html: str):
         self.html = html
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.html
 
 
@@ -77,11 +90,11 @@ class UnescapedDataFrame(pd.DataFrame):
         This method does not escape `obj._repr_html_`. So make sure your reprs are trustworthy!
         """
         if hasattr(obj, "_repr_html_"):
-            return obj._repr_html_()
+            return cast(str, obj._repr_html_())
         return html.escape(str(obj))
 
     @property
-    def _constructor(self):
+    def _constructor(self) -> Type["UnescapedDataFrame"]:
         return UnescapedDataFrame
 
     def _repr_html_(self) -> str:
@@ -107,7 +120,7 @@ class InputSequence:
 
     stored_traits = ["value", "disabled"]
 
-    def __init__(self, done_action: Callable, *children: DOMWidget):
+    def __init__(self, done_action: Callable[..., Any], *children: DOMWidget):
         self.done_action = done_action
         self.children = children
         self.initial_traits = {}
@@ -129,7 +142,7 @@ class InputSequence:
             }
             child.observe(self.child_updated, "value")
 
-    def reset(self, change):
+    def reset(self, change: Any) -> None:
         """
         Reset the state of the InputSequence. Called when `new` button clicked.
         """
@@ -141,7 +154,7 @@ class InputSequence:
 
         self.confirm.disabled = True
 
-    def child_updated(self, change):
+    def child_updated(self, change: Any) -> None:
         """
         Called when a child is updated, meant to stop you pressing confirm until you've entered something into every
         widget... don't think it actually works tho!
@@ -160,7 +173,7 @@ class InputSequence:
         """
         return VBox((*self.children, HBox((self.confirm, self.new)), self.status))
 
-    def display(self):
+    def display(self) -> Output:
         """
         Displays `self.as_widget()`.
 
@@ -172,7 +185,7 @@ class InputSequence:
         self.output.append_display_data(self.as_widget())
         return self.output
 
-    def _do_done(self, pressed):
+    def _do_done(self, pressed: Any) -> None:
         """
         Internal function called when confirm clicked.
         """
@@ -189,7 +202,7 @@ class InputSequence:
 
 
 class SearchWidget:
-    def __init__(self):
+    def __init__(self) -> None:
         self.search = Text(placeholder="Name")
         self.go_btn = Button(description="Search")
         self.clear_btn = Button(description="Clear")
@@ -200,10 +213,12 @@ class SearchWidget:
         self.go_btn.on_click(self.do_search)
         self.clear_btn.on_click(self.do_clear)
 
-    def do_clear(self, cb):
+    def do_clear(self, cb: Any) -> None:
         self.out.clear_output()
 
-    def do_search(self, cb):
+    def do_search(self, cb: Any) -> None:
+        assert env.project
+
         name = self.search.value
 
         self.out.clear_output()
@@ -215,16 +230,19 @@ class SearchWidget:
             else:
                 print(f"{obj.name} valid, but doesn't exist")
 
-    def as_widget(self):
+    def as_widget(self) -> VBox:
         return VBox([HBox([self.search, self.go_btn, self.clear_btn]), self.out])
 
 
-class BaseTierGui:
+T = TypeVar("T", bound="TierBase")
+
+
+class BaseTierGui(Generic[T]):
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
 
-    def __init__(self, tier: "TierBase"):
+    def __init__(self, tier: T):
         self.tier = tier
 
     def _get_header_components(self) -> Dict[str, Callable[[], DOMWidget]]:
@@ -256,7 +274,7 @@ class BaseTierGui:
 
         return components
 
-    def _build_header_title(self, *, parent=None) -> DOMWidget:
+    def _build_header_title(self) -> DOMWidget:
         """
         Creates a widget that displays the title a `Tier` along side clickable links and buttons to its components
         """
@@ -277,7 +295,7 @@ class BaseTierGui:
         text += "</h3>"
         return VBox((widgetify_html(text), open_btn))
 
-    def _build_description(self, *, parent=None) -> Union[DOMWidget, None]:
+    def _build_description(self) -> Union[DOMWidget, None]:
         """
         Creates a widget that displays the motivation for a `Tier`.
         """
@@ -286,7 +304,7 @@ class BaseTierGui:
             return None
         return widgetify(Markdown(description))
 
-    def _build_highlights_accordion(self, *, parent=None) -> Union[DOMWidget, None]:
+    def _build_highlights_accordion(self) -> Union[DOMWidget, None]:
         """
         Creates a widget that displays highlights for this `Tier` in an `ipywidgets.Accordion` - which is nice!
         """
@@ -307,7 +325,7 @@ class BaseTierGui:
         widget.selected_index = None
         return widget
 
-    def _build_conclusion(self, *, parent=None) -> Union[DOMWidget, None]:
+    def _build_conclusion(self) -> Union[DOMWidget, None]:
         """
         Build widget to display conclusion of this `Tier` object.
         """
@@ -316,7 +334,7 @@ class BaseTierGui:
             return None
         return widgetify(Markdown(self.tier.conclusion))
 
-    def _build_children(self, *, parent=None) -> DOMWidget:
+    def _build_children(self) -> DOMWidget:
         """
         Build a widget to display an `UnescapedDataFrame` containing this `Tier`'s children.
         """
@@ -373,11 +391,11 @@ class BaseTierGui:
 
         return VBox(components)
 
-    def display_highlights(self):
+    def display_highlights(self) -> None:
         """
         Display an `ipywidgets.Accordian` with this `Tier`'s highlights.
         """
-        return display(self._build_highlights_accordion())
+        display(self._build_highlights_accordion())
 
     def children_df(
         self,
@@ -392,7 +410,7 @@ class BaseTierGui:
             self.tier.children_df(include=include, exclude=exclude)
         )
 
-    def new_child(self, *, parent=None) -> DOMWidget:
+    def new_child(self) -> DOMWidget:
         """
         Widget for creating new child for this `Tier`.
         """
@@ -407,17 +425,20 @@ class BaseTierGui:
 
         selection = Select(options=mapping.keys(), description="Template")
 
-        def create(name, template, description):
+        def create(name: str, template: str, description: str) -> None:
+            assert child
+
+            form: InputSequence
+
             with form.status:
                 obj = child(*self.tier.identifiers, name)
                 obj.setup_files(mapping[template])
                 obj.description = description
                 display(widgetify_html(obj._repr_html_()))
-            parent.update("Children")
 
         form = InputSequence(
             create,
-            Text(description=f"Identifier", placeholder=f"{child.id_regex}"),
+            Text(description="Identifier", placeholder="{child.id_regex}"),
             selection,
             Textarea(description="Motivation"),
         )

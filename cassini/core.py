@@ -18,18 +18,21 @@ from typing import (
     Union,
     Dict,
     ClassVar,
-    Sequence,
     Optional,
     cast,
 )
+from typing_extensions import Protocol, Self
 
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from .ipygui import BaseTierGui
-from .accessors import MetaAttr, cached_prop, cached_class_prop, _CachedClassProp
+from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType
 from .utils import FileMaker, open_file, str_to_date, date_to_str
-from .environment import env, _Env, Project
+from .environment import env
 from .config import config
+
+
+MetaDict = Dict[str, JSONType]
 
 
 class Meta:
@@ -43,10 +46,10 @@ class Meta:
     """
 
     timeout: ClassVar[int] = 1
-    my_attrs: ClassVar[List] = ["_cache", "_cache_born", "file"]
+    my_attrs: ClassVar[List[str]] = ["_cache", "_cache_born", "file"]
 
     def __init__(self, file: Path):
-        self._cache: dict = {}
+        self._cache: MetaDict = {}
         self._cache_born: float = 0.0
         self.file: Path = file
 
@@ -57,7 +60,7 @@ class Meta:
         """
         return time.time() - self._cache_born
 
-    def fetch(self) -> dict:
+    def fetch(self) -> MetaDict:
         """
         Fetches values from the meta file and updates them into `self._cache`.
 
@@ -71,14 +74,14 @@ class Meta:
             self._cache_born = time.time()
         return self._cache
 
-    def refresh(self):
+    def refresh(self) -> None:
         """
         Check age of cache, if stale then re-fetch
         """
         if self.age >= self.timeout:
             self.fetch()
 
-    def write(self):
+    def write(self) -> None:
         """
         Overwrite contents of cache into file
         """
@@ -86,21 +89,21 @@ class Meta:
         with self.file.open("w") as f:
             json.dump(self._cache, f)
 
-    def __getitem__(self, item: str) -> Any:
+    def __getitem__(self, item: str) -> JSONType:
         self.refresh()
         return self._cache[item]
 
-    def __setitem__(self, key: str, value: Any):
+    def __setitem__(self, key: str, value: JSONType) -> None:
         self.__setattr__(key, value)
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattr__(self, item: str) -> JSONType:
         self.refresh()
         try:
             return self[item]
         except KeyError:
             raise AttributeError(item)
 
-    def __setattr__(self, name: str, value: Any) -> Any:
+    def __setattr__(self, name: str, value: JSONType) -> None:
         if name in self.my_attrs:
             super().__setattr__(name, value)
         else:
@@ -108,7 +111,7 @@ class Meta:
             self._cache[name] = value
             self.write()
 
-    def __delitem__(self, key: str):
+    def __delitem__(self, key: str) -> None:
         self.fetch()
         del self._cache[key]
         self.write()
@@ -126,7 +129,7 @@ class Meta:
         except AttributeError:
             return default
 
-    def keys(self) -> KeysView:
+    def keys(self) -> KeysView[str]:
         """
         like `dict.keys`
         """
@@ -134,20 +137,14 @@ class Meta:
         return self._cache.keys()
 
 
-class TierMeta(type):
-    """
-    Metaclass mixin for the TierBase. Needed to ensure that each Tier Class has its own cache.
-    """
+HighlightType = List[Dict[str, Dict[str, Any]]]
+HighlightsType = Dict[str, HighlightType]
 
-    cache: Dict[Tuple[str, ...], TierBase]
-
-    def __new__(cls, name, bases, dct):
-        kls = super().__new__(cls, name, bases, dct)
-        kls.cache = {}  # ensures each TierBase class has its own cache
-        return kls
+CacheItemType = HighlightType
+CachedType = HighlightsType
 
 
-class TierBase(metaclass=TierMeta):
+class TierBase(Protocol):
     """
     Base class for creating Tiers
 
@@ -161,8 +158,8 @@ class TierBase(metaclass=TierMeta):
     rank : int
         Class attribute, specifying the rank of this `Tier`
     id_regex: str
-        Class attribute, regex that defines a group that matches the id of a `Tier` object from a name... except the name isn't the full
-        name, but with parent names stripped, see examples basically!
+        Class attribute, regex that defines a group that matches the id of a `Tier` object from a name... except the
+        name isn't the full name, but with parent names stripped, see examples basically!
     hierarchy : list
         Class attribute, hierarchy of `Tier`s.
     description : str
@@ -176,37 +173,39 @@ class TierBase(metaclass=TierMeta):
     id_regex : str
         (class attribute) regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id.
     gui_cls : Any
-        (class attribute) The class called upon initialisation to use as gui for this object. Constructor should take `self` as first
-        argument.
+        (class attribute) The class called upon initialisation to use as gui for this object. Constructor should take `self`
+         as first argument.
     """
+
+    cache: ClassVar[Dict[Tuple[str, ...], TierBase]]
+
+    def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
+        super().__init_subclass__(*args, **kwargs)
+        cls.cache = {}  # ensures each TierBase class has its own cache
 
     rank: ClassVar[int] = -1
     id_regex: ClassVar[str] = r"(\d+)"
 
-    gui_cls = BaseTierGui
+    gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
 
-    hierarchy: ClassVar[List[Type[TierBase]]]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def hierarchy(cls) -> List[Type[TierBase]]:
         """
         Gets the hierarchy from `env.project`.
         """
-        assert env.project
-        return env.project.hierarchy
+        if env.project:
+            return env.project.hierarchy
+        else:
+            return []
 
-    pretty_type: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def pretty_type(cls) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
-        return cls.__name__
+        return cast(str, cls.__name__)
 
-    short_type: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def short_type(cls) -> str:
         """
         Name used to programmatically refer to instances of this `Tier`.
@@ -215,18 +214,14 @@ class TierBase(metaclass=TierMeta):
         """
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys("aeiou")))
 
-    name_part_template: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def name_part_template(cls) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + "{}"
 
-    name_part_regex: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def name_part_regex(cls) -> str:
         """
         Regex where first group matches `id` part of string. Default is fill in `cls.name_part_template` with
@@ -234,9 +229,7 @@ class TierBase(metaclass=TierMeta):
         """
         return cls.name_part_template.format(cls.id_regex)
 
-    parent_cls: ClassVar[Union[Type[TierBase], None]]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def parent_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
@@ -247,9 +240,7 @@ class TierBase(metaclass=TierMeta):
             return None
         return cls.hierarchy[cls.rank - 1]
 
-    child_cls: ClassVar[Union[Type[TierBase], None]]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def child_cls(cls) -> Union[Type[TierBase], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
@@ -260,25 +251,21 @@ class TierBase(metaclass=TierMeta):
             return None
         return cls.hierarchy[cls.rank + 1]
 
-    default_template: ClassVar[Union[Path, None]]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def default_template(cls) -> Union[Path, None]:
         """
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
 
-    _meta_folder_name: ClassVar[str]
-
-    @cached_class_prop  # type: ignore[no-redef]
+    @cached_class_prop
     def _meta_folder_name(cls) -> str:
         """
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
         """
         return config.META_DIR_TEMPLATE.format(cls.short_type)
 
-    def __new__(cls, *args: str, **kwargs):
+    def __new__(cls, *args: str, **kwargs: Dict[str, Any]) -> TierBase:
         obj = cls.cache.get(args)
         if obj:
             return obj
@@ -304,7 +291,11 @@ class TierBase(metaclass=TierMeta):
                 continue
             yield cls.parse_name(meta_file.name[:-5])
 
-    def __init__(self, *args: str):
+    _identifiers: Tuple[str, ...]
+    gui: BaseTierGui[Self]
+    meta: Meta
+
+    def __init__(self: Self, *args: str):
         self._identifiers = tuple(filter(None, args))
         self.gui = self.gui_cls(self)
 
@@ -321,7 +312,7 @@ class TierBase(metaclass=TierMeta):
         if self.meta_file:
             self.meta: Meta = Meta(self.meta_file)
 
-    def setup_files(self, template: Union[Path, None] = None):
+    def setup_files(self, template: Union[Path, None] = None) -> None:
         """
         Create all the files needed for a valid `Tier` object to exist.
 
@@ -337,6 +328,9 @@ class TierBase(metaclass=TierMeta):
         """
         if template is None:
             template = self.default_template
+
+        assert template
+        assert self.file
 
         if self.exists():
             raise FileExistsError(f"Meta for {self.name} exists already")
@@ -370,9 +364,9 @@ class TierBase(metaclass=TierMeta):
 
         print("All Done")
 
-    description = MetaAttr()
-    conclusion = MetaAttr()
-    started = MetaAttr(str_to_date, date_to_str)
+    description: MetaAttr[str, str] = MetaAttr()
+    conclusion: MetaAttr[str, str] = MetaAttr()
+    started: MetaAttr[str, datetime.datetime] = MetaAttr(str_to_date, date_to_str)
 
     @cached_prop
     def identifiers(self) -> Tuple[str, ...]:
@@ -438,7 +432,7 @@ class TierBase(metaclass=TierMeta):
             return Path(self.name)
 
     @cached_prop
-    def meta_file(self) -> Path:
+    def meta_file(self) -> Union[Path, None]:
         """
         Path to where meta file for this `Tier` object should be.
 
@@ -522,6 +516,7 @@ class TierBase(metaclass=TierMeta):
         """
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
+        assert self.meta_file
         return self.meta_file.exists()
 
     def get_child(self, id: str) -> TierBase:
@@ -541,7 +536,7 @@ class TierBase(metaclass=TierMeta):
         assert self.child_cls
         return self.child_cls(*self._identifiers, id)
 
-    def serialize(self):
+    def serialize(self) -> MetaDict:
         data = dict(self.meta)
         data["identifiers"] = self.identifiers
         data["name"] = self.name
@@ -632,7 +627,7 @@ class TierBase(metaclass=TierMeta):
         if exclude:
             df = df.drop(exclude, axis="columns")
 
-        return cast(pd.DataFrame, df)
+        return df
 
     @classmethod
     def get_templates(cls) -> List[Path]:
@@ -647,7 +642,7 @@ class TierBase(metaclass=TierMeta):
             if entry.is_file()
         ]
 
-    def render_template(self, template) -> str:
+    def render_template(self, template_path: Path) -> str:
         """
         Render template file passing `self` as `self.short_type`.
 
@@ -663,10 +658,10 @@ class TierBase(metaclass=TierMeta):
         """
         assert env.project
 
-        template = env.project.template_env.get_template(template)
+        template = env.project.template_env.get_template(template_path)
         return template.render(**{self.short_type: self, "tier": self})
 
-    def open_folder(self):
+    def open_folder(self) -> None:
         """
         Open `self.folder` in explorer
 
@@ -679,7 +674,7 @@ class TierBase(metaclass=TierMeta):
         """
         open_file(self.folder)
 
-    def get_highlights(self) -> Union[Dict[str, List[Dict[str, Dict[str, Any]]]], None]:
+    def get_highlights(self) -> Union[HighlightsType, None]:
         """
         Get dictionary of highlights for this `Tier` _instance.
 
@@ -704,14 +699,16 @@ class TierBase(metaclass=TierMeta):
             ...         IPython.display.publish_display_data(**output)
         """
         if self.highlights_file and self.highlights_file.exists():
-            highlights = json.loads(self.highlights_file.read_text())
+            highlights = cast(
+                HighlightsType, json.loads(self.highlights_file.read_text())
+            )
             return highlights
         else:
             return {}
 
     def add_highlight(
-        self, name: str, data: List[Dict[str, Dict[str, Any]]], overwrite: bool = True
-    ):
+        self, name: str, data: HighlightType, overwrite: bool = True
+    ) -> None:
         """
         Add a highlight to `self.highlights_file`.
 
@@ -739,7 +736,7 @@ class TierBase(metaclass=TierMeta):
         highlights[name] = data
         self.highlights_file.write_text(json.dumps(highlights))
 
-    def remove_highlight(self, name: str):
+    def remove_highlight(self, name: str) -> None:
         """
         Remove highlight from highlight file. Performed by calling `get_highlights()`, then deleting the key `name` from
         the dictionary, then re-writing the highlights... if you're interested!
@@ -752,7 +749,7 @@ class TierBase(metaclass=TierMeta):
         del highlights[name]
         self.highlights_file.write_text(json.dumps(highlights))
 
-    def get_cached(self) -> Union[Dict[str, List[Dict[str, Dict[str, Any]]]], None]:
+    def get_cached(self) -> Union[CachedType, None]:
         """
         Retrieve cached output from `self.cache_file`.
 
@@ -765,14 +762,14 @@ class TierBase(metaclass=TierMeta):
             if no `cache_file` exists.
         """
         if self.cache_file and self.cache_file.exists():
-            cache = json.loads(self.cache_file.read_text())
+            cache = cast(CachedType, json.loads(self.cache_file.read_text()))
             return cache
         else:
             return {}
 
     def cache_result(
-        self, name: str, data: List[Dict[str, Dict[str, Any]]], overwrite: bool = True
-    ):
+        self, name: str, data: CacheItemType, overwrite: bool = True
+    ) -> None:
         """
         Cache a result in `self.cache_file`.
 
@@ -803,18 +800,22 @@ class TierBase(metaclass=TierMeta):
         cache[name] = data
         self.cache_file.write_text(json.dumps(cache))
 
-    def remove_cached(self, name):
+    def remove_cached(self, name: str) -> None:
         """
         Remove cached output according to the `name` provided.
         """
         cached = self.get_cached()
+
+        if not cached or not self.cache_file:
+            return
+
         del cached[name]
         self.cache_file.write_text(json.dumps(cached))
 
-    def __truediv__(self, other) -> Path:
-        return self.folder / other
+    def __truediv__(self, other: Any) -> Path:
+        return cast(Path, self.folder / other)
 
-    def __getitem__(self, item) -> TierBase:
+    def __getitem__(self, item: str) -> TierBase:
         """
         Equivalent to `self.get_child(item)`.
         """
@@ -838,7 +839,7 @@ class TierBase(metaclass=TierMeta):
             )
         return iter(())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<{self.__class__.__name__} "{self.name}">'
 
     def _repr_html_(self) -> str:
@@ -848,13 +849,13 @@ class TierBase(metaclass=TierMeta):
             f' target="_blank"><{block}>{html.escape(self.name)}</{block}</a>'
         )
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> TierBase:
         if env.project and item in env.project.rank_map:
             rank = env.project.rank_map[item]
             return env.project.hierarchy[rank](*self.identifiers[:rank])
         raise AttributeError(item)
 
-    def remove_files(self):
+    def remove_files(self) -> None:
         """
         Deletes files associated with a `Tier`
         """

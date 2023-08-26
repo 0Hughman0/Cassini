@@ -1,9 +1,16 @@
-import nbformat
 import re
+from typing import List, Callable, TypeVar
+
+import nbformat
+from nbformat import NotebookNode
+
+CellProcessor = Callable[[NotebookNode], None]
 
 
 class BaseUpdater:
-    def cell_processor(self, f):
+    cell_processors: List[CellProcessor]
+
+    def cell_processor(self, f: CellProcessor):
         self.cell_processors.append(f)
         return f
 
@@ -12,7 +19,9 @@ class V0_1to0_2(BaseUpdater):
     def __init__(self):
         from .. import env
 
-        self.home = env()
+        assert env.project
+
+        self.home = env.project.home
         self.cell_processors = []
 
         @self.cell_processor
