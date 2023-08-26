@@ -2,20 +2,20 @@ from pathlib import Path
 import os
 import html
 
-from typing import Iterator, List, overload
+from typing import Iterator, List, Any, Union, cast, Dict, Optional
 
-import pandas as pd  # type: ignore[import]
+import pandas as pd
 from IPython.display import display
-from ipywidgets import SelectMultiple, Text, HBox, Button  # type: ignore[import]
+from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget  # type: ignore[import]
 
-from ..core import TierBase
+from ..core import TierBase, MetaDict
 from ..accessors import cached_prop, cached_class_prop
 from ..utils import FileMaker
 from ..ipygui import InputSequence, widgetify_html, BaseTierGui, SearchWidget
 from ..environment import env
 
 
-def ignore_dir(name):
+def ignore_dir(name: str) -> bool:
     if name.startswith("."):
         return True
     if name.startswith("_"):
@@ -23,8 +23,8 @@ def ignore_dir(name):
     return False
 
 
-class HomeGui(BaseTierGui):
-    def _get_header_components(self):
+class HomeGui(BaseTierGui["Home"]):
+    def _get_header_components(self) -> Dict[str, DOMWidget]:
         components = dict()
         components["Search"] = lambda: SearchWidget().as_widget()
         child = self.tier.child_cls
@@ -49,30 +49,30 @@ class Home(TierBase):
     gui_cls = HomeGui
 
     @cached_prop
-    def name(self):
+    def name(self) -> str:
         return self.pretty_type
 
     @cached_prop
-    def folder(self):
+    def folder(self) -> Path:
         assert env.project
         assert self.child_cls
         return env.project.project_folder / (self.child_cls.pretty_type + "s")
 
     @cached_prop
-    def file(self):
+    def file(self) -> Path:
         assert env.project
         return env.project.project_folder / f"{self.name}.ipynb"
 
     @cached_prop
-    def highlights_file(self):
+    def highlights_file(self) -> None:
         return None
 
     @cached_prop
-    def meta_file(self):
+    def meta_file(self) -> None:
         return None
 
-    def serialize(self) -> dict:
-        data = {}
+    def serialize(self) -> MetaDict:
+        data: MetaDict = {}
 
         data["identifiers"] = self.name
         data["name"] = self.name
@@ -82,11 +82,12 @@ class Home(TierBase):
 
         return data
 
-    def exists(self):
+    def exists(self) -> bool:
         return self.file.exists()
 
-    def setup_files(self):
+    def setup_files(self, template: Union[Path, None] = None) -> None:
         assert self.child_cls
+        assert self.default_template
 
         with FileMaker() as maker:
             print(f"Creating {self.child_cls.pretty_type} folder")
@@ -108,20 +109,24 @@ class WorkPackage(TierBase):
     Next level down are `Experiment`s.
     """
 
-    name_part_template = "WP{}"
+    @cached_class_prop
+    def name_part_template(cls) -> str:
+        return "WP{}"
 
-    short_type = "wp"
+    @cached_class_prop
+    def short_type(cls) -> str:
+        return "wp"
 
     @property
-    def exps(self):
+    def exps(self) -> List[TierBase]:
         """
         Gets a list of all this `WorkPackage`s experiments.
         """
         return list(self)
 
 
-class ExperimentGui(BaseTierGui):
-    def new_dataset(self):
+class ExperimentGui(BaseTierGui["Experiment"]):
+    def new_dataset(self) -> DOMWidget:
         """
         A handy widget for creating new `DataSets`.
         """
@@ -140,12 +145,12 @@ class ExperimentGui(BaseTierGui):
                         display(widgetify_html(o._repr_html_()))
 
         form = InputSequence(
-            create, Text(description=f"Name:", placeholder="e.g. XRD"), selection
+            create, Text(description="Name:", placeholder="e.g. XRD"), selection
         )
 
         return form.as_widget()
 
-    def _get_header_components(self):
+    def _get_header_components(self) -> Dict[str, DOMWidget]:
         components = super()._get_header_components()
         components["New Data"] = self.new_dataset
         return components
@@ -161,9 +166,13 @@ class Experiment(TierBase):
     Each `Experiment` has a number of samples.
     """
 
-    name_part_template = ".{}"
+    @cached_class_prop
+    def name_part_template(cls) -> str:
+        return ".{}"
 
-    short_type = "exp"
+    @cached_class_prop
+    def short_type(cls) -> str:
+        return "exp"
 
     gui_cls = ExperimentGui
 
@@ -182,7 +191,7 @@ class Experiment(TierBase):
                 techs.append(entry.name)
         return techs
 
-    def setup_technique(self, name):
+    def setup_technique(self, name: str) -> None:
         """
         Convenience method for adding a new technique to this experiment.
 
@@ -201,7 +210,11 @@ class Experiment(TierBase):
 
         print("Done")
 
-    def children_df(self, include=None, exclude=None):
+    def children_df(
+        self,
+        include: Union[List[str], None] = None,
+        exclude: Union[List[str], None] = None,
+    ) -> Union[pd.DataFrame, None]:
         df = super().children_df(include=include, exclude=exclude)
 
         if df is None:
@@ -213,25 +226,25 @@ class Experiment(TierBase):
         return df
 
     @property
-    def smpls(self):
+    def smpls(self) -> List[TierBase]:
         """
         Get a list of this `Experiment`s samples.
         """
         return list(self)
 
 
-class SampleGui(BaseTierGui):
-    def new_child(self):
+class SampleGui(BaseTierGui["Sample"]):
+    def new_child(self) -> DOMWidget:
         def create(name):
             with form.status:
                 o = self.tier[name]
                 o.setup_files()
 
-        form = InputSequence(create, Text(description=f"Name:", placeholder="e.g. XRD"))
+        form = InputSequence(create, Text(description="Name:", placeholder="e.g. XRD"))
 
         return form.as_widget()
 
-    def _build_children(self):
+    def _build_children(self) -> DOMWidget:
         buttons = []
         for dataset in self.tier.datasets:
             b = Button(description=dataset.id)
@@ -246,7 +259,7 @@ class SampleGui(BaseTierGui):
             buttons.append(b)
         return HBox(tuple(buttons))
 
-    def _get_header_components(self):
+    def _get_header_components(self) -> Dict[str, DOMWidget]:
         components = super()._get_header_components()
         return components
 
@@ -264,18 +277,23 @@ class Sample(TierBase):
     A `Sample` id can't start with a number and can't contain `'-'` (dashes), as these confuse the name parser.
     """
 
-    name_part_template = "{}"
-    id_regex = r"([^0-9^-][^-]*)"
+    @cached_class_prop
+    def name_part_template(cls) -> str:
+        return "{}"
+
+    @cached_class_prop
+    def id_regex(cls) -> str:
+        return r"([^0-9^-][^-]*)"
 
     gui_cls = SampleGui
 
     @cached_prop
-    def folder(self):
+    def folder(self) -> Path:
         assert self.parent
         return self.parent.folder
 
     @property
-    def datasets(self) -> list:
+    def datasets(self) -> List[TierBase]:
         """
         Convenient way of getting a list of `DataSet`s this sample has.
         """
@@ -289,7 +307,7 @@ class Sample(TierBase):
                 techs.append(dataset)
         return techs
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[TierBase]:
         return iter(self.datasets)
 
 
@@ -300,78 +318,85 @@ class DataSet(TierBase):
     The final tier, intended to represent a folder containing a collection of files relating to a particular `Sample`.
     """
 
-    short_type = "dset"
-
-    name_part_template = "-{}"
-    id_regex = r"(.+)"
+    @cached_class_prop
+    def short_type(cls) -> str:
+        return "dset"
 
     @cached_class_prop
-    def default_template(cls):
+    def name_part_template(cls) -> str:
+        return "-{}"
+
+    @cached_class_prop
+    def id_regex(cls) -> str:
+        return r"(.+)"
+
+    @cached_class_prop
+    def default_template(cls) -> None:
         return None
 
     @cached_prop
-    def folder(self):
+    def folder(self) -> Path:
         assert self.parent
 
         return self.parent / self.id / self.parent.id
 
     @cached_prop
-    def href(self):
+    def href(self) -> str:
         return (
             html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
             + "/"
         )
 
-    def exists(self):
+    def exists(self) -> bool:
         return self.folder.exists()
 
-    def setup_files(self, template=None):
+    def setup_files(self, template: Union[Path, None] = None) -> None:
         print(f"Creating Folder for Data: {self}")
 
         with FileMaker() as maker:
             maker.mkdir(self.folder.parent, exist_ok=True)
             maker.mkdir(self.folder)
 
-        print(f"Success")
+        print("Success")
 
     @cached_prop
-    def meta_file(self):
+    def meta_file(self) -> None:
         """
         `DataSet`s have no meta.
         """
         return None
 
     @cached_prop
-    def highlights_file(self):
+    def highlights_file(self) -> None:
         """
         `DataSet`s have no highlights.
         """
         return None
 
     @cached_prop
-    def file(self):
+    def file(self) -> None:
         """
         `DataSet`s have no file
         """
         return None
 
     @classmethod
-    def get_templates(cls):
+    def get_templates(cls) -> List[Path]:
         """
         Datasets have no templates.
         """
         return []
 
-    def __truediv__(self, other):
-        return self.folder / other
+    def __truediv__(self, other: Any) -> Path:
+        return cast(Path, self.folder / other)
 
-    def __iter__(self) -> Iterator[os.DirEntry]:
+    def __iter__(self) -> Iterator["os.DirEntry[Any]"]:
         """
         Call `os.scandir` on `self.folder`.
         """
         yield from os.scandir(self.folder)
 
-    def __fspath__(self):
+    def __fspath__(self) -> str:
         return self.folder.__fspath__()
 
 

@@ -1,12 +1,15 @@
-from typing import List, Union
+from typing import List, Union, TYPE_CHECKING
 
 from IPython.display import publish_display_data
 
 from .environment import Project
 from .ipygui import BaseTierGui
 
+if TYPE_CHECKING:
+    from .core import TierBase
 
-class JLGui(BaseTierGui):
+
+class JLGui(BaseTierGui["TierBase"]):
     def __init__(self, tier):
         self.tier = tier
 

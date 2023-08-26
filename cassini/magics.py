@@ -1,13 +1,16 @@
 from IPython.core.magic import register_cell_magic
 from IPython.core.interactiveshell import InteractiveShell
-from IPython.display import Markdown, publish_display_data
+from IPython.display import Markdown, publish_display_data  # type: ignore[attr-defined]
 
 from .environment import env
 
 
-def hlt(line, cell):
+def hlt(line: str, cell: str):
     if not line:
         raise ValueError("Please provide a title for the highlight")
+
+    assert env.o
+
     outputs = []
 
     def capture_display(msg):
@@ -51,8 +54,11 @@ def hlt(line, cell):
 
 
 def cache(line, cell):
+    assert env.o
+
     key = str(hash(cell.strip()))
-    cache = env.o.get_cached().get(key)
+    cached = env.o.get_cached() or {}
+    cache = cached.get(key)
 
     if cache:
         print(f"Using cached version ('{key}')")
@@ -91,6 +97,8 @@ def cache(line, cell):
 
 
 def conc(line, cell):
+    assert env.o
+
     if env.o.conclusion and line != "force":
         raise RuntimeError(
             f"Conclusion for {env.o} already set, use %%conc force to force update"
