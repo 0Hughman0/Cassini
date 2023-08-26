@@ -327,6 +327,8 @@ class TierBase(Protocol):
         ----------
         template : Path
             path to template file to render to create `.ipynb` file.
+        meta : MetaDict
+            Initial meta values to create the tier with.
         """
         if template is None:
             template = self.default_template
