@@ -1,3 +1,4 @@
+cd binder
 python -c "from project import project; project.setup_files()"
 python -c "from project import project; project.setup_files()"
 
