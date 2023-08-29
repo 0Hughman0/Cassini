@@ -1,8 +1,12 @@
 # Cassini
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/0Hughman0/Cassini/HEAD)
+
 A virtual lab-book, using Jupyter Lab and Python. 
 
 ![Screenshot](doc_src/_static/JLGui.png)
+
+
 
 ### Installation
 
