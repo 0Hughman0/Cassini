@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cd binder
+export CASSINI_PROJECT='project.py:project'
+export PYTHONPATH=$PWD
+
+exec "$@"
