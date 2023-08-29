@@ -2,4 +2,6 @@
 
 export CASSINI_PROJECT='project:project'
 
+cd binder
+
 exec "$@"
