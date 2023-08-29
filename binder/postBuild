@@ -1,3 +1,6 @@
 cd binder
+
+mv binder/jupyter_jupyterlab_server_config.py ~/.jupyter/jupyter_jupyterlab_server_config.py
+
 python -c "from project import project; project.setup_files()"
 python -c "from project import project; project.setup_files()"
