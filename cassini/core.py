@@ -21,7 +21,7 @@ from typing import (
     Optional,
     cast,
 )
-from typing_extensions import Protocol, Self
+from typing_extensions import Protocol, Self, deprecated
 
 import pandas as pd
 
@@ -465,6 +465,9 @@ class TierBase(Protocol):
         return self.parent.folder / self._meta_folder_name / (self.name + ".hlts")
 
     @cached_prop
+    @deprecated(
+        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
+    )
     def cache_file(self) -> Union[Path, None]:
         """
         Path to where cache file for this `Tier` object will be.
@@ -756,6 +759,9 @@ class TierBase(Protocol):
         del highlights[name]
         self.highlights_file.write_text(json.dumps(highlights), encoding="utf-8")
 
+    @deprecated(
+        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
+    )
     def get_cached(self) -> Union[CachedType, None]:
         """
         Retrieve cached output from `self.cache_file`.
@@ -774,6 +780,9 @@ class TierBase(Protocol):
         else:
             return {}
 
+    @deprecated(
+        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
+    )
     def cache_result(
         self, name: str, data: CacheItemType, overwrite: bool = True
     ) -> None:
@@ -807,6 +816,9 @@ class TierBase(Protocol):
         cache[name] = data
         self.cache_file.write_text(json.dumps(cache), encoding="utf-8")
 
+    @deprecated(
+        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
+    )
     def remove_cached(self, name: str) -> None:
         """
         Remove cached output according to the `name` provided.
