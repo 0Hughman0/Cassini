@@ -1,12 +1,6 @@
 Quickstart
 ==========
 
-Development work is ongoing to create a complementary JupyterLab GUI for Cassini.
-
-.. image:: _static/JLGui.png
-
-The Github page for the project can be found `here <https://github.com/0Hughman0/jupyter_cassini>`_.
-
 Installation
 -----------
 
@@ -14,12 +8,7 @@ This can all be done via pip::
 
     pip install cassini
 
-Then install the latest version of the jupyterlab extension using::
-    
-    pip install --pre jupyter_cassini_server
-
-As you can see, the jupyterlab extension is still in the pre-release stage and also relies on a small number of pre-release changes to ``cassini`` too,
-so you should expect this to be an bit of an unstable experience.
+Note that this project is still in its alpha stage and so may be unstable.
 
 Setup
 -----
