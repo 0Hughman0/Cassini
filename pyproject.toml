@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8.1"
 pandas = "^1.0"
-ipywidgets = "^7.5"
+ipywidgets = "^8.0"
 jupyterlab = "^4.0.0"
 typing-extensions = "^4.7.1"
 jupyter_cassini_server = "^0.2.0"
