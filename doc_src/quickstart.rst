@@ -33,9 +33,7 @@ We then use ``project.launch()`` to launch our cassini project, but we still wan
     if __name__ == '__main__':
         project.launch()
 
-This would work as a ``project.py``, but we also want to inject the new jupyterlab gui into your project.
-
-To do so we add couple more lines, so the final ``project.py`` looks like::
+To make use of the new JupyterLab gui, we add couple more lines, so the final ``project.py`` looks like::
 
     # project.py
     from cassini import Project, DEFAULT_TIERS
