@@ -1,7 +1,6 @@
 #!/bin/bash
 
 export CASSINI_PROJECT='project:project'
-
-cd binder
+mv binder/jupyter_jupyterlab_server_config.py ~/.jupyter/jupyter_jupyterlab_server_config.py
 
 exec "$@"
