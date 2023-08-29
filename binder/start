@@ -2,5 +2,6 @@
 
 cd binder
 export CASSINI_PROJECT='project.py:project'
+export PYTHONPATH='~/binder'
 
 exec "$@"
