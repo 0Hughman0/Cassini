@@ -1,12 +1,6 @@
 Quickstart
 ==========
 
-Development work is ongoing to create a complementary JupyterLab GUI for Cassini.
-
-.. image:: _static/JLGui.png
-
-The Github page for the project can be found `here <https://github.com/0Hughman0/jupyter_cassini>`_.
-
 Installation
 -----------
 
@@ -14,12 +8,7 @@ This can all be done via pip::
 
     pip install cassini
 
-Then install the latest version of the jupyterlab extension using::
-    
-    pip install --pre jupyter_cassini_server
-
-As you can see, the jupyterlab extension is still in the pre-release stage and also relies on a small number of pre-release changes to ``cassini`` too,
-so you should expect this to be an bit of an unstable experience.
+Note that this project is still in its alpha stage and so may be unstable.
 
 Setup
 -----
@@ -44,9 +33,7 @@ We then use ``project.launch()`` to launch our cassini project, but we still wan
     if __name__ == '__main__':
         project.launch()
 
-This would work as a ``project.py``, but we also want to inject the new jupyterlab gui into your project.
-
-To do so we add couple more lines, so the final ``project.py`` looks like::
+To make use of the new JupyterLab gui, we add couple more lines, so the final ``project.py`` looks like::
 
     # project.py
     from cassini import Project, DEFAULT_TIERS
