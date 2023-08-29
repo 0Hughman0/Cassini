@@ -12,7 +12,7 @@ At the moment a few priorities for the project are:
 
     1. **Improving test coverage** - The test coverage of the codebase is quite low as this project is still in its infancy. Getting a good 'n' proper test suite will help make `cassini` into adulthood and is a great way to get orientated with the codebase!
     
-    2. **CSS/ HTML improvements** - The fancy new Jupyterlab UI (see `codebase orientation <#codebase orientation>`_ still looks a bit ugly and could be vastly improved by users who are have a knack for css and HTML.
+    2. **CSS/ HTML improvements** - The fancy new Jupyterlab UI (see :ref:`codebase orientation <codebase-orientation>` still looks a bit ugly and could be vastly improved by users who are have a knack for css and HTML.
     
     3. **Discussing new feature ideas** - The project is young and its not clear who will use it and for what. If you wish it did xyz, start a discussion - there's a good chance others would like that feature too.
     
@@ -23,6 +23,8 @@ No need to ask for permission to get started... just fork the repo, have a go at
 We run some CI tools to help streamline things. This includes running the test suite, linting, checking formatting and checking test coverage.
 
 As test coverage is a big issue at the moment, please make sure your PR *increases* the test coverage!
+
+.. _codebase-orientation:
 
 Codebase Orientation
 ====================
@@ -82,7 +84,7 @@ And run with::
 jupyter_cassini
 ---------------
 
-The github repo for ``jupyter_cassini`` can be found `here <https://github.com/0Hughman0/jupyter_cassini>`_
+The github repo for ``jupyter_cassini`` can be found `here <https://github.com/0Hughman0/jupyter_cassini>`_. Issues with the JupyterLab UI should be submitted here rather than the Cassini repo.
 
 Get the repo contents with::
 
@@ -121,7 +123,7 @@ Creates a symbolic link between your project directory and your virtual environm
 
 Wew!...
 
-Management of TypeScript is done using JupyterLab's bundled version of Yarn, which is ran using the command `jlpm`.
+Management of TypeScript is done using JupyterLab's bundled version of Yarn, which is ran using the command ``jlpm``.
 
 To build ``jupyter_cassini`` run::
 
@@ -167,7 +169,7 @@ As most users probably won't even know they're interacting with 2 python package
 
 None-the-less, docstrings should be provided to allow others (and you in a couple of months!) to make sense of your code.
 
-Python Docstrings should use the numpy standard.
+Python Docstrings should use the `numpy standard <https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard>`_.
 
 TypeScript docstrings should follow the `TypeDoc standard <https://typedoc.org/guides/tags/>`_
 
