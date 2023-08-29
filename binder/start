@@ -1,5 +1,6 @@
 #!/bin/bash
 
-export CASSINI_PROJECT='binder/project.py:project'
+cd binder
+export CASSINI_PROJECT='project.py:project'
 
 exec "$@"
