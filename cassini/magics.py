@@ -1,3 +1,5 @@
+from typing_extensions import deprecated
+
 from IPython.core.magic import register_cell_magic
 from IPython.core.interactiveshell import InteractiveShell
 from IPython.display import Markdown, publish_display_data  # type: ignore[attr-defined]
@@ -53,6 +55,7 @@ def hlt(line: str, cell: str):
     return None
 
 
+@deprecated("Cache will be removed in future releases. This feature may be written into a separate Cassini extension")
 def cache(line, cell):
     assert env.o
 
