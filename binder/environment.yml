@@ -1,5 +1,8 @@
 name: cassini
 dependencies:
   - python=3.8
-  - cassini
+  - pip
   - matplotlib
+  - pip:
+    - cassini
+
