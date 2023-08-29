@@ -55,7 +55,9 @@ def hlt(line: str, cell: str):
     return None
 
 
-@deprecated("Cache will be removed in future releases. This feature may be written into a separate Cassini extension")
+@deprecated(
+    "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
+)
 def cache(line, cell):
     assert env.o
 
