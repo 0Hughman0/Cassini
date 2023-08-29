@@ -12,7 +12,6 @@ pandas = "^1.0"
 ipywidgets = "^7.5"
 jupyterlab = "^4.0.0"
 typing-extensions = "^4.7.1"
-jupyter_cassini_server = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.4"
