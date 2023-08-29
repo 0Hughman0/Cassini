@@ -179,10 +179,6 @@ class Project:
         """
         return self.project_folder / "templates"
 
-    @soft_prop
-    def caslib_folder(self) -> Path:
-        return self.project_folder / "caslib"
-
     def setup_files(self) -> TierBase:
         """
         Setup files needed for this project.
