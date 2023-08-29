@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cassini"
-version = "0.2.0"
+version = "0.2.1"
 description = "A tool to structure experimental work, data and analysis using Jupyter Lab."
 authors = ["0Hughman0 <rammers2@hotmail.co.uk>"]
 license = "GPL-3.0-only"
@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8.1"
 pandas = "^1.0"
-ipywidgets = "^7.5"
+ipywidgets = "^8.0"
 jupyterlab = "^4.0.0"
 typing-extensions = "^4.7.1"
 jupyter_cassini_server = "^0.2.0"
