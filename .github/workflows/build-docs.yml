@@ -4,7 +4,7 @@ name: Deploy static content to Pages
 on:
   # Runs on pushes targeting the default branch, turns out only master can 
   push:
-    branches: ["master"]
+    branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -37,12 +37,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           curl -sSL https://install.python-poetry.org | python3 -
-      - name: Checkout Master
+      - name: Checkout Main
         uses: actions/checkout@v3
         with:
-          ref: master
+          ref: main
           clean: false
-      - name: Build Master Docs
+      - name: Build Main Docs
         run: |
           poetry install --with docs
           poetry run sphinx-build doc_src docs/latest -D version=latest
