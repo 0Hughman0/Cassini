@@ -23,10 +23,9 @@ jobs:
     - name: check version bumped
       shell: bash
       run: |
-        echo $GITHUB_SHA
-        echo $GITHUB_REF
-        echo ${{ github.base_ref }}
-        CURRENT_VERSION=$(git show origin/${{ github.base_ref }}:pyproject.toml | grep -E ^version)
+        CURRENT_CONTENT=$(git show origin/${{ github.base_ref }}:pyproject.toml)
+        echo $CURRENT_CONTENT
+        CURRENT_VERSION=$(echo $CURRENT_CONTENT | grep -E ^version)
         THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version)
 
         if [[ $CURRENT_VERSION -eq $THIS_VERSION ]]; then
