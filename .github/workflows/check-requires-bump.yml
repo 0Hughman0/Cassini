@@ -1,0 +1,33 @@
+name: Check Requires Bump
+
+on: 
+  pull_request:
+    branches: [ "main", "0.2.x", "0.1.x" ]
+    paths:
+      - 'cassini/*'
+      - 'tests/*'
+      - 'pyproject.toml'
+      
+permissions:
+  contents: read
+
+jobs:
+  check:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    - name: check version bumped
+      shell: bash
+      run: |
+        CURRENT_VERSION=$(git show $GITHUB_SHA:pyproject.toml | grep -E ^version)
+        THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version)
+
+        if [[ $CURRENT_VERSION -eq $THIS_VERSION ]]; then
+          echo "Bump required
+          exit 1
+        
+      
+
+    
