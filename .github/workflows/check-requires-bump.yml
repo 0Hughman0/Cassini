@@ -25,8 +25,8 @@ jobs:
       run: |
         CURRENT_CONTENT=$(git show origin/${{ github.base_ref }}:pyproject.toml)
         echo $CURRENT_CONTENT
-        CURRENT_VERSION=$(echo $CURRENT_CONTENT | grep -E ^version)
-        THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version)
+        CURRENT_VERSION=$(echo $CURRENT_CONTENT | grep -E ^version || true)
+        THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version || true)
 
         if [[ $CURRENT_VERSION -eq $THIS_VERSION ]]; then
           echo "Bump required
