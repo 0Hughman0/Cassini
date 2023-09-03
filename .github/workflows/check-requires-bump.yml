@@ -28,7 +28,7 @@ jobs:
         THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version || true)
         echo "this" $THIS_VERSION
         
-        if [ '$CURRENT_VERSION' == '$THIS_VERSION' ]; then
+        if [[ '$CURRENT_VERSION' == '$THIS_VERSION' ]]; then
           echo "Bump required"
           exit 1
         else
