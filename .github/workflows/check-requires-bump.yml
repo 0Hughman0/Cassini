@@ -1,0 +1,35 @@
+name: Check Requires Bump
+
+on: 
+  pull_request:
+    branches: [ "main", "0.2.x", "0.1.x" ]
+    paths:
+      - 'cassini/*'
+      - 'tests/*'
+      - 'pyproject.toml'
+      
+permissions:
+  contents: read
+
+jobs:
+  check:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: check version bumped
+      shell: bash
+      run: |
+        echo "Detected internal changes, checking version number has been bumped"
+        CURRENT_VERSION=$(git show origin/${{ github.base_ref }}:pyproject.toml | grep -E ^version | grep -Eo \".+\")
+        echo "current" $CURRENT_VERSION
+        THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version | grep -Eo \".+\")
+        echo "this" $THIS_VERSION
+        
+        if [[ $CURRENT_VERSION == $THIS_VERSION ]]; then
+          echo "Versions match but internal changes have been made, bump required"
+          exit 1
+        fi
