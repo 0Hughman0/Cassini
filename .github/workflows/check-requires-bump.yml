@@ -24,11 +24,11 @@ jobs:
       shell: bash
       run: |
         CURRENT_CONTENT=$(git show origin/${{ github.base_ref }}:pyproject.toml)
-        echo $CURRENT_CONTENT
+        # echo content $CURRENT_CONTENT
         CURRENT_VERSION=$(echo $CURRENT_CONTENT | grep -E ^version || true)
-        echo $CURRENT_VERSION
+        echo "current" $CURRENT_VERSION
         THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version || true)
-        echo $THIS_VERSION
+        echo "this" $THIS_VERSION
         
         if [ "$CURRENT_VERSION" == "$THIS_VERSION" ]; then
           echo "Bump required
