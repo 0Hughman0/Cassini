@@ -18,16 +18,18 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: check version bumped
       shell: bash
       run: |
-        CURRENT_VERSION=$(git show $GITHUB_SHA:pyproject.toml | grep -E ^version)
-        THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version)
-
-        if [[ $CURRENT_VERSION -eq $THIS_VERSION ]]; then
-          echo "Bump required
-          exit 1
+        echo "Detected internal changes, checking version number has been bumped"
+        CURRENT_VERSION=$(git show origin/${{ github.base_ref }}:pyproject.toml | grep -E ^version | grep -Eo \".+\")
+        echo "current" $CURRENT_VERSION
+        THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version | grep -Eo \".+\")
+        echo "this" $THIS_VERSION
         
-      
-
-    
+        if [[ $CURRENT_VERSION == $THIS_VERSION ]]; then
+          echo "Versions match but internal changes have been made, bump required"
+          exit 1
+        fi
