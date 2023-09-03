@@ -23,7 +23,8 @@ jobs:
       run: |
         echo $GITHUB_SHA
         echo $GITHUB_REF
-        CURRENT_VERSION=$(git show $GITHUB_SHA:pyproject.toml | grep -E ^version)
+        echo ${{ github.base_ref }}
+        CURRENT_VERSION=$(git show ${{ github.base_ref }}:pyproject.toml | grep -E ^version)
         THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version)
 
         if [[ $CURRENT_VERSION -eq $THIS_VERSION ]]; then
