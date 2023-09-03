@@ -24,9 +24,9 @@ jobs:
       shell: bash
       run: |
         echo "Detected internal changes, checking version number has been bumped"
-        CURRENT_VERSION=$(git show origin/${{ github.base_ref }}:pyproject.toml | grep -E ^version || true)
+        CURRENT_VERSION=$(git show origin/${{ github.base_ref }}:pyproject.toml | grep -E ^version | grep -Eo \".+\")
         echo "current" $CURRENT_VERSION
-        THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version || true)
+        THIS_VERSION=$(git show HEAD:pyproject.toml | grep -E ^version | grep -Eo \".+\")
         echo "this" $THIS_VERSION
         
         if [[ $CURRENT_VERSION == $THIS_VERSION ]]; then
