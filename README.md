@@ -1,5 +1,7 @@
 # Cassini
 
+*Note Cassini is in it's alpha development stage, so things may not work perfectly - tell us about problems so we can fix them!*
+
 A virtual lab-book, using Jupyter Lab and Python. 
 
 Cassini's goal is to help you explore, analyse and organise your data.
@@ -8,13 +10,14 @@ Cassini's goal is to help you explore, analyse and organise your data.
 
 ## Features
 
-* Structures your project into an easy to navigate hierarchy of workpackages, experiments, samples and datasets.
-* Allows retrieval of data by name e.g. `project['WP3.2f-XRD'] / 'XRD_data.csv`.
-* Create new sample, experiment (etc.) notebooks through custom dialogs.
-* Create notebook templates for standardised proceedures.
-* Browse and explore your project through a custom browser, including previewing cell outputs in-browser.
+* **Structures your project** into an easy to navigate hierarchy of workpackages, experiments, samples and datasets.
+* Allows **retrieval of data by name** e.g. `project['WP3.2f-XRD'] / 'XRD_data.csv`.
+* Create new sample, experiment (etc.) notebooks through **custom dialogs**.
+* Create **notebook templates** for standardised proceedures.
+* **Browse and explore** your project through a custom browser, including previewing cell outputs, such as plots in-browser.
+* No magic! Everything is stored in regular **human navigatable folders**, cloud backups etc. work as expected.
 
-Check out the demo/walkthrough binder:
+Check out the demo/walkthrough binder (note this can take a while to load):
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/0Hughman0/Cassini/HEAD?urlpath=lab/tree/Home.ipynb)
 
