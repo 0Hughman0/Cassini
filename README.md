@@ -42,3 +42,9 @@ And launch it:
     > python project.py
 
 Head to [Quickstart](https://0hughman0.github.io/Cassini/latest/quickstart.html) for more info.
+
+## Contributing
+
+Contributing guidelines are found [here](https://0hughman0.github.io/Cassini/latest/contributing.html).
+
+This includes development installation instructions and codebase orientation.
