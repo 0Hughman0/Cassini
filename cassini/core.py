@@ -7,6 +7,7 @@ import os
 import time
 from pathlib import Path
 from collections import defaultdict
+from abc import ABC
 
 from typing import (
     Any,
@@ -21,7 +22,7 @@ from typing import (
     Optional,
     cast,
 )
-from typing_extensions import Protocol, Self, deprecated
+from typing_extensions import Self, deprecated
 
 import pandas as pd
 
@@ -144,7 +145,7 @@ CacheItemType = HighlightType
 CachedType = HighlightsType
 
 
-class TierBase(Protocol):
+class TierBase(ABC):
     """
     Base class for creating Tiers
 

@@ -39,9 +39,11 @@ def hlt(line: str, cell: str):
         publish_display_data({"text/markdown": header})
 
         result = shell.run_cell(cell).result
-        outputs.append(
-            dict(zip(("data", "metadata"), shell.display_formatter.format(result)))
-        )
+
+        if shell.display_formatter:
+            outputs.append(
+                dict(zip(("data", "metadata"), shell.display_formatter.format(result)))
+            )
 
         if annotation:
             publish_display_data({"text/markdown": annotation})
