@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cassini"
-version = "0.2.2a"
+version = "0.2.2"
 description = "A tool to structure experimental work, data and analysis using Jupyter Lab."
 authors = ["0Hughman0 <rammers2@hotmail.co.uk>"]
 license = "GPL-3.0-only"
