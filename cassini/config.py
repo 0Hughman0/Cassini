@@ -8,7 +8,7 @@ SCIFY_DIR = Path(__file__).parent
 @dataclass
 class Config:
     SCIFY_DIR = SCIFY_DIR
-    DATE_FORMAT = "%d/%m/%Y"
+    DATE_FORMAT = "%d-%m-%Y %H:%M:%S.%f"
     META_DIR_TEMPLATE = ".{}s"
 
     DEFAULT_TEMPLATE_DIR = SCIFY_DIR / "defaults" / "templates"
