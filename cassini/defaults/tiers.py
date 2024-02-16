@@ -8,7 +8,7 @@ import pandas as pd
 from IPython.display import display
 from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget  # type: ignore[import]
 
-from ..core import TierBase, MetaDict
+from ..core import NotebookTierBase, FolderTierBase, TierBase, MetaDict
 from ..accessors import cached_prop, cached_class_prop
 from ..utils import FileMaker
 from ..ipygui import InputSequence, widgetify_html, BaseTierGui, SearchWidget
@@ -36,7 +36,7 @@ class HomeGui(BaseTierGui["Home"]):
         return components
 
 
-class Home(TierBase):
+class Home(NotebookTierBase):
     """
     Home `Tier`.
 
@@ -100,7 +100,7 @@ class Home(TierBase):
             print("Success")
 
 
-class WorkPackage(TierBase):
+class WorkPackage(NotebookTierBase):
     """
     WorkPackage Tier.
 
@@ -156,7 +156,7 @@ class ExperimentGui(BaseTierGui["Experiment"]):
         return components
 
 
-class Experiment(TierBase):
+class Experiment(NotebookTierBase):
     """
     Experiment `Tier`.
 
@@ -264,7 +264,7 @@ class SampleGui(BaseTierGui["Sample"]):
         return components
 
 
-class Sample(TierBase):
+class Sample(NotebookTierBase):
     """
     Sample `Tier`.
 
@@ -311,7 +311,7 @@ class Sample(TierBase):
         return iter(self.datasets)
 
 
-class DataSet(TierBase):
+class DataSet(FolderTierBase):
     """
     `DataSet` Tier.
 
@@ -330,10 +330,6 @@ class DataSet(TierBase):
     def id_regex(cls) -> str:
         return r"(.+)"
 
-    @cached_class_prop
-    def default_template(cls) -> None:
-        return None
-
     @cached_prop
     def folder(self) -> Path:
         assert self.parent
@@ -341,51 +337,11 @@ class DataSet(TierBase):
         return self.parent / self.id / self.parent.id
 
     @cached_prop
-    def href(self) -> str:
-        return (
-            html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
-            + "/"
-        )
-
-    def exists(self) -> bool:
-        return self.folder.exists()
-
-    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
-        print(f"Creating Folder for Data: {self}")
-
-        with FileMaker() as maker:
-            maker.mkdir(self.folder.parent, exist_ok=True)
-            maker.mkdir(self.folder)
-
-        print("Success")
-
-    @cached_prop
     def meta_file(self) -> None:
         """
         `DataSet`s have no meta.
         """
         return None
-
-    @cached_prop
-    def highlights_file(self) -> None:
-        """
-        `DataSet`s have no highlights.
-        """
-        return None
-
-    @cached_prop
-    def file(self) -> None:
-        """
-        `DataSet`s have no file
-        """
-        return None
-
-    @classmethod
-    def get_templates(cls) -> List[Path]:
-        """
-        Datasets have no templates.
-        """
-        return []
 
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)

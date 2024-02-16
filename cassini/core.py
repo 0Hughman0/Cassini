@@ -7,7 +7,7 @@ import os
 import time
 from pathlib import Path
 from collections import defaultdict
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from typing import (
     Any,
@@ -253,13 +253,6 @@ class TierBase(ABC):
         return cls.hierarchy[cls.rank + 1]
 
     @cached_class_prop
-    def default_template(cls) -> Union[Path, None]:
-        """
-        Template used to render a tier file by default.
-        """
-        return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
-
-    @cached_class_prop
     def _meta_folder_name(cls) -> str:
         """
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
@@ -313,64 +306,9 @@ class TierBase(ABC):
         if self.meta_file:
             self.meta: Meta = Meta(self.meta_file)
 
-    def setup_files(
-        self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
-    ) -> None:
-        """
-        Create all the files needed for a valid `Tier` object to exist.
-
-        This includes its `.ipynb` file, its parent folder, its own folder and its `Meta` file.
-
-        Will render `.ipynb` file as Jinja template engine, passing to the template `self` with names given by
-        `self.short_type` and `tier`.
-
-        Parameters
-        ----------
-        template : Path
-            path to template file to render to create `.ipynb` file.
-        meta : MetaDict
-            Initial meta values to create the tier with.
-        """
-        if template is None:
-            template = self.default_template
-
-        if meta is None:
-            meta = {}
-
-        assert template
-        assert self.file
-
-        if self.exists():
-            raise FileExistsError(f"Meta for {self.name} exists already")
-
-        if self.file and self.file.exists():
-            raise FileExistsError(f"Notebook for {self.name} exists already")
-
-        print(f"Creating files for {self.name}")
-
-        print(f"Meta ({self.meta_file})")
-
-        with FileMaker() as maker:
-            maker.mkdir(self.meta.file.parent, exist_ok=True)
-            maker.write_file(self.meta.file, json.dumps(meta))
-
-            print("Writing Meta Data")
-
-            self.started = datetime.datetime.now()
-
-            print("Success")
-
-            print(f"Creating Tier File ({self.file}) using template ({template})")
-            maker.write_file(self.file, self.render_template(template))
-            print("Success")
-
-            print(f"Creating Tier Folder ({self.folder})")
-
-            self.folder.mkdir(exist_ok=True)
-
-            print("Success")
-
-        print("All Done")
+    @abstractmethod
+    def setup_files(self):
+        raise NotImplementedError()
 
     description: MetaAttr[str, str] = MetaAttr()
     conclusion: MetaAttr[str, str] = MetaAttr()
@@ -439,8 +377,9 @@ class TierBase(ABC):
         else:  # this is bad
             return Path(self.name)
 
-    @cached_prop
-    def meta_file(self) -> Union[Path, None]:
+    @property
+    @abstractmethod
+    def meta_file(self) -> Path:
         """
         Path to where meta file for this `Tier` object should be.
 
@@ -449,50 +388,7 @@ class TierBase(ABC):
         meta_file : Path
             Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.json')`
         """
-        assert self.parent
-        return self.parent.folder / self._meta_folder_name / (self.name + ".json")
-
-    @cached_prop
-    def highlights_file(self) -> Union[Path, None]:
-        """
-        Path to where highlights file for this `Tier` object should be.
-
-        Returns
-        -------
-        highlights_file : Path
-            Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.hlts')`
-        """
-        assert self.parent
-        return self.parent.folder / self._meta_folder_name / (self.name + ".hlts")
-
-    @cached_prop
-    @deprecated(
-        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
-    )
-    def cache_file(self) -> Union[Path, None]:
-        """
-        Path to where cache file for this `Tier` object will be.
-
-        Returns
-        -------
-        cache_file : Path
-            Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.cache')`
-        """
-        assert self.parent
-        return self.parent.folder / self._meta_folder_name / (self.name + ".cache")
-
-    @cached_prop
-    def file(self) -> Union[Path, None]:
-        """
-        Path to where `.ipynb` file for this `Tier` instance will be.
-
-        Returns
-        -------
-        file : Path
-            Defaults to self.parent.folder / (self.name + '.ipynb').
-        """
-        assert self.parent
-        return self.parent.folder / (self.name + ".ipynb")
+        raise NotImplementedError()
 
     @cached_prop
     def parent(self) -> Union[TierBase, None]:
@@ -502,33 +398,13 @@ class TierBase(ABC):
         if self.parent_cls:
             return self.parent_cls(*self._identifiers[:-1])
         return None
-
-    @cached_prop
-    def href(self) -> Union[str, None]:
-        """
-        href usable in notebook HTML giving link to `self.file`.
-
-        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
-        changing working dir).
-
-        Does do escaping on the HTML, but is maybe pointless!
-
-        Returns
-        -------
-        href : str
-            href usable in notebook HTML.
-        """
-        if self.file:
-            return html.escape(Path(os.path.relpath(self.file, os.getcwd())).as_posix())
-        else:
-            return None
-
+    
+    @abstractmethod
     def exists(self) -> bool:
         """
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
-        assert self.meta_file
-        return self.meta_file.exists()
+        raise NotImplementedError()
 
     def get_child(self, id: str) -> TierBase:
         """
@@ -640,6 +516,226 @@ class TierBase(ABC):
 
         return df
 
+    def open_folder(self) -> None:
+        """
+        Open `self.folder` in explorer
+
+        Notes
+        -----
+        Only works on Windows machines.
+
+        Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
+        the window won't open for you!
+        """
+        open_file(self.folder)
+
+    def __truediv__(self, other: Any) -> Path:
+        return cast(Path, self.folder / other)
+
+    def __getitem__(self, item: str) -> TierBase:
+        """
+        Equivalent to `self.get_child(item)`.
+        """
+        return self.get_child(item)
+
+    def __iter__(self) -> Iterator[Any]:
+        """
+        Iterates over all children (in no particular order). Children are found by looking through the child meta
+        folder.
+
+        Empty iterator if no children.
+        """
+        assert self.child_cls
+
+        child_cls = self.child_cls
+        child_meta_dir = self / child_cls._meta_folder_name
+        if child_meta_dir.exists():
+            return (
+                child_cls(*identifiers)
+                for identifiers in self._iter_meta_dir(child_meta_dir)
+            )
+        return iter(())
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} "{self.name}">'
+
+    def _repr_html_(self) -> str:
+        block = f'h{len(self.identifiers) + 1} style="display: inline;"'
+        return (
+            f'<a href="{self.href}"'
+            f' target="_blank"><{block}>{html.escape(self.name)}</{block}</a>'
+        )
+
+    def __getattr__(self, item: str) -> TierBase:
+        if env.project and item in env.project.rank_map:
+            rank = env.project.rank_map[item]
+            return env.project.hierarchy[rank](*self.identifiers[:rank])
+        raise AttributeError(item)
+
+    @abstractmethod
+    def remove_files(self) -> None:
+        """
+        Deletes files associated with a `Tier`
+        """
+        raise NotImplementedError()
+
+
+class FolderTierBase(TierBase):
+    
+    def exists(self) -> bool:
+        return self.folder.exists()
+
+    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
+        print(f"Creating Folder for Data: {self}")
+
+        with FileMaker() as maker:
+            maker.mkdir(self.folder.parent, exist_ok=True)
+            maker.mkdir(self.folder)
+
+        print("Success")
+
+    @cached_prop
+    def href(self) -> str:
+        return (
+            html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
+            + "/"
+        )
+
+    def remove_files(self) -> None:
+        """
+        Deletes files associated with a `Tier`
+        """
+        if self.meta_file:
+            self.meta_file.unlink()
+
+
+class NotebookTierBase(TierBase):
+
+    @cached_class_prop
+    def default_template(cls) -> Path:
+        """
+        Template used to render a tier file by default.
+        """
+        return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
+
+    def setup_files(
+        self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
+    ) -> None:
+        """
+        Create all the files needed for a valid `Tier` object to exist.
+
+        This includes its `.ipynb` file, its parent folder, its own folder and its `Meta` file.
+
+        Will render `.ipynb` file as Jinja template engine, passing to the template `self` with names given by
+        `self.short_type` and `tier`.
+
+        Parameters
+        ----------
+        template : Path
+            path to template file to render to create `.ipynb` file.
+        meta : MetaDict
+            Initial meta values to create the tier with.
+        """
+        if template is None:
+            template = self.default_template
+
+        if meta is None:
+            meta = {}
+
+        if self.exists():
+            raise FileExistsError(f"Meta for {self.name} exists already")
+
+        if self.file and self.file.exists():
+            raise FileExistsError(f"Notebook for {self.name} exists already")
+
+        print(f"Creating files for {self.name}")
+
+        print(f"Meta ({self.meta_file})")
+
+        with FileMaker() as maker:
+            maker.mkdir(self.meta.file.parent, exist_ok=True)
+            maker.write_file(self.meta.file, json.dumps(meta))
+
+            print("Writing Meta Data")
+
+            self.started = datetime.datetime.now()
+
+            print("Success")
+
+            print(f"Creating Tier File ({self.file}) using template ({template})")
+            maker.write_file(self.file, self.render_template(template))
+            print("Success")
+
+            print(f"Creating Tier Folder ({self.folder})")
+
+            self.folder.mkdir(exist_ok=True)
+
+            print("Success")
+
+        print("All Done")
+
+    @cached_prop
+    def meta_file(self) -> Path:
+        """
+        Path to where meta file for this `Tier` object should be.
+
+        Returns
+        -------
+        meta_file : Path
+            Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.json')`
+        """
+        assert self.parent
+        return self.parent.folder / self._meta_folder_name / (self.name + ".json")
+
+    @cached_prop
+    def highlights_file(self) -> Path:
+        """
+        Path to where highlights file for this `Tier` object should be.
+
+        Returns
+        -------
+        highlights_file : Path
+            Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.hlts')`
+        """
+        assert self.parent
+        return self.parent.folder / self._meta_folder_name / (self.name + ".hlts")
+
+    @cached_prop
+    def file(self) -> Path:
+        """
+        Path to where `.ipynb` file for this `Tier` instance will be.
+
+        Returns
+        -------
+        file : Path
+            Defaults to self.parent.folder / (self.name + '.ipynb').
+        """
+        assert self.parent
+        return self.parent.folder / (self.name + ".ipynb")
+    
+    @cached_prop
+    def href(self) -> str:
+        """
+        href usable in notebook HTML giving link to `self.file`.
+
+        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
+        changing working dir).
+
+        Does do escaping on the HTML, but is maybe pointless!
+
+        Returns
+        -------
+        href : str
+            href usable in notebook HTML.
+        """
+        return html.escape(Path(os.path.relpath(self.file, os.getcwd())).as_posix())
+        
+    def exists(self) -> bool:
+        """
+        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
+        """
+        return self.meta_file.exists()
+    
     @classmethod
     def get_templates(cls) -> List[Path]:
         """
@@ -671,19 +767,6 @@ class TierBase(ABC):
 
         template = env.project.template_env.get_template(template_path)
         return template.render(**{self.short_type: self, "tier": self})
-
-    def open_folder(self) -> None:
-        """
-        Open `self.folder` in explorer
-
-        Notes
-        -----
-        Only works on Windows machines.
-
-        Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
-        the window won't open for you!
-        """
-        open_file(self.folder)
 
     def get_highlights(self) -> Union[HighlightsType, None]:
         """
@@ -759,121 +842,6 @@ class TierBase(ABC):
 
         del highlights[name]
         self.highlights_file.write_text(json.dumps(highlights), encoding="utf-8")
-
-    @deprecated(
-        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
-    )
-    def get_cached(self) -> Union[CachedType, None]:
-        """
-        Retrieve cached output from `self.cache_file`.
-
-        Keys are a hash of text from cell that created this output.
-
-        Returns
-        -------
-        cached : dict
-            dictionary with all the cached outputs. In the same form as `self.get_highlights()`. Returns an empty dict
-            if no `cache_file` exists.
-        """
-        if self.cache_file and self.cache_file.exists():
-            cache = cast(CachedType, json.loads(self.cache_file.read_text()))
-            return cache
-        else:
-            return {}
-
-    @deprecated(
-        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
-    )
-    def cache_result(
-        self, name: str, data: CacheItemType, overwrite: bool = True
-    ) -> None:
-        """
-        Cache a result in `self.cache_file`.
-
-        This is usually done behind the scenes using the `%%cache` magic.
-
-        Parameters
-        ----------
-        name : str
-            name used as key in JSON for this cached result. When using `%%cache` this is a hash of the cell text
-        data : dict
-            list of data and metadata that can be passed to `IPython.display.publish_display_data` to render.
-        overwrite : bool
-            If `False` will raise an exception if a cached result of the same `name` exists. Default is `True`
-        """
-        if not self.cache_file:
-            return
-
-        cache = self.get_cached()
-
-        if cache:
-            cache = cache.copy()
-        else:
-            return
-
-        if not overwrite and name in cache:
-            raise KeyError("Attempting to overwrite existing meta value")
-
-        cache[name] = data
-        self.cache_file.write_text(json.dumps(cache), encoding="utf-8")
-
-    @deprecated(
-        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
-    )
-    def remove_cached(self, name: str) -> None:
-        """
-        Remove cached output according to the `name` provided.
-        """
-        cached = self.get_cached()
-
-        if not cached or not self.cache_file:
-            return
-
-        del cached[name]
-        self.cache_file.write_text(json.dumps(cached), encoding="utf-8")
-
-    def __truediv__(self, other: Any) -> Path:
-        return cast(Path, self.folder / other)
-
-    def __getitem__(self, item: str) -> TierBase:
-        """
-        Equivalent to `self.get_child(item)`.
-        """
-        return self.get_child(item)
-
-    def __iter__(self) -> Iterator[Any]:
-        """
-        Iterates over all children (in no particular order). Children are found by looking through the child meta
-        folder.
-
-        Empty iterator if no children.
-        """
-        assert self.child_cls
-
-        child_cls = self.child_cls
-        child_meta_dir = self / child_cls._meta_folder_name
-        if child_meta_dir.exists():
-            return (
-                child_cls(*identifiers)
-                for identifiers in self._iter_meta_dir(child_meta_dir)
-            )
-        return iter(())
-
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} "{self.name}">'
-
-    def _repr_html_(self) -> str:
-        block = f'h{len(self.identifiers) + 1} style="display: inline;"'
-        return (
-            f'<a href="{self.href}"'
-            f' target="_blank"><{block}>{html.escape(self.name)}</{block}</a>'
-        )
-
-    def __getattr__(self, item: str) -> TierBase:
-        if env.project and item in env.project.rank_map:
-            rank = env.project.rank_map[item]
-            return env.project.hierarchy[rank](*self.identifiers[:rank])
-        raise AttributeError(item)
 
     def remove_files(self) -> None:
         """
