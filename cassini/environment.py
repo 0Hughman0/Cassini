@@ -198,8 +198,9 @@ class Project:
             print("Success")
 
             for tier_cls in self.hierarchy:
-                if tier_cls.default_template is None:
+                if not hasattr(tier_cls, 'default_template'):
                     continue
+                
                 maker.mkdir(self.template_folder / tier_cls.pretty_type)
                 print("Copying over default template")
                 maker.copy_file(
