@@ -65,10 +65,10 @@ jobs:
     - name: get jupyter_cassini version
       run: |
         poetry version -s
-        poetry version -s | grep -Eo "[0-9]+\.[0-9]+"
-        
-        echo "CASSINI_MINOR_VERSION=$(poetry version -s | grep -Eo [0-9]+\.[0-9]+).x" >> "$GITHUB_ENV"
+        CURRENT_VERSION=$(poetry version -s | grep -Eo "[0-9]+\.[0-9]+")
+        CASSINI_MINOR_VERSION="$CURRENT_VERSION.x"
         echo "$CASSINI_MINOR_VERSION"
+        echo "CASSINI_MINOR_VERSION=$CASSINI_MINOR_VERSION" >> "$GITHUB_ENV"
     - uses: actions/checkout@v3
       with:
         repository: 0Hughman0/jupyter_cassini        
