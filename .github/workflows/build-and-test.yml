@@ -8,6 +8,7 @@ on:
     branches: [ "main", "*.*.*", "*.*.*-*" ]
   pull_request:
     branches: [ "main", "*.*.*", "*.*.*-*" ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -47,3 +48,49 @@ jobs:
       uses: codecov/codecov-action@v3
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  
+  compat:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout cassini
+      uses: actions/checkout@v3
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.8"
+    - name: setup pip/ poetry
+      run: |
+        python -m pip install --upgrade pip
+        curl -sSL https://install.python-poetry.org | python3 -
+    - name: get jupyter_cassini version
+      run: |
+        poetry version -s
+        CURRENT_VERSION=$(poetry version -s | grep -Eo "[0-9]+\.[0-9]+")
+        CASSINI_MINOR_VERSION="$CURRENT_VERSION.x"
+        echo "$CASSINI_MINOR_VERSION"
+        echo "CASSINI_MINOR_VERSION=$CASSINI_MINOR_VERSION" >> "$GITHUB_ENV"
+    - uses: actions/checkout@v3
+      with:
+        repository: 0Hughman0/jupyter_cassini        
+        path: jupyter_cassini
+        ref: ${{ env.CASSINI_MINOR_VERSION }}
+    - name: check it's there
+      run: |
+        export INSTALL_DIR="$(pwd)"
+        echo "$INSTALL_DIR"
+        ls -R
+    - name: Install jupyter_cassini
+      run: |
+        cd jupyter_cassini
+        python -m pip install -U "jupyterlab>=4.0.0,<5"
+        python -m pip install .[test]
+    - name: Install cassini
+      run: |
+        cd "$INSTALL_DIR"
+        poetry build
+        pip install dist/*.whl --force-reinstall
+    - name: run jupyter_cassini tests
+      run: |
+        cd jupyter_cassini
+        pip show cassini
+        pytest -vv jupyter_cassini_server
