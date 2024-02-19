@@ -64,13 +64,13 @@ jobs:
         curl -sSL https://install.python-poetry.org | python3 -
     - name: get jupyter_cassini version
       run: |
-        echo "$(poetry version -s | grep -E \d+\.\d+).x" >> "$CASSINI_MINOR_VERSION"
+        echo "CASSINI_MINOR_VERSION=$(poetry version -s | grep -E \d+\.\d+).x" >> "$GITHUB_ENV"
         echo "$CASSINI_MINOR_VERSION"
     - uses: actions/checkout@v3
       with:
         repository: 0Hughman0/jupyter_cassini        
         path: jupyter_cassini
-        ref: "$CASSINI_MINOR_VERSION"
+        ref: ${{ env.CASSINI_MINOR_VERSION }}
     - name: check it's there
       run: |
         export INSTALL_DIR="$(pwd)"
