@@ -59,7 +59,10 @@ jobs:
         repository: 0Hughman0/jupyter_cassini        
         path: jupyter_cassini
     - name: check it's there
-      run: ls -R
+      run: |
+        INSTALL_DIR = $(pwd)
+        echo $INSTALL_DIR
+        ls -R
     - name: Set up Python 3.8
       uses: actions/setup-python@v3
       with:
@@ -75,7 +78,7 @@ jobs:
         python -m pip install .[test]
     - name: Install cassini
       run: |
-        cd ~/cassini
+        cd $INSTALL_DIR
         poetry install
     - name: run jupyter_cassini tests
       run: |
