@@ -55,7 +55,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/checkout@v3
       with:
-        repository: jupyter_cassini        
+        repository: 0Hughman0/jupyter_cassini        
         path: jupyter_cassini
     - name: check it's there
       run: ls -R
