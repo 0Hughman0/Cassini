@@ -65,7 +65,7 @@ jobs:
     - name: get jupyter_cassini version
       run: |
         poetry version -s
-        poetry version -s | grep -E \d+\.\d+
+        poetry version -s | grep -Eo "[0-9]+\.[0-9]+"
         
         echo "CASSINI_MINOR_VERSION=$(poetry version -s | grep -E \d+\.\d+).x" >> "$GITHUB_ENV"
         echo "$CASSINI_MINOR_VERSION"
