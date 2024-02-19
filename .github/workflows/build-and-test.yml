@@ -75,7 +75,7 @@ jobs:
         python -m pip install .[test]
     - name: Install cassini
       run: |
-        cd ~
+        cd ~/cassini
         poetry install
     - name: run jupyter_cassini tests
       run: |
