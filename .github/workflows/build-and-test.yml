@@ -60,7 +60,7 @@ jobs:
         path: jupyter_cassini
     - name: check it's there
       run: |
-        INSTALL_DIR = "$(pwd)"
+        export INSTALL_DIR="$(pwd)"
         echo "$INSTALL_DIR"
         ls -R
     - name: Set up Python 3.8
