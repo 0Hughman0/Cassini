@@ -80,7 +80,7 @@ jobs:
       run: |
         cd "$INSTALL_DIR"
         poetry build
-        pip install dist/*.whl
+        pip install dist/*.whl --force-reinstall
     - name: run jupyter_cassini tests
       run: |
         cd jupyter_cassini
