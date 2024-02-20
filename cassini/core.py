@@ -22,7 +22,7 @@ from typing import (
     Optional,
     cast,
 )
-from typing_extensions import Self, deprecated
+from typing_extensions import Self
 
 import pandas as pd
 
@@ -252,13 +252,6 @@ class TierBase(ABC):
             return None
         return cls.hierarchy[cls.rank + 1]
 
-    @cached_class_prop
-    def _meta_folder_name(cls) -> str:
-        """
-        Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
-        """
-        return config.META_DIR_TEMPLATE.format(cls.short_type)
-
     def __new__(cls, *args: str, **kwargs: Dict[str, Any]) -> TierBase:
         obj = cls.cache.get(args)
         if obj:
@@ -278,16 +271,8 @@ class TierBase(ABC):
             )
         return env.project.parse_name(name)
 
-    @classmethod
-    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
-        for meta_file in os.scandir(path):
-            if not meta_file.is_file() or not meta_file.name.endswith(".json"):
-                continue
-            yield cls.parse_name(meta_file.name[:-5])
-
     _identifiers: Tuple[str, ...]
     gui: BaseTierGui[Self]
-    meta: Meta
 
     def __init__(self: Self, *args: str):
         self._identifiers = tuple(filter(None, args))
@@ -302,9 +287,6 @@ class TierBase(ABC):
             raise ValueError(
                 f"Invalid identifiers - {self._identifiers}, resulting name ('{self.name}') not in a parsable form "
             )
-
-        if self.meta_file:
-            self.meta: Meta = Meta(self.meta_file)
 
     @abstractmethod
     def setup_files(self):
@@ -376,19 +358,6 @@ class TierBase(ABC):
             return self.parent.folder / self.name
         else:  # this is bad
             return Path(self.name)
-
-    @property
-    @abstractmethod
-    def meta_file(self) -> Path:
-        """
-        Path to where meta file for this `Tier` object should be.
-
-        Returns
-        -------
-        meta_file : Path
-            Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.json')`
-        """
-        raise NotImplementedError()
 
     @cached_prop
     def parent(self) -> Union[TierBase, None]:
@@ -538,6 +507,7 @@ class TierBase(ABC):
         """
         return self.get_child(item)
 
+    @abstractmethod
     def __iter__(self) -> Iterator[Any]:
         """
         Iterates over all children (in no particular order). Children are found by looking through the child meta
@@ -545,16 +515,7 @@ class TierBase(ABC):
 
         Empty iterator if no children.
         """
-        assert self.child_cls
-
-        child_cls = self.child_cls
-        child_meta_dir = self / child_cls._meta_folder_name
-        if child_meta_dir.exists():
-            return (
-                child_cls(*identifiers)
-                for identifiers in self._iter_meta_dir(child_meta_dir)
-            )
-        return iter(())
+        raise NotImplementedError()
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} "{self.name}">'
@@ -605,11 +566,34 @@ class FolderTierBase(TierBase):
         """
         Deletes files associated with a `Tier`
         """
-        if self.meta_file:
-            self.meta_file.unlink()
+        pass
 
 
 class NotebookTierBase(TierBase):
+
+    meta: Union[Meta, None]
+
+    @cached_class_prop
+    def _meta_folder_name(cls) -> str:
+        """
+        Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
+        """
+        return config.META_DIR_TEMPLATE.format(cls.short_type)
+    
+    @classmethod
+    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
+        for meta_file in os.scandir(path):
+            if not meta_file.is_file() or not meta_file.name.endswith(".json"):
+                continue
+            yield cls.parse_name(meta_file.name[:-5])
+    
+    @cached_class_prop
+    def parent_cls(cls) -> Type[TierBase]:
+        """
+        `Tier` below this `Tier`, `None` if doesn't have one
+        """
+        assert env.project
+        return cls.hierarchy[cls.rank - 1]
 
     @cached_class_prop
     def default_template(cls) -> Path:
@@ -617,6 +601,12 @@ class NotebookTierBase(TierBase):
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
+    
+    def __init__(self: Self, *args: str):
+        super().__init__(*args)
+        
+        if self.meta_file:
+            self.meta: Meta = Meta(self.meta_file)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -642,25 +632,26 @@ class NotebookTierBase(TierBase):
         if meta is None:
             meta = {}
 
-        if self.exists():
-            raise FileExistsError(f"Meta for {self.name} exists already")
-
         if self.file and self.file.exists():
             raise FileExistsError(f"Notebook for {self.name} exists already")
+        
+        if self.meta_file and self.meta_file.exists():
+            raise FileExistsError(f"Meta for {self.name} exists already")
 
         print(f"Creating files for {self.name}")
 
         print(f"Meta ({self.meta_file})")
 
         with FileMaker() as maker:
-            maker.mkdir(self.meta.file.parent, exist_ok=True)
-            maker.write_file(self.meta.file, json.dumps(meta))
+            if self.meta_file:
+                maker.mkdir(self.meta_file.parent, exist_ok=True)
+                maker.write_file(self.meta_file, json.dumps(meta))
 
-            print("Writing Meta Data")
+                print("Writing Meta Data")
 
-            self.started = datetime.datetime.now()
+                self.started = datetime.datetime.now()
 
-            print("Success")
+                print("Success")
 
             print(f"Creating Tier File ({self.file}) using template ({template})")
             maker.write_file(self.file, self.render_template(template))
@@ -675,7 +666,7 @@ class NotebookTierBase(TierBase):
         print("All Done")
 
     @cached_prop
-    def meta_file(self) -> Path:
+    def meta_file(self) -> Union[Path, None]:
         """
         Path to where meta file for this `Tier` object should be.
 
@@ -734,7 +725,7 @@ class NotebookTierBase(TierBase):
         """
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
-        return self.meta_file.exists()
+        return bool(self.file.exists() and self.meta_file and self.meta_file.exists())
     
     @classmethod
     def get_templates(cls) -> List[Path]:
@@ -852,3 +843,72 @@ class NotebookTierBase(TierBase):
 
         if self.meta_file:
             self.meta_file.unlink()
+
+    def __iter__(self) -> Iterator[Any]:
+        """
+        Iterates over all children (in no particular order). Children are found by looking through the child meta
+        folder.
+
+        Empty iterator if no children.
+        """
+        assert self.child_cls
+
+        child_cls = self.child_cls
+        child_meta_dir = self / child_cls._meta_folder_name
+        if child_meta_dir.exists():
+            return (
+                child_cls(*identifiers)
+                for identifiers in self._iter_meta_dir(child_meta_dir)
+            )
+        return iter(())
+
+
+class HomeTierBase(NotebookTierBase):
+
+    @cached_class_prop
+    def child_cls(cls) -> Type[TierBase]:
+        """
+        `Tier` below this `Tier`, `None` if doesn't have one
+        """
+        assert env.project
+        return cls.hierarchy[cls.rank + 1]
+
+    @cached_prop
+    def name(self) -> str:
+        return self.pretty_type
+
+    @cached_prop
+    def folder(self) -> Path:
+        assert env.project
+        return env.project.project_folder / (self.child_cls.pretty_type + "s")
+
+    @cached_prop
+    def file(self) -> Path:
+        assert env.project
+        return env.project.project_folder / f"{self.name}.ipynb"
+
+    @cached_prop
+    def meta_file(self) -> None:
+        return None
+
+    def serialize(self) -> MetaDict:
+        data: MetaDict = {}
+
+        data["identifiers"] = self.name
+        data["name"] = self.name
+        data["file"] = str(self.file)
+        data["parents"] = []
+        data["children"] = [child.name for child in self]
+
+        return data
+
+    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
+        assert self.child_cls
+        assert self.default_template
+        
+        with FileMaker() as maker:
+            print(f"Creating {self.child_cls.pretty_type} folder")
+            maker.mkdir(self.folder)
+            print("Success")
+
+        super().setup_files(template=template, meta=None)
