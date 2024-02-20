@@ -144,7 +144,9 @@ def test_datasets(mk_project):
     dataset = smpl1['Stuff']
     dataset.setup_files()
 
-    assert dataset.file is None
+    with pytest.raises(AttributeError):
+        assert dataset.file is None
+    
     assert dataset.child_cls is None
 
     mock_file = dataset / 'nothing.txt'

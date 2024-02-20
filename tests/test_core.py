@@ -1,6 +1,6 @@
 import pytest # type: ignore[import]
 
-from cassini import TierBase, Home, Project
+from cassini import TierBase, NotebookTierBase, Home, Project
 from cassini.accessors import _CachedProp
 
 
@@ -8,7 +8,7 @@ def test_project(tmp_path):
     class First(Home):
         pass
 
-    class Second(TierBase):
+    class Second(NotebookTierBase):
         pass
 
     project = Project([First, Second], tmp_path)
@@ -38,7 +38,7 @@ def test_project(tmp_path):
 def patch_project(monkeypatch, tmp_path):
     Project._instance = None
 
-    class Tier(TierBase):
+    class Tier(NotebookTierBase):
         pass
 
     project = Project([Home, Tier], tmp_path)
@@ -96,7 +96,6 @@ def test_tier_attrs(patch_project):
     assert tier.folder == project.project_folder / 'Tiers' / 'Tier1'
     assert tier.meta_file == project.project_folder / 'Tiers' / '.trs' / 'Tier1.json'
     assert tier.highlights_file == project.project_folder / 'Tiers' / '.trs' / 'Tier1.hlts'
-    assert tier.cache_file == project.project_folder / 'Tiers' / '.trs' / 'Tier1.cache'
     assert tier.file == project.project_folder / 'Tiers' / 'Tier1.ipynb'
 
     assert tier.parent == Home()
