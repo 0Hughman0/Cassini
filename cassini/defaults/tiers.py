@@ -92,6 +92,7 @@ class Home(FolderTierBase):
 
         with FileMaker() as maker:
             print(f"Creating Tier File ({self.file})")
+            # TODO: look at this, is this ok?
             maker.write_file(self.file, (config.DEFAULT_TEMPLATE_DIR / 'Home.ipynb').read_text())
             print("Success")
 

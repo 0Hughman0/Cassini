@@ -10,7 +10,7 @@ def mk_project(tmp_path):
     class MyHome(Home):
         pass
 
-    class Second(FolderTierBase):
+    class Second(NotebookTierBase):
         pass
 
     class Third(NotebookTierBase):

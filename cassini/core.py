@@ -570,6 +570,8 @@ class FolderTierBase(TierABC):
     @classmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[FolderTierBase]:
         # TODO: shouldn't project also handle this?
+        if not parent.folder.exists():
+            return 
         
         for folder in os.scandir(parent.folder):
             if not folder.is_dir():
@@ -666,6 +668,9 @@ class NotebookTierBase(FolderTierBase):
     def iter_siblings(cls, parent):
         meta_folder = parent.folder / config.META_DIR_TEMPLATE.format(cls.short_type)
 
+        if not meta_folder.exists():
+            return
+
         for meta_file in os.scandir(meta_folder):
             if not meta_file.is_file() or not meta_file.name.endswith(".json"):
                 continue
@@ -737,7 +742,7 @@ class NotebookTierBase(FolderTierBase):
         """
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
-        return bool(self.file and self.folder.exists())
+        return bool(self.file and self.folder.exists() and self.meta_file.exists())
 
     description: MetaAttr[str, str] = MetaAttr()
     conclusion: MetaAttr[str, str] = MetaAttr()

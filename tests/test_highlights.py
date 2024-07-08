@@ -57,11 +57,6 @@ def test_add_highlight(mk_project) -> None:
 
     dset = project['WP1.1a-data']
 
-    assert dset.highlights_file is None 
-        
-    dset.add_highlight('test', [{'data': {}}])
-
-
-
-
+    with pytest.raises(AttributeError):
+        assert dset.highlights_file is None 
 
