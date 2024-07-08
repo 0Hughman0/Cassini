@@ -106,6 +106,7 @@ class _SoftProp(Generic[T, V]):
 
     def __init__(self, func: Callable[[T], V]):
         self.func = func
+        self.__wrapped__ = func
 
     @overload
     def __get__(self, instance: None, owner: Type[T]) -> Self:
@@ -138,6 +139,8 @@ class _CachedProp(Generic[T, V]):
     def __init__(self, func: Callable[[T], V]):
         self.func = func
         self.cache: Dict[T, V] = {}
+        
+        self.__wrapped__ = func
 
     @overload
     def __get__(self, instance: None, owner: Type[T]) -> Self:
@@ -161,6 +164,11 @@ class _CachedProp(Generic[T, V]):
 
     def __set__(self, instance: Optional[T], value: Any) -> None:
         raise AttributeError("Trying to set a cached property - naughty!")
+    
+    @property
+    def __isabstractmethod__(self):
+        return getattr(self.func, '__isabstractmethod__', False)
+
 
 
 def cached_prop(wrapped: Callable[[Any], V]) -> V:
@@ -183,6 +191,8 @@ class _CachedClassProp(Generic[T, V]):
         self.func = func
         self.cache: Dict[Type[T], V] = {}
 
+        self.__wrapped__ = func
+
     def __get__(self, instance: T, owner: Type[T]) -> V:
         if owner in self.cache:
             return self.cache[owner]
@@ -194,6 +204,10 @@ class _CachedClassProp(Generic[T, V]):
 
     def __set__(self, instance: T, value: Any) -> Any:
         raise AttributeError("Trying to set a cached class property - naughty!")
+
+    @property
+    def __isabstractmethod__(self):
+        return getattr(self.func, '__isabstractmethod__', False)
 
 
 def cached_class_prop(wrapped: Callable[[Any], V]) -> V:

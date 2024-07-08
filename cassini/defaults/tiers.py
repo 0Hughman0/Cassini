@@ -8,11 +8,12 @@ import pandas as pd
 from IPython.display import display
 from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget  # type: ignore[import]
 
-from ..core import TierABC, NotebookTierABC, MetaDict
+from ..core import TierABC, FolderTierBase, NotebookTierBase, MetaDict
 from ..accessors import cached_prop, cached_class_prop
 from ..utils import FileMaker
 from ..ipygui import InputSequence, widgetify_html, BaseTierGui, SearchWidget
 from ..environment import env
+from ..config import config
 
 
 def ignore_dir(name: str) -> bool:
@@ -36,7 +37,7 @@ class HomeGui(BaseTierGui["Home"]):
         return components
 
 
-class Home(TierABC):
+class Home(FolderTierBase):
     """
     Home `Tier`.
 
@@ -47,7 +48,14 @@ class Home(TierABC):
     """
 
     gui_cls = HomeGui
-    name = "Home"
+
+    @cached_prop
+    def name(self) -> str:
+        return self.pretty_type
+
+    @classmethod
+    def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
+        yield env.project.home
 
     @cached_prop
     def folder(self) -> Path:
@@ -72,12 +80,11 @@ class Home(TierABC):
         return data
 
     def exists(self) -> bool:
-        return self.file.exists()
+        return bool(self.folder and self.file.exists())
 
     def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
         assert self.child_cls
-        assert self.default_template
-
+    
         with FileMaker() as maker:
             print(f"Creating {self.child_cls.pretty_type} folder")
             maker.mkdir(self.folder)
@@ -85,11 +92,14 @@ class Home(TierABC):
 
         with FileMaker() as maker:
             print(f"Creating Tier File ({self.file})")
-            maker.write_file(self.file, self.render_template(self.default_template))
+            maker.write_file(self.file, (config.DEFAULT_TEMPLATE_DIR / 'Home.ipynb').read_text())
             print("Success")
 
+    def remove_files(self) -> None:
+        self.file.unlink()
 
-class WorkPackage(NotebookTierABC):
+
+class WorkPackage(NotebookTierBase):
     """
     WorkPackage Tier.
 
@@ -140,7 +150,7 @@ class ExperimentGui(BaseTierGui["Experiment"]):
         return components
 
 
-class Experiment(NotebookTierABC):
+class Experiment(NotebookTierBase):
     """
     Experiment `Tier`.
 
@@ -243,7 +253,7 @@ class SampleGui(BaseTierGui["Sample"]):
         return components
 
 
-class Sample(NotebookTierABC):
+class Sample(NotebookTierBase):
     """
     Sample `Tier`.
 
@@ -286,7 +296,7 @@ class Sample(NotebookTierABC):
         return iter(self.datasets)
 
 
-class DataSet(TierABC):
+class DataSet(FolderTierBase):
     """
     `DataSet` Tier.
 

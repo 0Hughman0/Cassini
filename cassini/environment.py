@@ -21,7 +21,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
-    from .core import TierABC, NotebookTierABC
+    from .core import TierABC, NotebookTierBase
 
 import jinja2
 
@@ -198,9 +198,9 @@ class Project:
             print("Success")
 
             for tier_cls in self.hierarchy:
-                if not isinstance(tier_cls, NotebookTierABC):
+                if not hasattr(tier_cls, 'default_template'):
                     continue
-                
+
                 maker.mkdir(self.template_folder / tier_cls.pretty_type)
                 print("Copying over default template")
                 maker.copy_file(
@@ -315,7 +315,7 @@ class Project:
             match = re.search(pattern, name)
             if match and match.start(0) == 0:
                 ids.append(match.group(1))
-                name = name[match.end(0) :]
+                name = name[match.end(0):]
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!

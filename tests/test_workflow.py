@@ -1,6 +1,6 @@
 import pytest # type: ignore[import]
 
-from cassini import TierABC, Home, Project
+from cassini import FolderTierBase, NotebookTierBase, Home, Project
 
 
 @pytest.fixture
@@ -10,10 +10,10 @@ def mk_project(tmp_path):
     class MyHome(Home):
         pass
 
-    class Second(TierABC):
+    class Second(FolderTierBase):
         pass
 
-    class Third(TierABC):
+    class Third(NotebookTierBase):
         pass
 
     project = Project([MyHome, Second, Third], tmp_path)

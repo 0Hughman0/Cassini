@@ -189,8 +189,8 @@ class TierABC(ABC):
 
     gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
 
-    @deprecated("Switching functionality to env.project later")
     @cached_class_prop
+    @deprecated("Switching functionality to env.project later")
     def hierarchy(cls) -> List[Type[TierABC]]:
         """
         Gets the hierarchy from `env.project`.
@@ -200,15 +200,13 @@ class TierABC(ABC):
         else:
             return []
 
-    @abstractmethod
     @cached_class_prop
     def pretty_type(cls) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
-        pass
+        return cast(str, cls.__name__)
 
-    @abstractmethod
     @cached_class_prop
     def short_type(cls) -> str:
         """
@@ -216,15 +214,14 @@ class TierABC(ABC):
 
         Default, take pretty type, make lowercase and remove vowels.
         """
-        pass
-
-    @abstractmethod
+        return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys("aeiou")))
+    
     @cached_class_prop
     def name_part_template(cls) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
-        pass
+        return cls.pretty_type + "{}"
 
     @cached_class_prop
     def name_part_regex(cls) -> str:
@@ -259,6 +256,12 @@ class TierABC(ABC):
         if cls.rank is None or cls.rank >= (len(cls.hierarchy) - 1):
             return None
         return cls.hierarchy[cls.rank + 1]
+    
+    @classmethod
+    @abstractmethod
+    def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
+        """"""
+        pass
 
     def __new__(cls, *args: str, **kwargs: Dict[str, Any]) -> TierABC:
         obj = cls.cache.get(args)
@@ -279,12 +282,6 @@ class TierABC(ABC):
             )
         return env.project.parse_name(name)
     
-    @classmethod
-    @abstractmethod
-    def iter_siblings(cls, parent_ids) -> Iterator[TierABC]:
-        """"""
-        pass
-
     _identifiers: Tuple[str, ...]
     gui: BaseTierGui[Self]
 
@@ -375,18 +372,6 @@ class TierABC(ABC):
         return self._identifiers[-1]
 
     @cached_prop
-    def folder(self) -> Path:
-        """
-        Path to folder where the contents of this `Tier` lives.
-
-        Defaults to `self.parent.folder / self.name`.
-        """
-        if self.parent:
-            return self.parent.folder / self.name
-        else:  # this is bad
-            return Path(self.name)
-
-    @cached_prop
     def parent(self) -> Union[TierABC, None]:
         """
         Parent of this `Tier` _instance, `None` if has no parent :'(
@@ -396,6 +381,7 @@ class TierABC(ABC):
         return None
 
     @cached_prop
+    @abstractmethod
     def href(self) -> Union[str, None]:
         """
         href usable in notebook HTML giving link to `self.file`.
@@ -410,14 +396,14 @@ class TierABC(ABC):
         href : str
             href usable in notebook HTML.
         """
-        return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
+        pass
         
+    @abstractmethod
     def exists(self) -> bool:
         """
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
-        assert self.meta_file
-        return self.meta_file.exists()
+        pass
 
     def get_child(self, id: str) -> TierABC:
         """
@@ -534,19 +520,6 @@ class TierABC(ABC):
 
         return df
 
-    def open_folder(self) -> None:
-        """
-        Open `self.folder` in explorer
-
-        Notes
-        -----
-        Only works on Windows machines.
-
-        Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
-        the window won't open for you!
-        """
-        open_file(self.folder)
-
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)
 
@@ -555,8 +528,7 @@ class TierABC(ABC):
         Equivalent to `self.get_child(item)`.
         """
         return self.get_child(item)
-
-    @abstractmethod
+    
     def __iter__(self) -> Iterator[Any]:
         """
         Iterates over all children (in no particular order). Children are found by looking through the child meta
@@ -564,7 +536,10 @@ class TierABC(ABC):
 
         Empty iterator if no children.
         """
-        pass
+        if not self.child_cls:
+            raise NotImplementedError()
+        
+        yield from self.child_cls.iter_siblings(self)
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} "{self.name}">'
@@ -590,7 +565,79 @@ class TierABC(ABC):
         pass
 
 
-class NotebookTierABC(TierABC):
+class FolderTierBase(TierABC):
+
+    @classmethod
+    def iter_siblings(cls, parent: TierABC) -> Iterator[FolderTierBase]:
+        # TODO: shouldn't project also handle this?
+        
+        for folder in os.scandir(parent.folder):
+            if not folder.is_dir():
+                continue
+            yield cls(*cls.parse_name(folder.name))
+            
+    @cached_prop
+    def folder(self) -> Path:
+        """
+        Path to folder where the contents of this `Tier` lives.
+
+        Defaults to `self.parent.folder / self.name`.
+        """
+        if self.parent:
+            return self.parent.folder / self.name
+        else:  # this is bad
+            return Path(self.name)
+
+    def open_folder(self) -> None:
+        """
+        Open `self.folder` in explorer
+
+        Notes
+        -----
+        Only works on Windows machines.
+
+        Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
+        the window won't open for you!
+        """
+        open_file(self.folder)
+
+    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
+        print(f"Creating Folder for {self} at {self.folder}")
+
+        with FileMaker() as maker:
+            maker.mkdir(self.folder.parent, exist_ok=True)
+            maker.mkdir(self.folder)
+
+        print("Success")
+
+    def remove_files(self) -> None:
+        pass
+
+    def exists(self) -> bool:
+        """
+        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
+        """
+        return self.folder.exists()
+    
+    @cached_prop
+    def href(self) -> Union[str, None]:
+        """
+        href usable in notebook HTML giving link to `self.file`.
+
+        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
+        changing working dir).
+
+        Does do escaping on the HTML, but is maybe pointless!
+
+        Returns
+        -------
+        href : str
+            href usable in notebook HTML.
+        """
+        return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
+
+
+class NotebookTierBase(FolderTierBase):
 
     meta: Meta
 
@@ -614,6 +661,15 @@ class NotebookTierABC(TierABC):
             if not meta_file.is_file() or not meta_file.name.endswith(".json"):
                 continue
             yield cls.parse_name(meta_file.name[:-5])
+
+    @classmethod
+    def iter_siblings(cls, parent):
+        meta_folder = parent.folder / config.META_DIR_TEMPLATE.format(cls.short_type)
+
+        for meta_file in os.scandir(meta_folder):
+            if not meta_file.is_file() or not meta_file.name.endswith(".json"):
+                continue
+            yield cls(*cls.parse_name(meta_file.name[:-5]))
 
     def __init__(self, *identifiers):
         super().__init__(*identifiers)
@@ -676,6 +732,12 @@ class NotebookTierABC(TierABC):
             print("Success")
 
         print("All Done")
+
+    def exists(self) -> bool:
+        """
+        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
+        """
+        return bool(self.file and self.folder.exists())
 
     description: MetaAttr[str, str] = MetaAttr()
     conclusion: MetaAttr[str, str] = MetaAttr()

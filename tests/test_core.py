@@ -1,14 +1,15 @@
 import pytest # type: ignore[import]
 
-from cassini import TierABC, Home, Project
+from cassini import FolderTierBase, NotebookTierBase, Home, Project
+from cassini.core import TierABC
 from cassini.accessors import _CachedProp
 
 
 def test_project(tmp_path):
     class First(Home):
-        pass
+        name = "First"
 
-    class Second(TierABC):
+    class Second(NotebookTierBase):
         pass
 
     project = Project([First, Second], tmp_path)
@@ -38,7 +39,7 @@ def test_project(tmp_path):
 def patch_project(monkeypatch, tmp_path):
     Project._instance = None
 
-    class Tier(TierABC):
+    class Tier(FolderTierBase):
         pass
 
     project = Project([Home, Tier], tmp_path)
