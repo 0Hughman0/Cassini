@@ -315,25 +315,9 @@ class DataSet(FolderTierBase):
 
         return self.parent / self.id / self.parent.id
 
-    @cached_prop
-    def href(self) -> str:
-        return (
-            html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
-            + "/"
-        )
-
     def exists(self) -> bool:
         return self.folder.exists()
 
-    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
-        print(f"Creating Folder for Data: {self}")
-
-        with FileMaker() as maker:
-            maker.mkdir(self.folder.parent, exist_ok=True)
-            maker.mkdir(self.folder)
-
-        print("Success")
-    
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)
 
