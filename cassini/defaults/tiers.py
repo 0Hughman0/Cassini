@@ -8,7 +8,7 @@ import pandas as pd
 from IPython.display import display
 from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget  # type: ignore[import]
 
-from ..core import TierBase, MetaDict
+from ..core import TierABC, NotebookTierABC, MetaDict
 from ..accessors import cached_prop, cached_class_prop
 from ..utils import FileMaker
 from ..ipygui import InputSequence, widgetify_html, BaseTierGui, SearchWidget
@@ -36,7 +36,7 @@ class HomeGui(BaseTierGui["Home"]):
         return components
 
 
-class Home(TierBase):
+class Home(TierABC):
     """
     Home `Tier`.
 
@@ -47,10 +47,7 @@ class Home(TierBase):
     """
 
     gui_cls = HomeGui
-
-    @cached_prop
-    def name(self) -> str:
-        return self.pretty_type
+    name = "Home"
 
     @cached_prop
     def folder(self) -> Path:
@@ -62,14 +59,6 @@ class Home(TierBase):
     def file(self) -> Path:
         assert env.project
         return env.project.project_folder / f"{self.name}.ipynb"
-
-    @cached_prop
-    def highlights_file(self) -> None:
-        return None
-
-    @cached_prop
-    def meta_file(self) -> None:
-        return None
 
     def serialize(self) -> MetaDict:
         data: MetaDict = {}
@@ -100,7 +89,7 @@ class Home(TierBase):
             print("Success")
 
 
-class WorkPackage(TierBase):
+class WorkPackage(NotebookTierABC):
     """
     WorkPackage Tier.
 
@@ -108,17 +97,12 @@ class WorkPackage(TierBase):
 
     Next level down are `Experiment`s.
     """
-
-    @cached_class_prop
-    def name_part_template(cls) -> str:
-        return "WP{}"
-
-    @cached_class_prop
-    def short_type(cls) -> str:
-        return "wp"
+    
+    name_part_template = "WP{}"
+    short_type = "wp"
 
     @property
-    def exps(self) -> List[TierBase]:
+    def exps(self) -> List[TierABC]:
         """
         Gets a list of all this `WorkPackage`s experiments.
         """
@@ -156,7 +140,7 @@ class ExperimentGui(BaseTierGui["Experiment"]):
         return components
 
 
-class Experiment(TierBase):
+class Experiment(NotebookTierABC):
     """
     Experiment `Tier`.
 
@@ -166,13 +150,8 @@ class Experiment(TierBase):
     Each `Experiment` has a number of samples.
     """
 
-    @cached_class_prop
-    def name_part_template(cls) -> str:
-        return ".{}"
-
-    @cached_class_prop
-    def short_type(cls) -> str:
-        return "exp"
+    name_part_template = ".{}"
+    short_type = "exp"
 
     gui_cls = ExperimentGui
 
@@ -226,7 +205,7 @@ class Experiment(TierBase):
         return df
 
     @property
-    def smpls(self) -> List[TierBase]:
+    def smpls(self) -> List[TierABC]:
         """
         Get a list of this `Experiment`s samples.
         """
@@ -264,7 +243,7 @@ class SampleGui(BaseTierGui["Sample"]):
         return components
 
 
-class Sample(TierBase):
+class Sample(NotebookTierABC):
     """
     Sample `Tier`.
 
@@ -277,13 +256,9 @@ class Sample(TierBase):
     A `Sample` id can't start with a number and can't contain `'-'` (dashes), as these confuse the name parser.
     """
 
-    @cached_class_prop
-    def name_part_template(cls) -> str:
-        return "{}"
+    name_part_template = "{}"
 
-    @cached_class_prop
-    def id_regex(cls) -> str:
-        return r"([^0-9^-][^-]*)"
+    id_regex = r"([^0-9^-][^-]*)"
 
     gui_cls = SampleGui
 
@@ -293,7 +268,7 @@ class Sample(TierBase):
         return self.parent.folder
 
     @property
-    def datasets(self) -> List[TierBase]:
+    def datasets(self) -> List[TierABC]:
         """
         Convenient way of getting a list of `DataSet`s this sample has.
         """
@@ -307,32 +282,21 @@ class Sample(TierBase):
                 techs.append(dataset)
         return techs
 
-    def __iter__(self) -> Iterator[TierBase]:
+    def __iter__(self) -> Iterator[TierABC]:
         return iter(self.datasets)
 
 
-class DataSet(TierBase):
+class DataSet(TierABC):
     """
     `DataSet` Tier.
 
     The final tier, intended to represent a folder containing a collection of files relating to a particular `Sample`.
     """
 
-    @cached_class_prop
-    def short_type(cls) -> str:
-        return "dset"
+    short_type = "dset"
+    name_part_template = "-{}"
 
-    @cached_class_prop
-    def name_part_template(cls) -> str:
-        return "-{}"
-
-    @cached_class_prop
-    def id_regex(cls) -> str:
-        return r"(.+)"
-
-    @cached_class_prop
-    def default_template(cls) -> None:
-        return None
+    id_regex = r"(.+)"
 
     @cached_prop
     def folder(self) -> Path:
@@ -358,35 +322,7 @@ class DataSet(TierBase):
             maker.mkdir(self.folder)
 
         print("Success")
-
-    @cached_prop
-    def meta_file(self) -> None:
-        """
-        `DataSet`s have no meta.
-        """
-        return None
-
-    @cached_prop
-    def highlights_file(self) -> None:
-        """
-        `DataSet`s have no highlights.
-        """
-        return None
-
-    @cached_prop
-    def file(self) -> None:
-        """
-        `DataSet`s have no file
-        """
-        return None
-
-    @classmethod
-    def get_templates(cls) -> List[Path]:
-        """
-        Datasets have no templates.
-        """
-        return []
-
+    
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)
 

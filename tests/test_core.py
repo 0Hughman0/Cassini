@@ -1,6 +1,6 @@
 import pytest # type: ignore[import]
 
-from cassini import TierBase, Home, Project
+from cassini import TierABC, Home, Project
 from cassini.accessors import _CachedProp
 
 
@@ -8,7 +8,7 @@ def test_project(tmp_path):
     class First(Home):
         pass
 
-    class Second(TierBase):
+    class Second(TierABC):
         pass
 
     project = Project([First, Second], tmp_path)
@@ -38,7 +38,7 @@ def test_project(tmp_path):
 def patch_project(monkeypatch, tmp_path):
     Project._instance = None
 
-    class Tier(TierBase):
+    class Tier(TierABC):
         pass
 
     project = Project([Home, Tier], tmp_path)
@@ -110,7 +110,7 @@ def test_tier_attrs(patch_project):
 def test_tier_accessors(patch_project):
     Tier, project = patch_project
 
-    assert isinstance(TierBase.name, _CachedProp)
+    assert isinstance(TierABC.name, _CachedProp)
 
     assert Tier.pretty_type is Tier.pretty_type
 

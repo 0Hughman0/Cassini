@@ -18,7 +18,7 @@ from typing import (
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from .core import TierBase
+    from .core import TierABC
 
 T = TypeVar("T")
 V = TypeVar("V")
@@ -89,13 +89,13 @@ class MetaAttr(Generic[JOut, T]):
         if self.name is None:
             self.name = name
 
-    def __get__(self, instance: "TierBase", owner: object) -> Union[T, None]:
+    def __get__(self, instance: "TierABC", owner: object) -> Union[T, None]:
         try:
             return self.post_get(cast(JOut, instance.meta[self.name]))
         except KeyError:
             return self.default
 
-    def __set__(self, instance: "TierBase", value: T) -> None:
+    def __set__(self, instance: "TierABC", value: T) -> None:
         setattr(instance.meta, self.name, self.pre_set(value))
 
 

@@ -21,7 +21,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
-    from .core import TierBase
+    from .core import TierABC, NotebookTierABC
 
 import jinja2
 
@@ -97,7 +97,7 @@ class Project:
         return instance
 
     def __init__(
-        self, hierarchy: List[Type[TierBase]], project_folder: Union[str, Path]
+        self, hierarchy: List[Type[TierABC]], project_folder: Union[str, Path]
     ):
         self.rank_map: Dict[str, int] = {}
         self.hierarchy = hierarchy
@@ -117,13 +117,13 @@ class Project:
             self.rank_map[tier_cls.short_type] = rank
 
     @property
-    def home(self) -> TierBase:
+    def home(self) -> TierABC:
         """
         Get the home `Tier`.
         """
         return self.hierarchy[0]()
 
-    def env(self, name: str) -> TierBase:
+    def env(self, name: str) -> TierABC:
         """
         Initialise the global environment to a particular `Tier` that is retrieved by parsing `name`.
 
@@ -148,7 +148,7 @@ class Project:
         env.update(obj)
         return obj
 
-    def __getitem__(self, name: str) -> TierBase:
+    def __getitem__(self, name: str) -> TierABC:
         """
         Retrieve a tier object from the project by name.
 
@@ -179,7 +179,7 @@ class Project:
         """
         return self.project_folder / "templates"
 
-    def setup_files(self) -> TierBase:
+    def setup_files(self) -> TierABC:
         """
         Setup files needed for this project.
 
@@ -198,8 +198,9 @@ class Project:
             print("Success")
 
             for tier_cls in self.hierarchy:
-                if tier_cls.default_template is None:
+                if not isinstance(tier_cls, NotebookTierABC):
                     continue
+                
                 maker.mkdir(self.template_folder / tier_cls.pretty_type)
                 print("Copying over default template")
                 maker.copy_file(
@@ -361,7 +362,7 @@ class _Env:
 
     def __init__(self) -> None:
         self.project: Union[Project, None] = None
-        self._o: Union[TierBase, None] = None
+        self._o: Union[TierABC, None] = None
 
     def _has_instance(
         self, val: Union[ValWithInstance, None]
@@ -369,7 +370,7 @@ class _Env:
         return self.instance is not None
 
     @property
-    def o(self) -> Union[TierBase, None]:
+    def o(self) -> Union[TierABC, None]:
         """
         Reference to current Tier object.
         """
@@ -378,7 +379,7 @@ class _Env:
 
         return None
 
-    def update(self, obj: TierBase) -> None:
+    def update(self, obj: TierABC) -> None:
         self._o = obj
 
 

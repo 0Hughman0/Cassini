@@ -7,7 +7,7 @@ from .defaults.tiers import (
     DataSet,
 )
 from .environment import Project, env
-from .core import TierBase
+from .core import TierABC
 
 try:
     __IPYTHON__  # type: ignore[name-defined]
@@ -21,7 +21,7 @@ __all__ = [
     "Project",
     "DEFAULT_TIERS",
     "env",
-    "TierBase",
+    "TierABC",
     "Home",
     "WorkPackage",
     "Experiment",

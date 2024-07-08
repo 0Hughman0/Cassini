@@ -24,7 +24,7 @@ from IPython.display import display, Markdown, publish_display_data  # type: ign
 from .environment import env
 
 if TYPE_CHECKING:
-    from .core import TierBase
+    from .core import TierABC
 
 
 class WHTML:

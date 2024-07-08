@@ -6,7 +6,7 @@ from .environment import Project
 from .ipygui import BaseTierGui
 
 if TYPE_CHECKING:
-    from .core import TierBase
+    from .core import TierABC
 
 
 class JLGui(BaseTierGui["TierBase"]):
