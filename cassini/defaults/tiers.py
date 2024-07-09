@@ -68,17 +68,6 @@ class Home(FolderTierBase):
         assert env.project
         return env.project.project_folder / f"{self.name}.ipynb"
 
-    def serialize(self) -> MetaDict:
-        data: MetaDict = {}
-
-        data["identifiers"] = self.name
-        data["name"] = self.name
-        data["file"] = str(self.file)
-        data["parents"] = []
-        data["children"] = [child.name for child in self]
-
-        return data
-
     def exists(self) -> bool:
         return bool(self.folder and self.file.exists())
 
@@ -199,21 +188,6 @@ class Experiment(NotebookTierBase):
             maker.mkdir(folder)
 
         print("Done")
-
-    def children_df(
-        self,
-        include: Union[List[str], None] = None,
-        exclude: Union[List[str], None] = None,
-    ) -> Union[pd.DataFrame, None]:
-        df = super().children_df(include=include, exclude=exclude)
-
-        if df is None:
-            return None
-
-        df["datasets"] = pd.Series(
-            {smpl.name: list(dataset.id for dataset in smpl.datasets) for smpl in self}
-        )
-        return df
 
     @property
     def smpls(self) -> List[TierABC]:
