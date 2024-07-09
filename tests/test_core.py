@@ -1,7 +1,7 @@
 import pytest # type: ignore[import]
 
-from cassini import FolderTierBase, NotebookTierBase, Home, Project
-from cassini.core import TierABC
+from cassini import FolderTierBase, NotebookTierBase, Home
+from cassini.core import Project, TierABC
 from cassini.accessors import _CachedProp
 
 

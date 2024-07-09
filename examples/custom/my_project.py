@@ -1,4 +1,5 @@
-from cassini import TierABC, Home, Project
+from cassini import TierABC, Home
+from cassini.core import Project
 
 
 class Book(Home):

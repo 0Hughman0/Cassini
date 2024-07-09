@@ -1,6 +1,7 @@
 import pytest # type: ignore[import]
 
-from cassini import Project, DEFAULT_TIERS
+from cassini import DEFAULT_TIERS
+from cassini.core import Project
 
 @pytest.fixture
 def mk_project(tmp_path):

@@ -1,6 +1,7 @@
 import pytest # type: ignore[import]
 
-from cassini import FolderTierBase, NotebookTierBase, Home, Project
+from cassini import FolderTierBase, NotebookTierBase, Home
+from cassini.core import Project
 
 
 @pytest.fixture

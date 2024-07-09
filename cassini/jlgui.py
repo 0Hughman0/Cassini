@@ -2,7 +2,7 @@ from typing import List, Union, TYPE_CHECKING
 
 from IPython.display import publish_display_data
 
-from .environment import Project
+from .core import Project
 from .ipygui import BaseTierGui
 
 if TYPE_CHECKING:

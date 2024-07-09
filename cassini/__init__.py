@@ -6,8 +6,8 @@ from .defaults.tiers import (
     Sample,
     DataSet,
 )
-from .environment import Project, env
-from .core import FolderTierBase, NotebookTierBase
+from .environment import env
+from .core import FolderTierBase, NotebookTierBase, Project
 
 try:
     __IPYTHON__  # type: ignore[name-defined]
