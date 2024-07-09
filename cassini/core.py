@@ -180,8 +180,7 @@ class TierABC(ABC):
     """
 
     cache: ClassVar[Dict[Tuple[str, ...], TierABC]] 
-    rank = -1  # deprecated to be removed
-
+    
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
         cls.cache = {}  # ensures each TierBase class has its own cache
@@ -189,17 +188,6 @@ class TierABC(ABC):
     id_regex: ClassVar[str] = r"(\d+)"
 
     gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
-
-    @cached_class_prop
-    @deprecated("Switching functionality to env.project later")
-    def hierarchy(cls) -> List[Type[TierABC]]:
-        """
-        Gets the hierarchy from `env.project`.
-        """
-        if env.project:
-            return env.project.hierarchy
-        else:
-            return []
 
     @cached_class_prop
     def pretty_type(cls) -> str:
@@ -240,10 +228,7 @@ class TierABC(ABC):
         TODO: Make project oriented.
         """
         assert env.project
-
-        if cls.rank is None or cls.rank <= 0:
-            return None
-        return cls.hierarchy[cls.rank - 1]
+        return env.project.get_parent_cls(cls)
 
     @cached_class_prop
     def child_cls(cls) -> Union[Type[TierABC], None]:
@@ -253,11 +238,8 @@ class TierABC(ABC):
         TODO: Make project oriented.
         """
         assert env.project
+        return env.project.get_child_cls(cls)
 
-        if cls.rank is None or cls.rank >= (len(cls.hierarchy) - 1):
-            return None
-        return cls.hierarchy[cls.rank + 1]
-    
     @classmethod
     @abstractmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
@@ -287,12 +269,16 @@ class TierABC(ABC):
     gui: BaseTierGui[Self]
 
     def __init__(self: Self, *args: str):
+        assert env.project
+
         self._identifiers = tuple(filter(None, args))
         self.gui = self.gui_cls(self)
 
-        if len(self._identifiers) != self.rank:
+        rank = env.project.rank_map[self.__class__]
+
+        if len(self._identifiers) != rank:
             raise ValueError(
-                f"Invalid number of identifiers in {self._identifiers}, expecting {self.rank}."
+                f"Invalid number of identifiers in {self._identifiers}, expecting {rank}."
             )
 
         if self.parse_name(self.name) != self.identifiers:
@@ -352,7 +338,7 @@ class TierABC(ABC):
 
         return "".join(
             cls.name_part_template.format(id)
-            for cls, id in zip(self.hierarchy[1:], self.identifiers)
+            for cls, id in zip(env.project.hierarchy[1:], self.identifiers)
         )
 
     @cached_prop
@@ -455,9 +441,16 @@ class TierABC(ABC):
         )
 
     def __getattr__(self, item: str) -> TierABC:
-        if env.project and item in env.project.rank_map:
-            rank = env.project.rank_map[item]
-            return env.project.hierarchy[rank](*self.identifiers[:rank])
+        if env.project:
+            short_map = {cls.short_type: cls for cls in env.project.hierarchy}
+            tier_cls = short_map.get(item)
+            
+            if tier_cls is None:
+                raise AttributeError(item)
+            
+            rank = env.project.rank_map[tier_cls]
+            
+            return tier_cls(*self.identifiers[:rank])
         raise AttributeError(item)
 
     @abstractmethod
@@ -858,9 +851,11 @@ class Project:
     def __init__(
         self, hierarchy: List[Type[TierABC]], project_folder: Union[str, Path]
     ):
-        self.rank_map: Dict[str, int] = {}
+        self._rank_map: Dict[Type[TierABC], int] = {}
+        self._hierarchy: List[Type[TierABC]] = []
+        
         self.hierarchy = hierarchy
-
+        
         project_folder = Path(project_folder).resolve()
         self.project_folder = (
             project_folder if project_folder.is_dir() else project_folder.parent
@@ -871,9 +866,20 @@ class Project:
             loader=jinja2.FileSystemLoader(self.template_folder),
         )
 
+    @property
+    def hierarchy(self) -> List[Type[TierABC]]:
+        return self._hierarchy
+
+    @hierarchy.setter
+    def hierarchy(self, hierarchy: List[Type[TierABC]]):
+        self._hierarchy = hierarchy
+
         for rank, tier_cls in enumerate(hierarchy):
-            tier_cls.rank = rank
-            self.rank_map[tier_cls.short_type] = rank
+            self._rank_map[tier_cls] = rank
+
+    @property
+    def rank_map(self):
+        return self._rank_map
 
     @property
     def home(self) -> TierABC:
@@ -907,6 +913,24 @@ class Project:
         env.update(obj)
         return obj
 
+    def get_tier(self, identifiers: Tuple[str, ...]) -> TierABC:
+        cls = self.hierarchy[len(identifiers)]
+        return cls(*identifiers)
+    
+    def get_child_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
+        rank = self.rank_map[tier_cls]
+        if rank + 1 > (len(self.hierarchy) - 1):
+            return None
+        else:
+            return self.hierarchy[rank + 1]
+    
+    def get_parent_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
+        rank = self.rank_map[tier_cls]
+        if rank - 1 < 0:
+            return None
+        else:
+            return self.hierarchy[rank - 1]
+
     def __getitem__(self, name: str) -> TierABC:
         """
         Retrieve a tier object from the project by name.
@@ -927,8 +951,7 @@ class Project:
             identifiers = self.parse_name(name)
             if not identifiers:
                 raise ValueError(f"Name {name} not recognised as identifying any Tier")
-            cls = self.hierarchy[len(identifiers)]
-            obj = cls(*identifiers)
+            obj = self.get_tier(identifiers)
         return obj
 
     @soft_prop
