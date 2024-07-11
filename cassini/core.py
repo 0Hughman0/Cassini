@@ -190,38 +190,46 @@ class TierABC(ABC):
     gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
 
     @cached_class_prop
-    def pretty_type(cls) -> str:
+    def _pretty_type(cls) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
         return cast(str, cls.__name__)
+    
+    pretty_type: str = _pretty_type  # to please type checker.
 
     @cached_class_prop
-    def short_type(cls) -> str:
+    def _short_type(cls) -> str:
         """
         Name used to programmatically refer to instances of this `Tier`.
 
         Default, take pretty type, make lowercase and remove vowels.
         """
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys("aeiou")))
+    
+    short_type: str = _short_type
 
     @cached_class_prop
-    def name_part_template(cls) -> str:
+    def _name_part_template(cls) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + "{}"
+    
+    name_part_template = _name_part_template
 
     @cached_class_prop
-    def name_part_regex(cls) -> str:
+    def _name_part_regex(cls) -> str:
         """
         Regex where first group matches `id` part of string. Default is fill in `cls.name_part_template` with
         `cls.id_regex`.
         """
         return cls.name_part_template.format(cls.id_regex)
+    
+    name_part_regex = _name_part_regex
 
     @cached_class_prop
-    def parent_cls(cls) -> Union[Type[TierABC], None]:
+    def _parent_cls(cls) -> Union[Type[TierABC], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
 
@@ -230,8 +238,10 @@ class TierABC(ABC):
         assert env.project
         return env.project.get_parent_cls(cls)
 
+    parent_cls = _parent_cls
+
     @cached_class_prop
-    def child_cls(cls) -> Union[Type[TierABC], None]:
+    def _child_cls(cls) -> Union[Type[TierABC], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
 
@@ -239,6 +249,8 @@ class TierABC(ABC):
         """
         assert env.project
         return env.project.get_child_cls(cls)
+    
+    child_cls = _child_cls
 
     @classmethod
     @abstractmethod
@@ -540,11 +552,13 @@ class NotebookTierBase(FolderTierBase):
     meta: Meta
 
     @cached_class_prop
-    def default_template(cls) -> Path:
+    def _default_template(cls) -> Path:
         """
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
+    
+    default_template = _default_template
 
     @cached_class_prop
     def _meta_folder_name(cls) -> str:
@@ -552,6 +566,8 @@ class NotebookTierBase(FolderTierBase):
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
         """
         return config.META_DIR_TEMPLATE.format(cls.short_type)
+    
+    meta_folder_name = _meta_folder_name
     
     @classmethod
     def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
@@ -652,10 +668,10 @@ class NotebookTierBase(FolderTierBase):
         Returns
         -------
         meta_file : Path
-            Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.json')`
+            Defaults to `self.parent.folder / self.meta_folder_name / (self.name + '.json')`
         """
         assert self.parent
-        return self.parent.folder / self._meta_folder_name / (self.name + ".json")
+        return self.parent.folder / self.meta_folder_name / (self.name + ".json")
 
     @cached_prop
     def highlights_file(self) -> Union[Path, None]:
