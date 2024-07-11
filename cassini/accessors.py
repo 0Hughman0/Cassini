@@ -131,7 +131,7 @@ def soft_prop(wraps: Callable[[Any], V]) -> V:
     """
     Create an over-writable property
     """
-    return cast(V, functools.wraps(wraps)(_SoftProp(wraps)))
+    return cast(V, functools.wraps(wraps)(_SoftProp(wraps)))  # type: ignore[arg-type]
 
 
 class _CachedProp(Generic[T, V]):
@@ -179,7 +179,7 @@ def cached_prop(wrapped: Callable[[Any], V]) -> V:
     """
     Decorator for turning functions/ methods into `_CachedProp`s.
     """
-    return cast(V, functools.wraps(wrapped)(_CachedProp(wrapped)))
+    return cast(V, functools.wraps(wrapped)(_CachedProp(wrapped)))  # type: ignore[arg-type]
 
 
 class _CachedClassProp(Generic[T, V]):
@@ -220,4 +220,4 @@ def cached_class_prop(wrapped: Callable[[Any], V]) -> V:
 
     First argument of wrapped will be `self.__class__` rather than `self`.
     """
-    return cast(V, functools.wraps(wrapped)(_CachedClassProp(wrapped)))
+    return cast(V, functools.wraps(wrapped)(_CachedClassProp(wrapped)))  # type: ignore[arg-type]
