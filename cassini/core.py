@@ -23,8 +23,8 @@ from typing import (
     cast,
 )
 from warnings import warn
-from jupyterlab.labapp import LabApp
-from typing_extensions import Self, deprecated
+from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
+from typing_extensions import Self
 
 from .ipygui import BaseTierGui
 from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType, soft_prop
@@ -354,11 +354,30 @@ class TierABC(ABC):
             >>> smpl.name  # all 3 joined together
             WP2.3c
         """
+        assert env.project
 
         return "".join(
             cls.name_part_template.format(id)
             for cls, id in zip(env.project.hierarchy[1:], self.identifiers)
         )
+
+    @property
+    @abstractmethod
+    def folder(self) -> Path:
+        pass
+
+    def open_folder(self) -> None:
+        """
+        Open `self.folder` in explorer
+
+        Notes
+        -----
+        Only works on Windows machines.
+
+        Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
+        the window won't open for you!
+        """
+        open_file(self.folder)
 
     @cached_prop
     def id(self) -> str:
@@ -482,7 +501,7 @@ class TierABC(ABC):
 
 class FolderTierBase(TierABC):
     @classmethod
-    def iter_siblings(cls, parent: TierABC) -> Iterator[FolderTierBase]:
+    def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
         # TODO: shouldn't project also handle this?
         if not parent.folder.exists():
             return
@@ -503,19 +522,6 @@ class FolderTierBase(TierABC):
             return self.parent.folder / self.name
         else:  # this is bad
             return Path(self.name)
-
-    def open_folder(self) -> None:
-        """
-        Open `self.folder` in explorer
-
-        Notes
-        -----
-        Only works on Windows machines.
-
-        Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
-        the window won't open for you!
-        """
-        open_file(self.folder)
 
     def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
         print(f"Creating Folder for {self} at {self.folder}")
@@ -593,11 +599,9 @@ class NotebookTierBase(FolderTierBase):
                 continue
             yield cls(*cls.parse_name(meta_file.name[:-5]))
 
-    def __init__(self, *identifiers):
+    def __init__(self, *identifiers: str):
         super().__init__(*identifiers)
-
-        if self.meta_file:
-            self.meta: Meta = Meta(self.meta_file)
+        self.meta: Meta = Meta(self.meta_file)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -855,6 +859,7 @@ class HomeTierBase(FolderTierBase):
 
     @classmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
+        assert env.project
         yield env.project.home
 
     @cached_prop
@@ -927,14 +932,16 @@ class Project:
         self._rank_map: Dict[Type[TierABC], int] = {}
         self._hierarchy: List[Type[TierABC]] = []
 
-        self.hierarchy = hierarchy
+        self.hierarchy: List[Type[TierABC]] = hierarchy
 
-        project_folder = Path(project_folder).resolve()
-        self.project_folder = (
-            project_folder if project_folder.is_dir() else project_folder.parent
+        project_folder_path = Path(project_folder).resolve()
+        self.project_folder: Path = (
+            project_folder_path
+            if project_folder_path.is_dir()
+            else project_folder_path.parent
         )
 
-        self.template_env = PathLibEnv(
+        self.template_env: PathLibEnv = PathLibEnv(
             autoescape=jinja2.select_autoescape(["html", "xml"]),
             loader=jinja2.FileSystemLoader(self.template_folder),
         )
@@ -995,14 +1002,18 @@ class Project:
         if rank + 1 > (len(self.hierarchy) - 1):
             return None
         else:
-            return self.hierarchy[rank + 1]
+            cls: Type[TierABC] = self.hierarchy[
+                rank + 1
+            ]  # I don't understand why annotation needed?
+            return cls
 
     def get_parent_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
         rank = self.rank_map[tier_cls]
         if rank - 1 < 0:
             return None
         else:
-            return self.hierarchy[rank - 1]
+            cls: Type[TierABC] = self.hierarchy[rank - 1]
+            return cls
 
     def __getitem__(self, name: str) -> TierABC:
         """

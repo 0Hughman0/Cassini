@@ -24,7 +24,12 @@ T = TypeVar("T")
 V = TypeVar("V")
 
 JSONPrimative = Union[str, int, float, bool, None]
-JSONType = Union[dict, list, tuple, JSONPrimative]
+JSONType = Union[
+    Dict[JSONPrimative, "JSONType"],
+    List["JSONType"],
+    Tuple[JSONPrimative],
+    JSONPrimative,
+]
 JSONProcessor = Callable[[JSONType], T]
 
 JOut = TypeVar(

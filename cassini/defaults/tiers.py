@@ -1,19 +1,15 @@
 from pathlib import Path
 import os
-import html
 
-from typing import Iterator, List, Any, Union, cast, Dict, Optional
+from typing import Iterator, List, Any, cast, Dict
 
-import pandas as pd
 from IPython.display import display
-from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget  # type: ignore[import]
+from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget
 
 from ..core import TierABC, FolderTierBase, NotebookTierBase, HomeTierBase
-from ..accessors import cached_prop, cached_class_prop
+from ..accessors import cached_prop
 from ..utils import FileMaker
 from ..ipygui import InputSequence, widgetify_html, BaseTierGui, SearchWidget
-from ..environment import env
-from ..config import config
 
 
 def ignore_dir(name: str) -> bool:

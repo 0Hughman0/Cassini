@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from .core import TierABC
 
 
-class JLGui(BaseTierGui["TierBase"]):
+class JLGui(BaseTierGui["TierABC"]):
     def __init__(self, tier):
         self.tier = tier
 
