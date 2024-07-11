@@ -2,7 +2,8 @@ import os
 
 import pytest # type: ignore[import]
 
-from cassini import Project, DEFAULT_TIERS, Home, FolderTierBase, NotebookTierBase
+from cassini import DEFAULT_TIERS, Home, FolderTierBase, NotebookTierBase
+from cassini.core import Project
 from cassini.defaults import WorkPackage, Experiment, Sample, DataSet
 
 

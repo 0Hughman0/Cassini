@@ -2,12 +2,15 @@ from pathlib import Path
 import os
 import sys
 import functools
-from typing import Union, Callable, Any, List, Tuple, TypeVar, Generic
+from typing import MutableMapping, Type, Union, Callable, Any, List, Tuple, TypeVar, Generic
+from jupyterlab.labapp import LabApp, LabServerApp
 from typing_extensions import Self, ParamSpec
 import datetime
 
 from .config import config
 from .accessors import JSONType
+
+import jinja2
 
 
 def str_to_date(val: JSONType) -> datetime.datetime:
@@ -17,6 +20,42 @@ def str_to_date(val: JSONType) -> datetime.datetime:
 
 def date_to_str(date: datetime.datetime) -> str:
     return date.strftime(config.DATE_FORMAT)
+
+
+class PathLibEnv(jinja2.Environment):
+    """
+    Subclass of `jinja2.Environment` to enable using `pathlib.Path` for template names.
+    """
+
+    def get_template(
+        self,
+        name: Union[Path, str],  # type: ignore[override]
+        parent: Union[str, None] = None,
+        globals: Union[MutableMapping[str, Any], None] = None,
+    ) -> jinja2.Template:
+        return super().get_template(
+            name.as_posix() if isinstance(name, Path) else name,
+            parent=None,
+            globals=None,
+        )
+    
+
+class CassiniLabApp(LabApp):  # type: ignore[misc]
+    """
+    Subclass of `jupyterlab.labapp.LabApp` that ensures `ContentsManager.allow_hidden = True`
+    (needed for jupyter_cassini_server)
+    """
+
+    @classmethod
+    def initialize_server(
+        cls: Type[LabApp], argv: Union[Any, None] = None
+    ) -> LabServerApp:
+        """
+        Patch serverapp to ensure hidden files are allowed, needed for jupyter_cassini_server
+        """
+        serverapp: LabServerApp = super().initialize_server(argv)
+        serverapp.contents_manager.allow_hidden = True
+        return serverapp
 
 
 class FileMaker:

@@ -1,13 +1,13 @@
 import pytest # type: ignore[import]
 
-from cassini import FolderTierBase, NotebookTierBase, Home, Project
-from cassini.core import TierABC
+from cassini import FolderTierBase, NotebookTierBase, Home
+from cassini.core import Project, TierABC
 from cassini.accessors import _CachedProp
 
 
 def test_project(tmp_path):
     class First(Home):
-        name = "First"
+        pass
 
     class Second(NotebookTierBase):
         pass
@@ -17,11 +17,9 @@ def test_project(tmp_path):
     with pytest.raises(RuntimeError):
         Project([First, Second], tmp_path)
 
-    assert First.rank == 0
-    assert project.rank_map['frst'] == 0
+    assert project.rank_map[First] == 0
 
-    assert Second.rank == 1
-    assert project.rank_map['scnd'] == 1
+    assert project.rank_map[Second] == 1
 
     assert project.project_folder == tmp_path
     assert project.template_folder == tmp_path / 'templates'
@@ -76,7 +74,6 @@ def test_construct(patch_project):
 def test_tier_attrs(patch_project):
     Tier, project = patch_project
 
-    assert Tier.hierarchy == [Home, Tier]
     assert Tier.pretty_type == 'Tier'
     assert Tier.short_type == 'tr'
 
@@ -89,7 +86,6 @@ def test_tier_attrs(patch_project):
 
     tier = Tier('1')
 
-    assert tier.hierarchy == [Home, Tier]
     assert tier.id == '1'
     assert tier.identifiers == ('1',)
     assert tier.name == 'Tier1'

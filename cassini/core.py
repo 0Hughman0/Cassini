@@ -6,8 +6,8 @@ import json
 import os
 import time
 from pathlib import Path
-from collections import defaultdict
 from abc import ABC, abstractmethod
+import re
 
 from typing import (
     Any,
@@ -22,16 +22,17 @@ from typing import (
     Optional,
     cast,
 )
+from warnings import warn
+from jupyterlab.labapp import LabApp
 from typing_extensions import Self, deprecated
 
-import pandas as pd
-
 from .ipygui import BaseTierGui
-from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType
-from .utils import FileMaker, open_file, str_to_date, date_to_str
+from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType, soft_prop
+from .utils import FileMaker, open_file, str_to_date, date_to_str, CassiniLabApp, PathLibEnv
 from .environment import env
 from .config import config
 
+import jinja2
 
 MetaDict = Dict[str, JSONType]
 
@@ -179,8 +180,7 @@ class TierABC(ABC):
     """
 
     cache: ClassVar[Dict[Tuple[str, ...], TierABC]] 
-    rank = -1  # deprecated to be removed
-
+    
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
         cls.cache = {}  # ensures each TierBase class has its own cache
@@ -188,17 +188,6 @@ class TierABC(ABC):
     id_regex: ClassVar[str] = r"(\d+)"
 
     gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
-
-    @cached_class_prop
-    @deprecated("Switching functionality to env.project later")
-    def hierarchy(cls) -> List[Type[TierABC]]:
-        """
-        Gets the hierarchy from `env.project`.
-        """
-        if env.project:
-            return env.project.hierarchy
-        else:
-            return []
 
     @cached_class_prop
     def pretty_type(cls) -> str:
@@ -215,7 +204,7 @@ class TierABC(ABC):
         Default, take pretty type, make lowercase and remove vowels.
         """
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys("aeiou")))
-    
+
     @cached_class_prop
     def name_part_template(cls) -> str:
         """
@@ -239,10 +228,7 @@ class TierABC(ABC):
         TODO: Make project oriented.
         """
         assert env.project
-
-        if cls.rank is None or cls.rank <= 0:
-            return None
-        return cls.hierarchy[cls.rank - 1]
+        return env.project.get_parent_cls(cls)
 
     @cached_class_prop
     def child_cls(cls) -> Union[Type[TierABC], None]:
@@ -252,11 +238,8 @@ class TierABC(ABC):
         TODO: Make project oriented.
         """
         assert env.project
+        return env.project.get_child_cls(cls)
 
-        if cls.rank is None or cls.rank >= (len(cls.hierarchy) - 1):
-            return None
-        return cls.hierarchy[cls.rank + 1]
-    
     @classmethod
     @abstractmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
@@ -286,12 +269,16 @@ class TierABC(ABC):
     gui: BaseTierGui[Self]
 
     def __init__(self: Self, *args: str):
+        assert env.project
+
         self._identifiers = tuple(filter(None, args))
         self.gui = self.gui_cls(self)
 
-        if len(self._identifiers) != self.rank:
+        rank = env.project.rank_map[self.__class__]
+
+        if len(self._identifiers) != rank:
             raise ValueError(
-                f"Invalid number of identifiers in {self._identifiers}, expecting {self.rank}."
+                f"Invalid number of identifiers in {self._identifiers}, expecting {rank}."
             )
 
         if self.parse_name(self.name) != self.identifiers:
@@ -351,7 +338,7 @@ class TierABC(ABC):
 
         return "".join(
             cls.name_part_template.format(id)
-            for cls, id in zip(self.hierarchy[1:], self.identifiers)
+            for cls, id in zip(env.project.hierarchy[1:], self.identifiers)
         )
 
     @cached_prop
@@ -422,104 +409,6 @@ class TierABC(ABC):
         assert self.child_cls
         return self.child_cls(*self._identifiers, id)
 
-    def serialize(self) -> MetaDict:
-        """
-        TODO: Deprecate in 0.2.x
-        """
-        data = dict(self.meta)
-        data["identifiers"] = self.identifiers
-        data["name"] = self.name
-        data["file"] = str(self.file)
-
-        parents = []
-        parent = self.parent
-
-        while parent:
-            parents.append(parent)
-            parent = parent.parent
-
-        data["parents"] = [parent.name for parent in parents][::-1]
-        data["children"] = [child.name for child in self]
-
-        return data
-
-    def children_df(        
-        self, *, include: Optional[List[str]] = None, exclude: Optional[List[str]]
-    ) -> Union[pd.DataFrame, None]:
-        """
-        TODO: Deprecate in 0.2.x, move to extension.
-
-        Build an `UnescapedDataFrame` containing rows from each child of this `Tier`. Columns are inferred from contents
-        of meta files.
-
-        Parameters
-        ----------
-        include : Sequence[str]
-            names of columns to include in children DataFrame
-        exclude : Sequence[str]
-            names of columns to drop from children DataFrame
-
-        Notes
-        -----
-        Parameters include and exclude are mutually exclusive.
-
-        Returns
-        -------
-        df : UnescapedDataFrame, None
-            DataFrame containing `Tier`'s children. If no children then returns `None`.
-        """
-        if self.child_cls is None:
-            return None
-
-        if include and exclude:
-            raise ValueError("Only one of include or exclude can be provided")
-
-        children = list(self)
-
-        if not children:
-            return None
-
-        data: Dict[str, List[Any]] = defaultdict(list)
-        attributes_set: set[str] = set()
-
-        for child in children:
-            attributes_set.update(child.meta.keys())
-            data["Name"].append(child.name)
-
-        attributes = list(attributes_set)
-
-        for child in children:
-            for attr in attributes:
-                try:
-                    val = getattr(child, attr)
-                except AttributeError:
-                    val = child.meta.get(attr)
-                data[attr].append(val)
-
-        for tier in children:
-            data["Obj"].append(tier)
-
-        df = pd.DataFrame(data=data)
-        df = df.set_index("Name")
-        df = df.sort_values("started", axis=0)
-
-        priority_columns = ["started", "description"]
-        if "conclusion" in df.columns:
-            priority_columns.append("conclusion")
-
-        df = df[
-            priority_columns
-            + [col for col in df.columns if col not in priority_columns]
-        ]
-
-        if include:
-            df = df.loc[:, include]
-
-        if exclude:
-            df = df.drop(exclude, axis="columns")
-
-        return df
-
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)
 
@@ -552,9 +441,16 @@ class TierABC(ABC):
         )
 
     def __getattr__(self, item: str) -> TierABC:
-        if env.project and item in env.project.rank_map:
-            rank = env.project.rank_map[item]
-            return env.project.hierarchy[rank](*self.identifiers[:rank])
+        if env.project:
+            short_map = {cls.short_type: cls for cls in env.project.hierarchy}
+            tier_cls = short_map.get(item)
+            
+            if tier_cls is None:
+                raise AttributeError(item)
+            
+            rank = env.project.rank_map[tier_cls]
+            
+            return tier_cls(*self.identifiers[:rank])
         raise AttributeError(item)
 
     @abstractmethod
@@ -921,3 +817,293 @@ class NotebookTierBase(FolderTierBase):
         if self.meta_file:
             self.meta_file.unlink()
 
+
+class Project:
+    """
+    Represents your project. Understands your naming convention, and your project hierarchy.
+
+    Parameters
+    ----------
+    hierarchy : List[Type[BaseTier]]
+        Sequence of `TierBase` subclasses representing the hierarchy for this project. i.e. earlier entries are stored
+        in higher level directories.
+    project_folder : Union[str, Path]
+        path to home directory. Note this also accepts a path to a file, but will take `project_folder.parent` in that
+        case. This enables `__file__` to be used if you want `project_folder` to be based in the same dir.
+
+    Notes
+    -----
+    This class is a singleton i.e. only 1 instance per interpreter can be created.
+    """
+
+    _instance: Union[Project, None] = None
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> Project:
+        if cls._instance:
+            raise RuntimeError(
+                "Attempted to create new Project instance, only 1 instance permitted per interpreter"
+            )
+        instance = object.__new__(cls)
+        cls._instance = instance
+        env.project = instance
+        return instance
+
+    def __init__(
+        self, hierarchy: List[Type[TierABC]], project_folder: Union[str, Path]
+    ):
+        self._rank_map: Dict[Type[TierABC], int] = {}
+        self._hierarchy: List[Type[TierABC]] = []
+        
+        self.hierarchy = hierarchy
+        
+        project_folder = Path(project_folder).resolve()
+        self.project_folder = (
+            project_folder if project_folder.is_dir() else project_folder.parent
+        )
+
+        self.template_env = PathLibEnv(
+            autoescape=jinja2.select_autoescape(["html", "xml"]),
+            loader=jinja2.FileSystemLoader(self.template_folder),
+        )
+
+    @property
+    def hierarchy(self) -> List[Type[TierABC]]:
+        return self._hierarchy
+
+    @hierarchy.setter
+    def hierarchy(self, hierarchy: List[Type[TierABC]]):
+        self._hierarchy = hierarchy
+
+        for rank, tier_cls in enumerate(hierarchy):
+            self._rank_map[tier_cls] = rank
+
+    @property
+    def rank_map(self):
+        return self._rank_map
+
+    @property
+    def home(self) -> TierABC:
+        """
+        Get the home `Tier`.
+        """
+        return self.hierarchy[0]()
+
+    def env(self, name: str) -> TierABC:
+        """
+        Initialise the global environment to a particular `Tier` that is retrieved by parsing `name`.
+
+        This will set the value of `env.o`.
+
+        Warnings
+        --------
+        This should only really be called once (or only with 1 name). Otherwise this could create some unexpected
+        behaviour.
+        """
+        obj = self.__getitem__(name)
+
+        if env.o and name != env.o.name:
+            warn(
+                (
+                    f"Overwriting the global Tier {env.o} for this interpreter. This may cause unexpected behaviour. "
+                    f"If you wish to create Tier objects that aren't the current Tier I recommend initialising them "
+                    f"directly e.g. obj = MyTier('id1', 'id2')"
+                )
+            )
+
+        env.update(obj)
+        return obj
+
+    def get_tier(self, identifiers: Tuple[str, ...]) -> TierABC:
+        cls = self.hierarchy[len(identifiers)]
+        return cls(*identifiers)
+    
+    def get_child_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
+        rank = self.rank_map[tier_cls]
+        if rank + 1 > (len(self.hierarchy) - 1):
+            return None
+        else:
+            return self.hierarchy[rank + 1]
+    
+    def get_parent_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
+        rank = self.rank_map[tier_cls]
+        if rank - 1 < 0:
+            return None
+        else:
+            return self.hierarchy[rank - 1]
+
+    def __getitem__(self, name: str) -> TierABC:
+        """
+        Retrieve a tier object from the project by name.
+
+        Parameters
+        ----------
+        name : str
+            Parsable name to get the tier object by. To get your `Home` just provide `Home.name`.
+
+        Returns
+        -------
+        tier : TierBase
+            Tier retrieved from project.
+        """
+        if name == self.home.name:
+            obj = self.home
+        else:
+            identifiers = self.parse_name(name)
+            if not identifiers:
+                raise ValueError(f"Name {name} not recognised as identifying any Tier")
+            obj = self.get_tier(identifiers)
+        return obj
+
+    @soft_prop
+    def template_folder(self) -> Path:
+        """
+        Overwritable property providing where templates will be stored for this project.
+        """
+        return self.project_folder / "templates"
+
+    def setup_files(self) -> TierABC:
+        """
+        Setup files needed for this project.
+
+        Will put everything you need in `project_folder` to get going.
+        """
+        home = self.home
+
+        if home.exists():
+            return home
+
+        print("Setting up project.")
+
+        with FileMaker() as maker:
+            print("Creating templates folder")
+            maker.mkdir(self.template_folder)
+            print("Success")
+
+            for tier_cls in self.hierarchy:
+                if not issubclass(tier_cls, NotebookTierBase):
+                    continue
+
+                maker.mkdir(self.template_folder / tier_cls.pretty_type)
+                print("Copying over default template")
+                maker.copy_file(
+                    config.BASE_TEMPLATE,
+                    self.template_folder / tier_cls.default_template,
+                )
+                print("Done")
+
+        print("Setting up Home Tier")
+        home.setup_files()
+        print("Success")
+
+        return home
+
+    def launch(
+        self, app: Union[LabApp, None] = None, patch_pythonpath: bool = True
+    ) -> LabApp:
+        """
+        Jump off point for a cassini project.
+
+        Sets up required files for your project, monkeypatches `PYTHONPATH` to make your project available throughout
+        and launches a jupyterlab server.
+
+        This explicitly associates an instance of the Jupyter server with a particular project.
+
+        Parameters
+        ----------
+        app : LabApp
+            A ready made Jupyter Lab app (By defuault will just create a new one).
+        patch_pythonpath : bool
+            Add `self.project_folder` to the `PYTHONPATH`? (defaults to `True`)
+        """
+        self.setup_files()
+
+        if patch_pythonpath:
+            py_path = os.environ.get("PYTHONPATH", "")
+            project_path = str(self.project_folder.resolve())
+            os.environ["PYTHONPATH"] = (
+                py_path + os.pathsep + project_path if py_path else project_path
+            )
+
+        if app is None:
+            app = CassiniLabApp()
+
+        app.launch_instance()
+
+        return app
+
+    def parse_name(self, name: str) -> Tuple[str, ...]:
+        """
+        Parses a string that corresponds to a `Tier` and returns a list of its identifiers.
+
+        returns an empty tuple if not a valid name.
+
+        Parameters
+        ----------
+        name : str
+            name to parse
+
+        Returns
+        -------
+        identifiers : tuple
+            identifiers extracted from name, empty tuple if `None` found
+
+        Notes
+        -----
+        This works in a slightly strange - but robust way!
+
+        e.g.
+
+            >>> name = 'WP2.3c'
+
+        it will loop through each entry in `cls.hierarchy` (skipping home!), and then perform a search on `name` with
+        that regex:
+
+            >>> WorkPackage.name_part_regex
+            WP(\\d+)
+            >>> match = re.search(WorkPackage.name_part_regex, name)
+
+        If there's no match, it will return `()`, if there is, it stores the `id` part:
+
+            >>> wp_id = match.group(1)  # in python group 0 is the whole match
+            >>> wp_id
+            2
+
+        Then it removes the whole match from the name:
+
+            >>> name = name[match.end(0):]
+            >>> name
+            .3c
+
+        Then it moves on to the next tier
+
+            >>> Experiment.name_part_regex
+            '\\.(\\d+)'
+            >>> match = re.search(WorkPackage.name_part_regex, name)
+
+        If there's a match it extracts the id, and substracts the whole string from name and moves on, continuing this
+        loop until it's gone through the whole hierarchy.
+
+        The whole name has to be a valid id, or it will return `()` e.g.
+
+            >>> TierBase.parse_name('WP2.3')
+            ('2', '3')
+            >>> TierBase.parse_name('WP2.u3')
+            ()
+        """
+        parts = self.hierarchy[1:]
+        ids: List[str] = []
+        for tier_cls in parts:
+            pattern = tier_cls.name_part_regex
+            match = re.search(pattern, name)
+            if match and match.start(0) == 0:
+                ids.append(match.group(1))
+                name = name[match.end(0):]
+            else:
+                break
+        if name:  # if there's any residual text then it's not a valid name!
+            return tuple()
+        else:
+            return tuple(ids)
+
+    def __repr__(self) -> str:
+        return f"<Project at: '{self.project_folder}' hierarchy: '{self.hierarchy}' ({env})>"
