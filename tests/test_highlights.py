@@ -1,6 +1,7 @@
 import pytest # type: ignore[import]
 
-from cassini import Project, DEFAULT_TIERS
+from cassini import DEFAULT_TIERS
+from cassini.core import Project
 
 @pytest.fixture
 def mk_project(tmp_path):
@@ -57,11 +58,6 @@ def test_add_highlight(mk_project) -> None:
 
     dset = project['WP1.1a-data']
 
-    assert dset.highlights_file is None 
-        
-    dset.add_highlight('test', [{'data': {}}])
-
-
-
-
+    with pytest.raises(AttributeError):
+        assert dset.highlights_file is None 
 

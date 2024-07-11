@@ -2,7 +2,8 @@ import time
 import datetime
 import pytest # type: ignore[import]
 
-from cassini import TierBase, Home, Project
+from cassini import FolderTierBase, NotebookTierBase, Home
+from cassini.core import Project
 
 
 @pytest.fixture
@@ -12,10 +13,10 @@ def mk_project(tmp_path):
     class MyHome(Home):
         pass
 
-    class Second(TierBase):
+    class Second(NotebookTierBase):
         pass
 
-    class Third(TierBase):
+    class Third(NotebookTierBase):
         pass
 
     project = Project([MyHome, Second, Third], tmp_path)

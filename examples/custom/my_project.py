@@ -1,15 +1,16 @@
-from cassini import TierBase, Home, Project
+from cassini import TierABC, Home
+from cassini.core import Project
 
 
 class Book(Home):
     pass
 
 
-class Chapter(TierBase):
+class Chapter(TierABC):
     name_part_template = 'Chapter {}'
 
 
-class Page(TierBase):
+class Page(TierABC):
     name_part_template = 'pg. {}'
 
 

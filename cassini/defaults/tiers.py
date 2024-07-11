@@ -1,18 +1,15 @@
 from pathlib import Path
 import os
-import html
 
-from typing import Iterator, List, Any, Union, cast, Dict, Optional
+from typing import Iterator, List, Any, cast, Dict
 
-import pandas as pd
 from IPython.display import display
-from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget  # type: ignore[import]
+from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget
 
-from ..core import TierBase, MetaDict
-from ..accessors import cached_prop, cached_class_prop
+from ..core import TierABC, FolderTierBase, NotebookTierBase, HomeTierBase
+from ..accessors import cached_prop
 from ..utils import FileMaker
 from ..ipygui import InputSequence, widgetify_html, BaseTierGui, SearchWidget
-from ..environment import env
 
 
 def ignore_dir(name: str) -> bool:
@@ -36,7 +33,7 @@ class HomeGui(BaseTierGui["Home"]):
         return components
 
 
-class Home(TierBase):
+class Home(HomeTierBase):
     """
     Home `Tier`.
 
@@ -48,59 +45,8 @@ class Home(TierBase):
 
     gui_cls = HomeGui
 
-    @cached_prop
-    def name(self) -> str:
-        return self.pretty_type
 
-    @cached_prop
-    def folder(self) -> Path:
-        assert env.project
-        assert self.child_cls
-        return env.project.project_folder / (self.child_cls.pretty_type + "s")
-
-    @cached_prop
-    def file(self) -> Path:
-        assert env.project
-        return env.project.project_folder / f"{self.name}.ipynb"
-
-    @cached_prop
-    def highlights_file(self) -> None:
-        return None
-
-    @cached_prop
-    def meta_file(self) -> None:
-        return None
-
-    def serialize(self) -> MetaDict:
-        data: MetaDict = {}
-
-        data["identifiers"] = self.name
-        data["name"] = self.name
-        data["file"] = str(self.file)
-        data["parents"] = []
-        data["children"] = [child.name for child in self]
-
-        return data
-
-    def exists(self) -> bool:
-        return self.file.exists()
-
-    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
-        assert self.child_cls
-        assert self.default_template
-
-        with FileMaker() as maker:
-            print(f"Creating {self.child_cls.pretty_type} folder")
-            maker.mkdir(self.folder)
-            print("Success")
-
-        with FileMaker() as maker:
-            print(f"Creating Tier File ({self.file})")
-            maker.write_file(self.file, self.render_template(self.default_template))
-            print("Success")
-
-
-class WorkPackage(TierBase):
+class WorkPackage(NotebookTierBase):
     """
     WorkPackage Tier.
 
@@ -109,16 +55,11 @@ class WorkPackage(TierBase):
     Next level down are `Experiment`s.
     """
 
-    @cached_class_prop
-    def name_part_template(cls) -> str:
-        return "WP{}"
-
-    @cached_class_prop
-    def short_type(cls) -> str:
-        return "wp"
+    name_part_template = "WP{}"
+    short_type = "wp"
 
     @property
-    def exps(self) -> List[TierBase]:
+    def exps(self) -> List[TierABC]:
         """
         Gets a list of all this `WorkPackage`s experiments.
         """
@@ -156,7 +97,7 @@ class ExperimentGui(BaseTierGui["Experiment"]):
         return components
 
 
-class Experiment(TierBase):
+class Experiment(NotebookTierBase):
     """
     Experiment `Tier`.
 
@@ -166,13 +107,8 @@ class Experiment(TierBase):
     Each `Experiment` has a number of samples.
     """
 
-    @cached_class_prop
-    def name_part_template(cls) -> str:
-        return ".{}"
-
-    @cached_class_prop
-    def short_type(cls) -> str:
-        return "exp"
+    name_part_template = ".{}"
+    short_type = "exp"
 
     gui_cls = ExperimentGui
 
@@ -210,23 +146,8 @@ class Experiment(TierBase):
 
         print("Done")
 
-    def children_df(
-        self,
-        include: Union[List[str], None] = None,
-        exclude: Union[List[str], None] = None,
-    ) -> Union[pd.DataFrame, None]:
-        df = super().children_df(include=include, exclude=exclude)
-
-        if df is None:
-            return None
-
-        df["datasets"] = pd.Series(
-            {smpl.name: list(dataset.id for dataset in smpl.datasets) for smpl in self}
-        )
-        return df
-
     @property
-    def smpls(self) -> List[TierBase]:
+    def smpls(self) -> List[TierABC]:
         """
         Get a list of this `Experiment`s samples.
         """
@@ -264,7 +185,7 @@ class SampleGui(BaseTierGui["Sample"]):
         return components
 
 
-class Sample(TierBase):
+class Sample(NotebookTierBase):
     """
     Sample `Tier`.
 
@@ -277,13 +198,9 @@ class Sample(TierBase):
     A `Sample` id can't start with a number and can't contain `'-'` (dashes), as these confuse the name parser.
     """
 
-    @cached_class_prop
-    def name_part_template(cls) -> str:
-        return "{}"
+    name_part_template = "{}"
 
-    @cached_class_prop
-    def id_regex(cls) -> str:
-        return r"([^0-9^-][^-]*)"
+    id_regex = r"([^0-9^-][^-]*)"
 
     gui_cls = SampleGui
 
@@ -293,7 +210,7 @@ class Sample(TierBase):
         return self.parent.folder
 
     @property
-    def datasets(self) -> List[TierBase]:
+    def datasets(self) -> List[TierABC]:
         """
         Convenient way of getting a list of `DataSet`s this sample has.
         """
@@ -307,32 +224,21 @@ class Sample(TierBase):
                 techs.append(dataset)
         return techs
 
-    def __iter__(self) -> Iterator[TierBase]:
+    def __iter__(self) -> Iterator[TierABC]:
         return iter(self.datasets)
 
 
-class DataSet(TierBase):
+class DataSet(FolderTierBase):
     """
     `DataSet` Tier.
 
     The final tier, intended to represent a folder containing a collection of files relating to a particular `Sample`.
     """
 
-    @cached_class_prop
-    def short_type(cls) -> str:
-        return "dset"
+    short_type = "dset"
+    name_part_template = "-{}"
 
-    @cached_class_prop
-    def name_part_template(cls) -> str:
-        return "-{}"
-
-    @cached_class_prop
-    def id_regex(cls) -> str:
-        return r"(.+)"
-
-    @cached_class_prop
-    def default_template(cls) -> None:
-        return None
+    id_regex = r"(.+)"
 
     @cached_prop
     def folder(self) -> Path:
@@ -340,52 +246,8 @@ class DataSet(TierBase):
 
         return self.parent / self.id / self.parent.id
 
-    @cached_prop
-    def href(self) -> str:
-        return (
-            html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
-            + "/"
-        )
-
     def exists(self) -> bool:
         return self.folder.exists()
-
-    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
-        print(f"Creating Folder for Data: {self}")
-
-        with FileMaker() as maker:
-            maker.mkdir(self.folder.parent, exist_ok=True)
-            maker.mkdir(self.folder)
-
-        print("Success")
-
-    @cached_prop
-    def meta_file(self) -> None:
-        """
-        `DataSet`s have no meta.
-        """
-        return None
-
-    @cached_prop
-    def highlights_file(self) -> None:
-        """
-        `DataSet`s have no highlights.
-        """
-        return None
-
-    @cached_prop
-    def file(self) -> None:
-        """
-        `DataSet`s have no file
-        """
-        return None
-
-    @classmethod
-    def get_templates(cls) -> List[Path]:
-        """
-        Datasets have no templates.
-        """
-        return []
 
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)

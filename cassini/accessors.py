@@ -18,13 +18,18 @@ from typing import (
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from .core import TierBase
+    from .core import TierABC
 
 T = TypeVar("T")
 V = TypeVar("V")
 
 JSONPrimative = Union[str, int, float, bool, None]
-JSONType = Union[dict, list, tuple, JSONPrimative]
+JSONType = Union[
+    Dict[JSONPrimative, "JSONType"],
+    List["JSONType"],
+    Tuple[JSONPrimative],
+    JSONPrimative,
+]
 JSONProcessor = Callable[[JSONType], T]
 
 JOut = TypeVar(
@@ -89,13 +94,13 @@ class MetaAttr(Generic[JOut, T]):
         if self.name is None:
             self.name = name
 
-    def __get__(self, instance: "TierBase", owner: object) -> Union[T, None]:
+    def __get__(self, instance: "TierABC", owner: object) -> Union[T, None]:
         try:
             return self.post_get(cast(JOut, instance.meta[self.name]))
         except KeyError:
             return self.default
 
-    def __set__(self, instance: "TierBase", value: T) -> None:
+    def __set__(self, instance: "TierABC", value: T) -> None:
         setattr(instance.meta, self.name, self.pre_set(value))
 
 
@@ -106,6 +111,7 @@ class _SoftProp(Generic[T, V]):
 
     def __init__(self, func: Callable[[T], V]):
         self.func = func
+        self.__wrapped__ = func
 
     @overload
     def __get__(self, instance: None, owner: Type[T]) -> Self:
@@ -125,7 +131,7 @@ def soft_prop(wraps: Callable[[Any], V]) -> V:
     """
     Create an over-writable property
     """
-    return cast(V, functools.wraps(wraps)(_SoftProp(wraps)))
+    return cast(V, functools.wraps(wraps)(_SoftProp(wraps)))  # type: ignore[arg-type]
 
 
 class _CachedProp(Generic[T, V]):
@@ -138,6 +144,8 @@ class _CachedProp(Generic[T, V]):
     def __init__(self, func: Callable[[T], V]):
         self.func = func
         self.cache: Dict[T, V] = {}
+
+        self.__wrapped__ = func
 
     @overload
     def __get__(self, instance: None, owner: Type[T]) -> Self:
@@ -162,12 +170,16 @@ class _CachedProp(Generic[T, V]):
     def __set__(self, instance: Optional[T], value: Any) -> None:
         raise AttributeError("Trying to set a cached property - naughty!")
 
+    @property
+    def __isabstractmethod__(self):
+        return getattr(self.func, "__isabstractmethod__", False)
+
 
 def cached_prop(wrapped: Callable[[Any], V]) -> V:
     """
     Decorator for turning functions/ methods into `_CachedProp`s.
     """
-    return cast(V, functools.wraps(wrapped)(_CachedProp(wrapped)))
+    return cast(V, functools.wraps(wrapped)(_CachedProp(wrapped)))  # type: ignore[arg-type]
 
 
 class _CachedClassProp(Generic[T, V]):
@@ -183,6 +195,8 @@ class _CachedClassProp(Generic[T, V]):
         self.func = func
         self.cache: Dict[Type[T], V] = {}
 
+        self.__wrapped__ = func
+
     def __get__(self, instance: T, owner: Type[T]) -> V:
         if owner in self.cache:
             return self.cache[owner]
@@ -195,6 +209,10 @@ class _CachedClassProp(Generic[T, V]):
     def __set__(self, instance: T, value: Any) -> Any:
         raise AttributeError("Trying to set a cached class property - naughty!")
 
+    @property
+    def __isabstractmethod__(self):
+        return getattr(self.func, "__isabstractmethod__", False)
+
 
 def cached_class_prop(wrapped: Callable[[Any], V]) -> V:
     """
@@ -202,4 +220,4 @@ def cached_class_prop(wrapped: Callable[[Any], V]) -> V:
 
     First argument of wrapped will be `self.__class__` rather than `self`.
     """
-    return cast(V, functools.wraps(wrapped)(_CachedClassProp(wrapped)))
+    return cast(V, functools.wraps(wrapped)(_CachedClassProp(wrapped)))  # type: ignore[arg-type]
