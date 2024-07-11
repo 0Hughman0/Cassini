@@ -834,6 +834,56 @@ class NotebookTierBase(FolderTierBase):
             self.meta_file.unlink()
 
 
+class HomeTierBase(FolderTierBase):
+    """
+    Home `Tier`.
+
+    This, or a subclass of this should generally be the first entry in your hierarchy, essentially represents the top
+    level folder in your hierarchy.
+
+    Creates the `Home.ipynb` notebook that allows easy navigation of your project.
+    """
+
+    @cached_prop
+    def name(self) -> str:
+        return self.pretty_type
+
+    @classmethod
+    def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
+        yield env.project.home
+
+    @cached_prop
+    def folder(self) -> Path:
+        assert env.project
+        assert self.child_cls
+        return env.project.project_folder / (self.child_cls.pretty_type + "s")
+
+    @cached_prop
+    def file(self) -> Path:
+        assert env.project
+        return env.project.project_folder / f"{self.name}.ipynb"
+
+    def exists(self) -> bool:
+        return bool(self.folder and self.file.exists())
+
+    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
+        assert self.child_cls
+    
+        with FileMaker() as maker:
+            print(f"Creating {self.child_cls.pretty_type} folder")
+            maker.mkdir(self.folder)
+            print("Success")
+
+        with FileMaker() as maker:
+            print(f"Creating Tier File ({self.file})")
+            # TODO: look at this, is this ok?
+            maker.write_file(self.file, (config.DEFAULT_TEMPLATE_DIR / 'Home.ipynb').read_text())
+            print("Success")
+
+    def remove_files(self) -> None:
+        self.file.unlink()
+
+
 class Project:
     """
     Represents your project. Understands your naming convention, and your project hierarchy.
