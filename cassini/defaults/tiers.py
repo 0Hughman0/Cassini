@@ -8,7 +8,7 @@ import pandas as pd
 from IPython.display import display
 from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget  # type: ignore[import]
 
-from ..core import TierABC, FolderTierBase, NotebookTierBase, MetaDict
+from ..core import TierABC, FolderTierBase, NotebookTierBase, HomeTierBase
 from ..accessors import cached_prop, cached_class_prop
 from ..utils import FileMaker
 from ..ipygui import InputSequence, widgetify_html, BaseTierGui, SearchWidget
@@ -37,7 +37,7 @@ class HomeGui(BaseTierGui["Home"]):
         return components
 
 
-class Home(FolderTierBase):
+class Home(HomeTierBase):
     """
     Home `Tier`.
 
@@ -46,47 +46,7 @@ class Home(FolderTierBase):
 
     Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
-
     gui_cls = HomeGui
-
-    @cached_prop
-    def name(self) -> str:
-        return self.pretty_type
-
-    @classmethod
-    def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
-        yield env.project.home
-
-    @cached_prop
-    def folder(self) -> Path:
-        assert env.project
-        assert self.child_cls
-        return env.project.project_folder / (self.child_cls.pretty_type + "s")
-
-    @cached_prop
-    def file(self) -> Path:
-        assert env.project
-        return env.project.project_folder / f"{self.name}.ipynb"
-
-    def exists(self) -> bool:
-        return bool(self.folder and self.file.exists())
-
-    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
-        assert self.child_cls
-    
-        with FileMaker() as maker:
-            print(f"Creating {self.child_cls.pretty_type} folder")
-            maker.mkdir(self.folder)
-            print("Success")
-
-        with FileMaker() as maker:
-            print(f"Creating Tier File ({self.file})")
-            # TODO: look at this, is this ok?
-            maker.write_file(self.file, (config.DEFAULT_TEMPLATE_DIR / 'Home.ipynb').read_text())
-            print("Success")
-
-    def remove_files(self) -> None:
-        self.file.unlink()
 
 
 class WorkPackage(NotebookTierBase):
@@ -97,7 +57,6 @@ class WorkPackage(NotebookTierBase):
 
     Next level down are `Experiment`s.
     """
-    
     name_part_template = "WP{}"
     short_type = "wp"
 
