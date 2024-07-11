@@ -2,7 +2,17 @@ from pathlib import Path
 import os
 import sys
 import functools
-from typing import MutableMapping, Type, Union, Callable, Any, List, Tuple, TypeVar, Generic
+from typing import (
+    MutableMapping,
+    Type,
+    Union,
+    Callable,
+    Any,
+    List,
+    Tuple,
+    TypeVar,
+    Generic,
+)
 from jupyterlab.labapp import LabApp, LabServerApp
 from typing_extensions import Self, ParamSpec
 import datetime
@@ -38,7 +48,7 @@ class PathLibEnv(jinja2.Environment):
             parent=None,
             globals=None,
         )
-    
+
 
 class CassiniLabApp(LabApp):  # type: ignore[misc]
     """

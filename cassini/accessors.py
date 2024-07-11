@@ -139,7 +139,7 @@ class _CachedProp(Generic[T, V]):
     def __init__(self, func: Callable[[T], V]):
         self.func = func
         self.cache: Dict[T, V] = {}
-        
+
         self.__wrapped__ = func
 
     @overload
@@ -164,11 +164,10 @@ class _CachedProp(Generic[T, V]):
 
     def __set__(self, instance: Optional[T], value: Any) -> None:
         raise AttributeError("Trying to set a cached property - naughty!")
-    
+
     @property
     def __isabstractmethod__(self):
-        return getattr(self.func, '__isabstractmethod__', False)
-
+        return getattr(self.func, "__isabstractmethod__", False)
 
 
 def cached_prop(wrapped: Callable[[Any], V]) -> V:
@@ -207,7 +206,7 @@ class _CachedClassProp(Generic[T, V]):
 
     @property
     def __isabstractmethod__(self):
-        return getattr(self.func, '__isabstractmethod__', False)
+        return getattr(self.func, "__isabstractmethod__", False)
 
 
 def cached_class_prop(wrapped: Callable[[Any], V]) -> V:

@@ -46,6 +46,7 @@ class Home(HomeTierBase):
 
     Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
+
     gui_cls = HomeGui
 
 
@@ -57,6 +58,7 @@ class WorkPackage(NotebookTierBase):
 
     Next level down are `Experiment`s.
     """
+
     name_part_template = "WP{}"
     short_type = "wp"
 

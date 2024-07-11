@@ -28,7 +28,14 @@ from typing_extensions import Self, deprecated
 
 from .ipygui import BaseTierGui
 from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType, soft_prop
-from .utils import FileMaker, open_file, str_to_date, date_to_str, CassiniLabApp, PathLibEnv
+from .utils import (
+    FileMaker,
+    open_file,
+    str_to_date,
+    date_to_str,
+    CassiniLabApp,
+    PathLibEnv,
+)
 from .environment import env
 from .config import config
 
@@ -179,8 +186,8 @@ class TierABC(ABC):
          as first argument.
     """
 
-    cache: ClassVar[Dict[Tuple[str, ...], TierABC]] 
-    
+    cache: ClassVar[Dict[Tuple[str, ...], TierABC]]
+
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
         cls.cache = {}  # ensures each TierBase class has its own cache
@@ -195,7 +202,7 @@ class TierABC(ABC):
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
         return cast(str, cls.__name__)
-    
+
     pretty_type: str = _pretty_type  # to please type checker.
 
     @cached_class_prop
@@ -206,7 +213,7 @@ class TierABC(ABC):
         Default, take pretty type, make lowercase and remove vowels.
         """
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys("aeiou")))
-    
+
     short_type: str = _short_type
 
     @cached_class_prop
@@ -215,7 +222,7 @@ class TierABC(ABC):
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + "{}"
-    
+
     name_part_template = _name_part_template
 
     @cached_class_prop
@@ -225,7 +232,7 @@ class TierABC(ABC):
         `cls.id_regex`.
         """
         return cls.name_part_template.format(cls.id_regex)
-    
+
     name_part_regex = _name_part_regex
 
     @cached_class_prop
@@ -249,7 +256,7 @@ class TierABC(ABC):
         """
         assert env.project
         return env.project.get_child_cls(cls)
-    
+
     child_cls = _child_cls
 
     @classmethod
@@ -276,7 +283,7 @@ class TierABC(ABC):
                 "Attempting to parse a name before a project is initialised"
             )
         return env.project.parse_name(name)
-    
+
     _identifiers: Tuple[str, ...]
     gui: BaseTierGui[Self]
 
@@ -396,7 +403,7 @@ class TierABC(ABC):
             href usable in notebook HTML.
         """
         pass
-        
+
     @abstractmethod
     def exists(self) -> bool:
         """
@@ -429,7 +436,7 @@ class TierABC(ABC):
         Equivalent to `self.get_child(item)`.
         """
         return self.get_child(item)
-    
+
     def __iter__(self) -> Iterator[Any]:
         """
         Iterates over all children (in no particular order). Children are found by looking through the child meta
@@ -439,7 +446,7 @@ class TierABC(ABC):
         """
         if not self.child_cls:
             raise NotImplementedError()
-        
+
         yield from self.child_cls.iter_siblings(self)
 
     def __repr__(self) -> str:
@@ -456,12 +463,12 @@ class TierABC(ABC):
         if env.project:
             short_map = {cls.short_type: cls for cls in env.project.hierarchy}
             tier_cls = short_map.get(item)
-            
+
             if tier_cls is None:
                 raise AttributeError(item)
-            
+
             rank = env.project.rank_map[tier_cls]
-            
+
             return tier_cls(*self.identifiers[:rank])
         raise AttributeError(item)
 
@@ -474,18 +481,17 @@ class TierABC(ABC):
 
 
 class FolderTierBase(TierABC):
-
     @classmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[FolderTierBase]:
         # TODO: shouldn't project also handle this?
         if not parent.folder.exists():
-            return 
-        
+            return
+
         for folder in os.scandir(parent.folder):
             if not folder.is_dir():
                 continue
             yield cls(*cls.parse_name(folder.name))
-            
+
     @cached_prop
     def folder(self) -> Path:
         """
@@ -528,7 +534,7 @@ class FolderTierBase(TierABC):
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
         return self.folder.exists()
-    
+
     @cached_prop
     def href(self) -> Union[str, None]:
         """
@@ -548,7 +554,6 @@ class FolderTierBase(TierABC):
 
 
 class NotebookTierBase(FolderTierBase):
-
     meta: Meta
 
     @cached_class_prop
@@ -557,7 +562,7 @@ class NotebookTierBase(FolderTierBase):
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
-    
+
     default_template = _default_template
 
     @cached_class_prop
@@ -566,9 +571,9 @@ class NotebookTierBase(FolderTierBase):
         Form of meta folder name. (Just fills in `config.META_DIR_TEMPLATE` with `cls.short_type`).
         """
         return config.META_DIR_TEMPLATE.format(cls.short_type)
-    
+
     meta_folder_name = _meta_folder_name
-    
+
     @classmethod
     def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
         for meta_file in os.scandir(path):
@@ -698,7 +703,7 @@ class NotebookTierBase(FolderTierBase):
         """
         assert self.parent
         return self.parent.folder / (self.name + ".ipynb")
-    
+
     @classmethod
     def get_templates(cls) -> List[Path]:
         """
@@ -868,7 +873,7 @@ class HomeTierBase(FolderTierBase):
 
     def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
         assert self.child_cls
-    
+
         with FileMaker() as maker:
             print(f"Creating {self.child_cls.pretty_type} folder")
             maker.mkdir(self.folder)
@@ -877,7 +882,9 @@ class HomeTierBase(FolderTierBase):
         with FileMaker() as maker:
             print(f"Creating Tier File ({self.file})")
             # TODO: look at this, is this ok?
-            maker.write_file(self.file, (config.DEFAULT_TEMPLATE_DIR / 'Home.ipynb').read_text())
+            maker.write_file(
+                self.file, (config.DEFAULT_TEMPLATE_DIR / "Home.ipynb").read_text()
+            )
             print("Success")
 
     def remove_files(self) -> None:
@@ -919,9 +926,9 @@ class Project:
     ):
         self._rank_map: Dict[Type[TierABC], int] = {}
         self._hierarchy: List[Type[TierABC]] = []
-        
+
         self.hierarchy = hierarchy
-        
+
         project_folder = Path(project_folder).resolve()
         self.project_folder = (
             project_folder if project_folder.is_dir() else project_folder.parent
@@ -982,14 +989,14 @@ class Project:
     def get_tier(self, identifiers: Tuple[str, ...]) -> TierABC:
         cls = self.hierarchy[len(identifiers)]
         return cls(*identifiers)
-    
+
     def get_child_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
         rank = self.rank_map[tier_cls]
         if rank + 1 > (len(self.hierarchy) - 1):
             return None
         else:
             return self.hierarchy[rank + 1]
-    
+
     def get_parent_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
         rank = self.rank_map[tier_cls]
         if rank - 1 < 0:
@@ -1163,7 +1170,7 @@ class Project:
             match = re.search(pattern, name)
             if match and match.start(0) == 0:
                 ids.append(match.group(1))
-                name = name[match.end(0):]
+                name = name[match.end(0) :]
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!
