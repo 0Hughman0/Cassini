@@ -233,7 +233,7 @@ class TierABC(ABC):
         super().__init_subclass__(*args, **kwargs)
         cls.cache = {}  # ensures each TierBase class has its own cache
 
-        for name in dir(cls):
+        for name in cls.__dict__:
             try:
                 attr = getattr(cls, name, None)
             except (AssertionError, KeyError):
