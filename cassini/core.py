@@ -63,7 +63,7 @@ class Meta:
     """
 
     timeout: ClassVar[int] = 1
-    my_attrs: ClassVar[List[str]] = ["_cache", "_cache_born", "file"]
+    my_attrs: ClassVar[List[str]] = ["_model", "_cache_born", "file"]
 
     def __init__(self, file: Path, fields: Optional[Dict[str, (JSONType, Field)]] = None):
         if fields is None:
@@ -72,7 +72,7 @@ class Meta:
         model = create_model('CustomMetaJSON', 
                             **fields,
                             __base__=MetaJSON)
-        self._cache: MetaJSON = model()
+        self._model: MetaJSON = model()
         self._cache_born: float = 0.0
         self.file: Path = file
 
@@ -93,9 +93,9 @@ class Meta:
         overwritten, it'll just be loaded.
         """
         if self.file.exists():
-            self._cache = self._cache.model_validate_json(self.file.read_text(), strict=False)
+            self._model = self._model.model_validate_json(self.file.read_text(), strict=False)
             self._cache_born = time.time()
-        return self._cache
+        return self._model
 
     def refresh(self) -> None:
         """
@@ -108,8 +108,8 @@ class Meta:
         """
         Overwrite contents of cache into file
         """
-        self._cache.model_validate(self._cache)  # maybe over-cautious!
-        jsons = self._cache.model_dump_json(exclude_defaults=True, exclude={'__pydantic_extra__'})
+        self._model.model_validate(self._model)  # maybe over-cautious!
+        jsons = self._model.model_dump_json(exclude_defaults=True, exclude={'__pydantic_extra__'})
         # Danger moment - writing bad cache to file.
         with self.file.open("w", encoding="utf-8") as f:
             f.write(jsons)
@@ -117,7 +117,7 @@ class Meta:
     def __getitem__(self, item: str) -> JSONType:
         self.refresh()
         try:
-            return getattr(self._cache, item)
+            return getattr(self._model, item)
         except AttributeError as e:
             raise KeyError(e)
 
@@ -127,7 +127,7 @@ class Meta:
     def __getattr__(self, item: str) -> JSONType:
         self.refresh()
         try:
-            return getattr(self._cache, item)
+            return getattr(self._model, item)
         except KeyError:
             raise AttributeError(item)
 
@@ -136,18 +136,18 @@ class Meta:
             super().__setattr__(name, value)
         else:
             self.fetch()
-            setattr(self._cache, name, value)
+            setattr(self._model, name, value)
             self.write()
 
     def __delitem__(self, key: str) -> None:
         self.fetch()
-        excluded = self._cache.model_dump(exclude={key})
-        self._cache = self._cache.model_validate(excluded)
+        excluded = self._model.model_dump(exclude={key})
+        self._model = self._model.model_validate(excluded)
         self.write()
 
     def __repr__(self) -> str:
         self.refresh()
-        return f"<Meta {self._cache} ({self.age * 1000:.1f}ms)>"
+        return f"<Meta {self._model} ({self.age * 1000:.1f}ms)>"
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -163,7 +163,7 @@ class Meta:
         like `dict.keys`
         """
         self.refresh()
-        return self._cache.model_dump().keys()
+        return self._model.model_dump().keys()
 
 
 HighlightType = List[Dict[str, Dict[str, Any]]]
