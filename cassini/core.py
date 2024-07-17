@@ -40,8 +40,15 @@ from .environment import env
 from .config import config
 
 import jinja2
+from pydantic import BaseModel, Field, ConfigDict, JsonValue
+
 
 MetaDict = Dict[str, JSONType]
+
+
+class MetaJSON(BaseModel):
+    __pydantic_extra__: Dict[str, JsonValue] = Field(init=False)
+    model_config = ConfigDict(extra='allow', validate_assignment=True)
 
 
 class Meta:
@@ -58,7 +65,7 @@ class Meta:
     my_attrs: ClassVar[List[str]] = ["_cache", "_cache_born", "file"]
 
     def __init__(self, file: Path):
-        self._cache: MetaDict = {}
+        self._cache: MetaJSON = MetaJSON()
         self._cache_born: float = 0.0
         self.file: Path = file
 
@@ -69,7 +76,7 @@ class Meta:
         """
         return time.time() - self._cache_born
 
-    def fetch(self) -> MetaDict:
+    def fetch(self) -> MetaJSON:
         """
         Fetches values from the meta file and updates them into `self._cache`.
 
@@ -79,7 +86,7 @@ class Meta:
         overwritten, it'll just be loaded.
         """
         if self.file.exists():
-            self._cache.update(json.loads(self.file.read_text()))
+            self._cache = self._cache.model_validate_json(self.file.read_text(), strict=False)
             self._cache_born = time.time()
         return self._cache
 
@@ -94,13 +101,18 @@ class Meta:
         """
         Overwrite contents of cache into file
         """
+        self._cache.model_validate(self._cache)  # maybe over-cautious!
+        jsons = self._cache.model_dump_json()
         # Danger moment - writing bad cache to file.
         with self.file.open("w", encoding="utf-8") as f:
-            json.dump(self._cache, f)
+            f.write(jsons)
 
     def __getitem__(self, item: str) -> JSONType:
         self.refresh()
-        return self._cache[item]
+        try:
+            return getattr(self._cache, item)
+        except AttributeError as e:
+            raise KeyError(e)
 
     def __setitem__(self, key: str, value: JSONType) -> None:
         self.__setattr__(key, value)
@@ -108,7 +120,7 @@ class Meta:
     def __getattr__(self, item: str) -> JSONType:
         self.refresh()
         try:
-            return self[item]
+            return getattr(self._cache, item)
         except KeyError:
             raise AttributeError(item)
 
@@ -117,12 +129,13 @@ class Meta:
             super().__setattr__(name, value)
         else:
             self.fetch()
-            self._cache[name] = value
+            setattr(self._cache, name, value)
             self.write()
 
     def __delitem__(self, key: str) -> None:
         self.fetch()
-        del self._cache[key]
+        excluded = self._cache.model_dump(exclude={key})
+        self._cache = self._cache.model_validate(excluded)
         self.write()
 
     def __repr__(self) -> str:
@@ -143,7 +156,7 @@ class Meta:
         like `dict.keys`
         """
         self.refresh()
-        return self._cache.keys()
+        return self._cache.model_dump().keys()
 
 
 HighlightType = List[Dict[str, Dict[str, Any]]]

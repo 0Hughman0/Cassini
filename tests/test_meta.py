@@ -43,7 +43,7 @@ def test_caching(mk_meta, monkeypatch):
     meta = mk_meta
 
     contents = meta.fetch()
-    assert contents == DEFAULT_CONTENTS
+    assert contents.model_dump() == DEFAULT_CONTENTS
 
     assert meta.age < 0.1
 
