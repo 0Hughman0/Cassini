@@ -49,7 +49,7 @@ MetaDict = Dict[str, JSONType]
 
 class MetaJSON(BaseModel):
     __pydantic_extra__: Dict[str, JsonValue] = Field(init=False)
-    model_config = ConfigDict(extra='allow', validate_assignment=True, revalidate_instances='subclass-instances')
+    model_config = ConfigDict(extra='allow', validate_assignment=True, revalidate_instances='subclass-instances', strict=True)
 
 
 class Meta:
@@ -108,8 +108,8 @@ class Meta:
         """
         Overwrite contents of cache into file
         """
-        # self._cache.model_validate(self._cache)  # maybe over-cautious!
-        jsons = self._cache.model_dump_json()
+        self._cache.model_validate(self._cache)  # maybe over-cautious!
+        jsons = self._cache.model_dump_json(exclude_defaults=True, exclude={'__pydantic_extra__'})
         # Danger moment - writing bad cache to file.
         with self.file.open("w", encoding="utf-8") as f:
             f.write(jsons)
