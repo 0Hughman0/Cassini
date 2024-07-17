@@ -14,11 +14,14 @@ from typing import (
     Type,
     overload,
     TYPE_CHECKING,
+    get_args
 )
-from typing_extensions import Self
+from typing_extensions import Self, Annotated
 
 if TYPE_CHECKING:
     from .core import TierABC
+
+import pydantic
 
 T = TypeVar("T")
 V = TypeVar("V")
@@ -95,13 +98,22 @@ class MetaAttr(Generic[JOut, T]):
             self.name = name
 
     def __get__(self, instance: "TierABC", owner: object) -> Union[T, None]:
-        try:
-            return self.post_get(cast(JOut, instance.meta[self.name]))
-        except KeyError:
-            return self.default
+        if instance is None:
+            return self
+        
+        return self.post_get(cast(JOut, instance.meta[self.name]))
 
     def __set__(self, instance: "TierABC", value: T) -> None:
         setattr(instance.meta, self.name, self.pre_set(value))
+
+    def as_field(self) -> Tuple[str, Tuple[JOut, pydantic.Field]]:
+        # this is nasty, see https://github.com/python/cpython/issues/101688
+        try:
+            JOut, T = get_args(self.__orig_class__)  # typing[attr-defined]
+        except AttributeError:
+            JOut = JSONType
+        
+        return self.name, Annotated[Optional[JOut], pydantic.Field(default=self.default)]
 
 
 class _SoftProp(Generic[T, V]):

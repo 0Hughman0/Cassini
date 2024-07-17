@@ -13,7 +13,6 @@ def test_project(tmp_path):
         pass
 
     project = Project([First, Second], tmp_path)
-
     with pytest.raises(RuntimeError):
         Project([First, Second], tmp_path)
 

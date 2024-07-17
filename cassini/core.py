@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 from abc import ABC, abstractmethod
 import re
+import functools
 
 from typing import (
     Any,
@@ -40,7 +41,7 @@ from .environment import env
 from .config import config
 
 import jinja2
-from pydantic import BaseModel, Field, ConfigDict, JsonValue
+from pydantic import BaseModel, Field, ConfigDict, JsonValue, create_model
 
 
 MetaDict = Dict[str, JSONType]
@@ -48,7 +49,7 @@ MetaDict = Dict[str, JSONType]
 
 class MetaJSON(BaseModel):
     __pydantic_extra__: Dict[str, JsonValue] = Field(init=False)
-    model_config = ConfigDict(extra='allow', validate_assignment=True)
+    model_config = ConfigDict(extra='allow', validate_assignment=True, revalidate_instances='subclass-instances')
 
 
 class Meta:
@@ -64,8 +65,14 @@ class Meta:
     timeout: ClassVar[int] = 1
     my_attrs: ClassVar[List[str]] = ["_cache", "_cache_born", "file"]
 
-    def __init__(self, file: Path):
-        self._cache: MetaJSON = MetaJSON()
+    def __init__(self, file: Path, fields: Optional[Dict[str, (JSONType, Field)]] = None):
+        if fields is None:
+            fields = {}
+
+        model = create_model('CustomMetaJSON', 
+                            **fields,
+                            __base__=MetaJSON)
+        self._cache: MetaJSON = model()
         self._cache_born: float = 0.0
         self.file: Path = file
 
@@ -101,7 +108,7 @@ class Meta:
         """
         Overwrite contents of cache into file
         """
-        self._cache.model_validate(self._cache)  # maybe over-cautious!
+        # self._cache.model_validate(self._cache)  # maybe over-cautious!
         jsons = self._cache.model_dump_json()
         # Danger moment - writing bad cache to file.
         with self.file.open("w", encoding="utf-8") as f:
@@ -166,6 +173,18 @@ CacheItemType = HighlightType
 CachedType = HighlightsType
 
 
+class MetaAttrManager:
+
+    def __init__(self):
+        self.meta_attrs = []
+    
+    @functools.wraps(MetaAttr)
+    def MetaAttr(self, *args, **kwargs):
+        meta_attr = MetaAttr(*args, **kwargs)
+        self.meta_attrs.append(meta_attr)
+        return meta_attr
+
+
 class TierABC(ABC):
     """
     Base class for creating Tiers
@@ -200,10 +219,28 @@ class TierABC(ABC):
     """
 
     cache: ClassVar[Dict[Tuple[str, ...], TierABC]]
+    meta_manager: ClassVar[MetaAttrManager]
+    __meta_attrs__: ClassVar[List[MetaAttr]] = []
+
+    @functools.wraps(MetaAttr)
+    @classmethod
+    def _MetaAttr(cls, *args, **kwargs):
+        meta_attr = MetaAttr(*args, **kwargs)
+        cls.__meta_attrs__.append(meta_attr)
+        return meta_attr
 
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
         cls.cache = {}  # ensures each TierBase class has its own cache
+
+        for name in dir(cls):
+            try:
+                attr = getattr(cls, name, None)
+            except (AssertionError, KeyError):
+                continue
+            
+            if isinstance(attr, MetaAttr):
+                cls.__meta_attrs__.append(attr)
 
     id_regex: ClassVar[str] = r"(\d+)"
 
@@ -614,7 +651,8 @@ class NotebookTierBase(FolderTierBase):
 
     def __init__(self, *identifiers: str):
         super().__init__(*identifiers)
-        self.meta: Meta = Meta(self.meta_file)
+        fields = {name: field_def for name, field_def in (meta_attr.as_field() for meta_attr in self.__meta_attrs__)}
+        self.meta: Meta = Meta(self.meta_file, fields=fields)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -677,10 +715,11 @@ class NotebookTierBase(FolderTierBase):
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
         return bool(self.file and self.folder.exists() and self.meta_file.exists())
-
-    description: MetaAttr[str, str] = MetaAttr()
-    conclusion: MetaAttr[str, str] = MetaAttr()
-    started: MetaAttr[str, datetime.datetime] = MetaAttr(str_to_date, date_to_str)
+    
+    description = MetaAttr[str, str]()
+    conclusion = MetaAttr[str, str]()
+    # started = MetaAttr[str, datetime.datetime](str_to_date, date_to_str)
+    started = MetaAttr[datetime.datetime, datetime.datetime]()
 
     @cached_prop
     def meta_file(self) -> Path:
