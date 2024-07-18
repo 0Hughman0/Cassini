@@ -13,15 +13,9 @@ from typing import (
     Optional,
     Type,
     overload,
-    TYPE_CHECKING,
-    get_args
+    TYPE_CHECKING
 )
-from typing_extensions import Self, Annotated
-
-if TYPE_CHECKING:
-    from .core import TierABC
-
-import pydantic
+from typing_extensions import Self
 
 T = TypeVar("T")
 V = TypeVar("V")
@@ -46,74 +40,6 @@ JOut = TypeVar(
     bool,
     None,
 )
-
-
-def _null_func(val: Any) -> Any:
-    return cast(JSONType, val)
-
-
-class MetaAttr(Generic[JOut, T]):
-    """
-    Accessor for getting values from a Tier class's meta as an attribute.
-
-    Supports basic serial and de-serialisation.
-
-    Isn't fussy, in that it won't raise an exception if it can't find its key.
-
-    Arguments
-    =========
-    post_get: func
-        function to apply to data after being loaded from json file
-    pre_set: func
-        function to apply to data before stored in json file.
-    name: str
-        key to lookup in meta
-    default:
-        value to return if key not found in meta (note post_get isn't called on this).
-
-    Examples
-    ========
-
-    >>> class MyTier(TierBase):
-    >>>
-    >>>     list_attr = MetaAttr(post_get=lambda val: val.split(','),
-    ...                          pre_set=lambda val: ','.join(val))
-
-    """
-
-    def __init__(
-        self,
-        post_get: Callable[[JOut], T] = _null_func,
-        pre_set: Callable[[T], JOut] = _null_func,
-        name: Union[str, None] = None,
-        default: Union[T, None] = None,
-    ):
-        self.name: str = cast(str, name)
-        self.post_get: Callable[[JOut], T] = post_get
-        self.pre_set: Callable[[T], JOut] = pre_set
-        self.default = default
-
-    def __set_name__(self, owner: object, name: str) -> None:
-        if self.name is None:
-            self.name = name
-
-    def __get__(self, instance: "TierABC", owner: object) -> Union[T, None]:
-        if instance is None:
-            return self
-        
-        return self.post_get(cast(JOut, instance.meta.get(self.name, self.default)))
-
-    def __set__(self, instance: "TierABC", value: T) -> None:
-        setattr(instance.meta, self.name, self.pre_set(value))
-
-    def as_field(self) -> Tuple[str, Tuple[JOut, pydantic.Field]]:
-        # this is nasty, see https://github.com/python/cpython/issues/101688
-        try:
-            JOut, T = get_args(self.__orig_class__)  # typing[attr-defined]
-        except AttributeError:
-            JOut = JSONType
-        
-        return self.name, Annotated[Optional[JOut], pydantic.Field(default=self.default)]
 
 
 class _SoftProp(Generic[T, V]):

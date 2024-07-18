@@ -2,8 +2,8 @@ import json
 
 import pytest # type: ignore[import]
 from cassini import Project, HomeTierBase, NotebookTierBase
-from cassini.core import Meta
-from cassini.accessors import MetaAttr
+from cassini.meta import Meta
+from cassini.meta import MetaAttr
 
 import pydantic
 

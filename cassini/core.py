@@ -4,7 +4,6 @@ import datetime
 import html
 import json
 import os
-import time
 from pathlib import Path
 from abc import ABC, abstractmethod
 import re
@@ -12,7 +11,6 @@ import functools
 
 from typing import (
     Any,
-    KeysView,
     List,
     Type,
     Tuple,
@@ -27,13 +25,13 @@ from warnings import warn
 from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
 from typing_extensions import Self
 
+from cassini.meta import Meta, MetaAttr, MetaAttrManager
+
 from .ipygui import BaseTierGui
-from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType, soft_prop
+from .accessors import cached_prop, cached_class_prop, JSONType, soft_prop
 from .utils import (
     FileMaker,
     open_file,
-    str_to_date,
-    date_to_str,
     CassiniLabApp,
     PathLibEnv,
 )
@@ -41,148 +39,13 @@ from .environment import env
 from .config import config
 
 import jinja2
-from pydantic import BaseModel, Field, ConfigDict, JsonValue, create_model
 
 
 MetaDict = Dict[str, JSONType]
 
 
-class MetaJSON(BaseModel):
-    __pydantic_extra__: Dict[str, JsonValue] = Field(init=False)
-    model_config = ConfigDict(extra='allow', validate_assignment=True, revalidate_instances='subclass-instances', strict=True)
-
-
-class Meta:
-    """
-    Like a dictionary, except linked to a json file on disk. Caches the value of the json in itself.
-
-    Arguments
-    ---------
-    file: Path
-           File Meta object stores information about.
-    """
-
-    timeout: ClassVar[int] = 1
-    my_attrs: ClassVar[List[str]] = ["_model", "_cache_born", "file"]
-
-    def __init__(self, file: Path, fields: Optional[Dict[str, (JSONType, Field)]] = None):
-        if fields is None:
-            fields = {}
-
-        model = create_model('CustomMetaJSON', 
-                             **fields,
-                             __base__=MetaJSON)
-        self._model: MetaJSON = model()
-        self._cache_born: float = 0.0
-        self.file: Path = file
-
-    @property
-    def age(self) -> float:
-        """
-        time in secs since last fetch
-        """
-        return time.time() - self._cache_born
-
-    def fetch(self) -> MetaJSON:
-        """
-        Fetches values from the meta file and updates them into `self._cache`.
-
-        Notes
-        -----
-        This doesn't *overwrite* `self._cache` with meta contents, but updates it. Meaning new stuff to file won't be
-        overwritten, it'll just be loaded.
-        """
-        if self.file.exists():
-            self._model = self._model.model_validate_json(self.file.read_text(), strict=False)
-            self._cache_born = time.time()
-        return self._model
-
-    def refresh(self) -> None:
-        """
-        Check age of cache, if stale then re-fetch
-        """
-        if self.age >= self.timeout:
-            self.fetch()
-
-    def write(self) -> None:
-        """
-        Overwrite contents of cache into file
-        """
-        self._model.model_validate(self._model)  # maybe over-cautious!
-        jsons = self._model.model_dump_json(exclude_defaults=True, exclude={'__pydantic_extra__'})
-        # Danger moment - writing bad cache to file.
-        with self.file.open("w", encoding="utf-8") as f:
-            f.write(jsons)
-
-    def __getitem__(self, item: str) -> JSONType:
-        self.refresh()
-        try:
-            return getattr(self._model, item)
-        except AttributeError as e:
-            raise KeyError(e)
-
-    def __setitem__(self, key: str, value: JSONType) -> None:
-        self.__setattr__(key, value)
-
-    def __getattr__(self, item: str) -> JSONType:
-        self.refresh()
-        try:
-            return getattr(self._model, item)
-        except KeyError:
-            raise AttributeError(item)
-
-    def __setattr__(self, name: str, value: JSONType) -> None:
-        if name in self.my_attrs:
-            super().__setattr__(name, value)
-        else:
-            self.fetch()
-            setattr(self._model, name, value)
-            self.write()
-
-    def __delitem__(self, key: str) -> None:
-        self.fetch()
-        excluded = self._model.model_dump(exclude={key})
-        self._model = self._model.model_validate(excluded)
-        self.write()
-
-    def __repr__(self) -> str:
-        self.refresh()
-        return f"<Meta {self._model} ({self.age * 1000:.1f}ms)>"
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """
-        Like `dict.get`
-        """
-        try:
-            return self.__getattr__(key)
-        except AttributeError:
-            return default
-
-    def keys(self) -> KeysView[str]:
-        """
-        like `dict.keys`
-        """
-        self.refresh()
-        return self._model.model_dump().keys()
-
-
 HighlightType = List[Dict[str, Dict[str, Any]]]
 HighlightsType = Dict[str, HighlightType]
-
-CacheItemType = HighlightType
-CachedType = HighlightsType
-
-
-class MetaAttrManager:
-
-    def __init__(self):
-        self.meta_attrs = []
-    
-    @functools.wraps(MetaAttr)
-    def MetaAttr(self, *args, **kwargs):
-        meta_attr = MetaAttr(*args, **kwargs)
-        self.meta_attrs.append(meta_attr)
-        return meta_attr
 
 
 class TierABC(ABC):
