@@ -4,6 +4,8 @@ from cassini import FolderTierBase, NotebookTierBase, Home
 from cassini.core import Project, TierABC
 from cassini.accessors import _CachedProp
 
+from utils import patch_project
+
 
 def test_project(tmp_path):
     class First(Home):
@@ -30,17 +32,6 @@ def test_project(tmp_path):
     obj = project['Second1']
 
     assert isinstance(obj, Second)
-
-
-@pytest.fixture
-def patch_project(monkeypatch, tmp_path):
-    Project._instance = None
-
-    class Tier(NotebookTierBase):
-        pass
-
-    project = Project([Home, Tier], tmp_path)
-    return Tier, project
 
 
 def test_home_attr(patch_project):

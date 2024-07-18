@@ -101,7 +101,7 @@ class MetaAttr(Generic[JOut, T]):
         if instance is None:
             return self
         
-        return self.post_get(cast(JOut, instance.meta[self.name]))
+        return self.post_get(cast(JOut, instance.meta.get(self.name, self.default)))
 
     def __set__(self, instance: "TierABC", value: T) -> None:
         setattr(instance.meta, self.name, self.pre_set(value))

@@ -1,8 +1,13 @@
 import json
 
 import pytest # type: ignore[import]
+from cassini import Project, HomeTierBase, NotebookTierBase
 from cassini.core import Meta
 from cassini.accessors import MetaAttr
+
+import pydantic
+
+from utils import patch_project
 
 DEFAULT_CONTENTS = {'str': 'val', 'int': 1, 'float': 1.5}
 
@@ -116,3 +121,70 @@ def test_meta_attr(mk_meta):
 
     assert obj.doesnt_have is None
     assert obj.with_default == 'squid'
+
+
+def test_jsonable(mk_meta):
+    meta = mk_meta
+
+    with pytest.raises(pydantic.ValidationError):
+        meta['object'] = object
+
+
+    # type changes are allowed without meta definition.
+    meta['type-change'] = 'text'
+
+    assert meta['type-change'] == 'text'
+
+    meta['type-change'] = False
+
+    assert meta['type-change'] is False
+
+
+def test_strict_attrs(tmp_path):
+    meta = Meta(tmp_path / 'test.json',
+                {'strict_str': (str, 'default')})
+    
+    assert meta['strict_str'] == 'default'
+    
+    with pytest.raises(pydantic.ValidationError):
+        meta['strict_str'] = 5
+    
+    meta['strict_str'] = 'new val'
+
+    assert meta['strict_str'] == 'new val'
+
+
+def test_meta_attr_discovery(tmp_path):
+    class First(HomeTierBase):
+        pass
+
+    class Second(NotebookTierBase):
+        pass
+    
+    Project._instance = None
+    project = Project([First, Second], tmp_path)
+    project.setup_files()
+
+    obj = project['Second1']
+    obj.setup_files()
+
+    assert 'description' in obj.meta._model.model_fields
+    assert 'conclusion' in obj.meta._model.model_fields
+    assert 'started' in obj.meta._model.model_fields
+
+    assert obj.description is None
+
+    obj.description = 'new description'
+
+    assert obj.description == 'new description'
+
+    with pytest.raises(pydantic.ValidationError):
+        obj.description = 124
+
+    
+
+
+
+
+
+    

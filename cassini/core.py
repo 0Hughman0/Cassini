@@ -70,8 +70,8 @@ class Meta:
             fields = {}
 
         model = create_model('CustomMetaJSON', 
-                            **fields,
-                            __base__=MetaJSON)
+                             **fields,
+                             __base__=MetaJSON)
         self._model: MetaJSON = model()
         self._cache_born: float = 0.0
         self.file: Path = file
@@ -718,7 +718,6 @@ class NotebookTierBase(FolderTierBase):
     
     description = MetaAttr[str, str]()
     conclusion = MetaAttr[str, str]()
-    # started = MetaAttr[str, datetime.datetime](str_to_date, date_to_str)
     started = MetaAttr[datetime.datetime, datetime.datetime]()
 
     @cached_prop
@@ -933,7 +932,7 @@ class HomeTierBase(FolderTierBase):
 
         with FileMaker() as maker:
             print(f"Creating {self.child_cls.pretty_type} folder")
-            maker.mkdir(self.folder)
+            maker.mkdir(self.folder, exist_ok=True)
             print("Success")
 
         with FileMaker() as maker:
