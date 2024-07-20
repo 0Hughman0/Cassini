@@ -25,7 +25,7 @@ from warnings import warn
 from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
 from typing_extensions import Self
 
-from cassini.meta import Meta, MetaAttr, MetaAttrManager
+from cassini.meta import Meta, MetaAttr, MetaManager
 
 from .ipygui import BaseTierGui
 from .accessors import cached_prop, cached_class_prop, JSONType, soft_prop
@@ -82,29 +82,11 @@ class TierABC(ABC):
     """
 
     cache: ClassVar[Dict[Tuple[str, ...], TierABC]]
-    meta_manager: ClassVar[MetaAttrManager]
-    __meta_attrs__: ClassVar[List[MetaAttr]] = []
-
-    @functools.wraps(MetaAttr)
-    @classmethod
-    def _MetaAttr(cls, *args, **kwargs):
-        meta_attr = MetaAttr(*args, **kwargs)
-        cls.__meta_attrs__.append(meta_attr)
-        return meta_attr
 
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
         cls.cache = {}  # ensures each TierBase class has its own cache
-
-        for name in cls.__dict__:
-            try:
-                attr = getattr(cls, name, None)
-            except (AssertionError, KeyError):
-                continue
-            
-            if isinstance(attr, MetaAttr):
-                cls.__meta_attrs__.append(attr)
-
+        
     id_regex: ClassVar[str] = r"(\d+)"
 
     gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
@@ -472,6 +454,10 @@ class FolderTierBase(TierABC):
         return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
 
 
+manager = MetaManager()
+
+
+@manager.connect_class
 class NotebookTierBase(FolderTierBase):
     meta: Meta
 
@@ -514,8 +500,7 @@ class NotebookTierBase(FolderTierBase):
 
     def __init__(self, *identifiers: str):
         super().__init__(*identifiers)
-        fields = {name: field_def for name, field_def in (meta_attr.as_field() for meta_attr in self.__meta_attrs__)}
-        self.meta: Meta = Meta(self.meta_file, fields=fields)
+        self.meta: Meta = manager.create_meta(self.meta_file)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -579,9 +564,9 @@ class NotebookTierBase(FolderTierBase):
         """
         return bool(self.file and self.folder.exists() and self.meta_file.exists())
     
-    description = MetaAttr[str, str]()
-    conclusion = MetaAttr[str, str]()
-    started = MetaAttr[datetime.datetime, datetime.datetime]()
+    description = manager.MetaAttr[str, str]()
+    conclusion = manager.MetaAttr[str, str]()
+    started = manager.MetaAttr[datetime.datetime, datetime.datetime]()
 
     @cached_prop
     def meta_file(self) -> Path:
