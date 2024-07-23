@@ -13,7 +13,7 @@ from typing import (
     Optional,
     Type,
     overload,
-    TYPE_CHECKING
+    TYPE_CHECKING,
 )
 from typing_extensions import Self
 

@@ -86,7 +86,7 @@ class TierABC(ABC):
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
         cls.cache = {}  # ensures each TierBase class has its own cache
-        
+
     id_regex: ClassVar[str] = r"(\d+)"
 
     gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
@@ -564,7 +564,7 @@ class NotebookTierBase(FolderTierBase):
         returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
         """
         return bool(self.file and self.folder.exists() and self.meta_file.exists())
-    
+
     description = manager.meta_attr(str, str)
     conclusion = manager.meta_attr(str, str)
     started = manager.meta_attr(datetime.datetime, datetime.datetime)

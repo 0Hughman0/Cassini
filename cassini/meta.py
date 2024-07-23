@@ -1,7 +1,19 @@
 import time
 import functools
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, Generic, KeysView, List, TYPE_CHECKING, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generic,
+    KeysView,
+    List,
+    TYPE_CHECKING,
+    Optional,
+    TypeVar,
+    Union,
+)
 from typing_extensions import Annotated, Tuple, cast, get_args, Self, Type
 
 from pydantic import BaseModel, ConfigDict, Field, create_model, JsonValue, Field
@@ -17,7 +29,12 @@ AttrType = TypeVar("AttrType")
 
 class MetaJSON(BaseModel):
     __pydantic_extra__: Dict[str, JsonValue] = Field(init=False)
-    model_config = ConfigDict(extra='allow', validate_assignment=True, revalidate_instances='subclass-instances', strict=True)
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        revalidate_instances="subclass-instances",
+        strict=True,
+    )
 
 
 class Meta:
@@ -33,13 +50,15 @@ class Meta:
     timeout: ClassVar[int] = 1
     my_attrs: ClassVar[List[str]] = ["_model", "_cache_born", "file"]
 
-    def __init__(self, file: Path, fields: Optional[Dict[str, Tuple[Type, FieldInfo]]] = None):
+    def __init__(
+        self, file: Path, fields: Optional[Dict[str, Tuple[Type, FieldInfo]]] = None
+    ):
         if fields is None:
             fields = {}
 
-        model = create_model('CustomMetaJSON',
-                             __base__=MetaJSON,
-                             **fields)  # type: ignore[call-overload]
+        model = create_model(
+            "CustomMetaJSON", __base__=MetaJSON, **fields
+        )  # type: ignore[call-overload]
         self._model: MetaJSON = model()
         self._cache_born: float = 0.0
         self.file: Path = file
@@ -61,7 +80,9 @@ class Meta:
         overwritten, it'll just be loaded.
         """
         if self.file.exists():
-            self._model = self._model.model_validate_json(self.file.read_text(), strict=False)
+            self._model = self._model.model_validate_json(
+                self.file.read_text(), strict=False
+            )
             self._cache_born = time.time()
         return self._model
 
@@ -77,7 +98,9 @@ class Meta:
         Overwrite contents of cache into file
         """
         self._model.model_validate(self._model)  # maybe over-cautious!
-        jsons = self._model.model_dump_json(exclude_defaults=True, exclude={'__pydantic_extra__'})
+        jsons = self._model.model_dump_json(
+            exclude_defaults=True, exclude={"__pydantic_extra__"}
+        )
         # Danger moment - writing bad cache to file.
         with self.file.open("w", encoding="utf-8") as f:
             f.write(jsons)
@@ -169,7 +192,7 @@ class MetaAttr(Generic[AttrType, JSONType]):
 
     def __init__(
         self,
-        owner_: 'MetaManager',
+        owner_: "MetaManager",
         json_type: Type[JSONType],
         attr_type: Type[AttrType],
         post_get: Callable[[JSONType], AttrType] = _null_func,
@@ -179,7 +202,7 @@ class MetaAttr(Generic[AttrType, JSONType]):
     ):
         self.json_type = json_type
         self.attr_type = attr_type
-    
+
         self.post_get = post_get
         self.pre_set = pre_set
 
@@ -191,12 +214,16 @@ class MetaAttr(Generic[AttrType, JSONType]):
         if self.name is None:
             self.name = name
 
-    def __get__(self, instance: Union[Any, None], owner: object) -> Union[AttrType, Self]:
+    def __get__(
+        self, instance: Union[Any, None], owner: object
+    ) -> Union[AttrType, Self]:
         if owner is None:
             return self
-        
+
         if not self.owner.metas[instance]:
-            raise RuntimeError("Trying to access Meta Attribute before Meta instance created!")
+            raise RuntimeError(
+                "Trying to access Meta Attribute before Meta instance created!"
+            )
 
         return self.post_get(self.owner.metas[instance].get(self.name, self.default))
 
@@ -208,7 +235,6 @@ class MetaAttr(Generic[AttrType, JSONType]):
 
 
 class MetaManager:
-
     metas: ClassVar[Dict[Any, Meta]] = {}
 
     def __init__(self) -> None:
@@ -224,33 +250,35 @@ class MetaManager:
         fields = set()
 
         for cls in self.cls.__mro__:
-            manager = getattr(cls, '__meta_manager__', None)
+            manager = getattr(cls, "__meta_manager__", None)
             if manager:
                 fields.update(meta_attr.as_field() for meta_attr in manager.meta_attrs)
-        
+
         return {name: field for name, field in fields}
 
-    def meta_attr(self,
-                  json_type: Type[JSONType],
-                  attr_type: Type[AttrType],
-                  post_get: Callable[[JSONType], AttrType] = _null_func,
-                  pre_set: Callable[[AttrType], JSONType] = _null_func,
-                  name: Union[str, None] = None,
-                  default: Union[AttrType, None] = None
-                  ):
-        
-        obj = MetaAttr(self,
-                       json_type=json_type,
-                       attr_type=attr_type,
-                       post_get=post_get,
-                       pre_set=pre_set,
-                       name=name,
-                       default=default)
-        
+    def meta_attr(
+        self,
+        json_type: Type[JSONType],
+        attr_type: Type[AttrType],
+        post_get: Callable[[JSONType], AttrType] = _null_func,
+        pre_set: Callable[[AttrType], JSONType] = _null_func,
+        name: Union[str, None] = None,
+        default: Union[AttrType, None] = None,
+    ):
+        obj = MetaAttr(
+            self,
+            json_type=json_type,
+            attr_type=attr_type,
+            post_get=post_get,
+            pre_set=pre_set,
+            name=name,
+            default=default,
+        )
+
         self.meta_attrs.append(obj)
 
         return obj
-    
+
     def create_meta(self, path: Path, owner: Any):
         self.__class__.metas[owner] = Meta(path, self.build_fields())
         return self.metas[owner]
