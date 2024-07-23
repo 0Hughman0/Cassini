@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 from abc import ABC, abstractmethod
 import re
-import functools
 
 from typing import (
     Any,
@@ -25,7 +24,7 @@ from warnings import warn
 from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
 from typing_extensions import Self
 
-from cassini.meta import Meta, MetaAttr, MetaManager
+from cassini.meta import Meta, MetaManager
 
 from .ipygui import BaseTierGui
 from .accessors import cached_prop, cached_class_prop, JSONType, soft_prop
@@ -1081,7 +1080,7 @@ class Project:
             match = re.search(pattern, name)
             if match and match.start(0) == 0:
                 ids.append(match.group(1))
-                name = name[match.end(0) :]
+                name = name[match.end(0):]
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!

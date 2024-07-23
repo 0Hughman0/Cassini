@@ -1,5 +1,4 @@
 import time
-import functools
 from pathlib import Path
 from typing import (
     Any,
@@ -9,18 +8,14 @@ from typing import (
     Generic,
     KeysView,
     List,
-    TYPE_CHECKING,
     Optional,
     TypeVar,
     Union,
 )
-from typing_extensions import Annotated, Tuple, cast, get_args, Self, Type
+from typing_extensions import Tuple, cast, Self, Type
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, JsonValue, Field
+from pydantic import BaseModel, ConfigDict, Field, create_model, JsonValue
 from pydantic.fields import FieldInfo
-
-if TYPE_CHECKING:
-    from cassini.core import TierABC
 
 
 JSONType = TypeVar("JSONType")
