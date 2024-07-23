@@ -460,6 +460,7 @@ manager = MetaManager()
 @manager.connect_class
 class NotebookTierBase(FolderTierBase):
     meta: Meta
+    __meta_manager__: ClassVar[MetaManager]
 
     @cached_class_prop
     def _default_template(cls) -> Path:
@@ -500,7 +501,7 @@ class NotebookTierBase(FolderTierBase):
 
     def __init__(self, *identifiers: str):
         super().__init__(*identifiers)
-        self.meta: Meta = manager.create_meta(self.meta_file)
+        self.meta: Meta = self.__meta_manager__.create_meta(self.meta_file, owner=self)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -564,9 +565,9 @@ class NotebookTierBase(FolderTierBase):
         """
         return bool(self.file and self.folder.exists() and self.meta_file.exists())
     
-    description = manager.MetaAttr[str, str]()
-    conclusion = manager.MetaAttr[str, str]()
-    started = manager.MetaAttr[datetime.datetime, datetime.datetime]()
+    description = manager.meta_attr(str, str)
+    conclusion = manager.meta_attr(str, str)
+    started = manager.meta_attr(datetime.datetime, datetime.datetime)
 
     @cached_prop
     def meta_file(self) -> Path:

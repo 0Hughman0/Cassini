@@ -4,14 +4,15 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, Generic, KeysView, List, TYPE_CHECKING, Optional, TypeVar, Union
 from typing_extensions import Annotated, Tuple, cast, get_args, Self, Type
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, create_model, JsonValue, Field
+from pydantic.fields import FieldInfo
 
 if TYPE_CHECKING:
     from cassini.core import TierABC
 
 
-JSONIn = TypeVar("JSONIn")
-JSONOut = TypeVar("JSONOut", bound=JsonValue)
+JSONType = TypeVar("JSONType")
+AttrType = TypeVar("AttrType")
 
 
 class MetaJSON(BaseModel):
@@ -32,13 +33,13 @@ class Meta:
     timeout: ClassVar[int] = 1
     my_attrs: ClassVar[List[str]] = ["_model", "_cache_born", "file"]
 
-    def __init__(self, file: Path, fields: Optional[Dict[str, Tuple[JsonValue, Field]]] = None):
+    def __init__(self, file: Path, fields: Optional[Dict[str, Tuple[Type, FieldInfo]]] = None):
         if fields is None:
             fields = {}
 
         model = create_model('CustomMetaJSON',
-                             **fields,
-                             __base__=MetaJSON)
+                             __base__=MetaJSON,
+                             **fields)  # type: ignore[call-overload]
         self._model: MetaJSON = model()
         self._cache_born: float = 0.0
         self.file: Path = file
@@ -81,24 +82,24 @@ class Meta:
         with self.file.open("w", encoding="utf-8") as f:
             f.write(jsons)
 
-    def __getitem__(self, item: str) -> JsonValue:
+    def __getitem__(self, item: str) -> Any:
         self.refresh()
         try:
             return getattr(self._model, item)
         except AttributeError as e:
             raise KeyError(e)
 
-    def __setitem__(self, key: str, value: JsonValue) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:
         self.__setattr__(key, value)
 
-    def __getattr__(self, item: str) -> JsonValue:
+    def __getattr__(self, item: str) -> Any:
         self.refresh()
         try:
             return getattr(self._model, item)
         except KeyError:
             raise AttributeError(item)
 
-    def __setattr__(self, name: str, value: JsonValue) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name in self.my_attrs:
             super().__setattr__(name, value)
         else:
@@ -116,7 +117,7 @@ class Meta:
         self.refresh()
         return f"<Meta {self._model} ({self.age * 1000:.1f}ms)>"
 
-    def get(self, key: str, default: Any = None) -> JsonValue:
+    def get(self, key: str, default: Any = None) -> Any:
         """
         Like `dict.get`
         """
@@ -137,7 +138,7 @@ def _null_func(val: Any) -> Any:
     return cast(JsonValue, val)
 
 
-class MetaAttr(Generic[JSONOut, JSONIn]):
+class MetaAttr(Generic[AttrType, JSONType]):
     """
     Accessor for getting values from a Tier class's meta as an attribute.
 
@@ -168,52 +169,56 @@ class MetaAttr(Generic[JSONOut, JSONIn]):
 
     def __init__(
         self,
-        post_get: Callable[[JSONOut], JSONIn] = _null_func,
-        pre_set: Callable[[JSONIn], JSONOut] = _null_func,
+        owner_: 'MetaManager',
+        json_type: Type[JSONType],
+        attr_type: Type[AttrType],
+        post_get: Callable[[JSONType], AttrType] = _null_func,
+        pre_set: Callable[[AttrType], JSONType] = _null_func,
         name: Union[str, None] = None,
-        default: Union[JSONIn, None] = None,
+        default: Union[AttrType, None] = None,
     ):
+        self.json_type = json_type
+        self.attr_type = attr_type
+    
+        self.post_get = post_get
+        self.pre_set = pre_set
+
+        self.owner = owner_
         self.name: str = cast(str, name)
-        self.post_get: Callable[[JSONOut], JSONIn] = post_get
-        self.pre_set: Callable[[JSONIn], JSONOut] = pre_set
         self.default = default
 
     def __set_name__(self, owner: object, name: str) -> None:
         if self.name is None:
             self.name = name
 
-    def __get__(self, instance: "TierABC", owner: object) -> Union[JSONIn, None]:
-        if instance is None:
+    def __get__(self, instance: Union[Any, None], owner: object) -> Union[AttrType, Self]:
+        if owner is None:
             return self
+        
+        if not self.owner.metas[instance]:
+            raise RuntimeError("Trying to access Meta Attribute before Meta instance created!")
 
-        return self.post_get(cast(JSONOut, instance.meta.get(self.name, self.default)))
+        return self.post_get(self.owner.metas[instance].get(self.name, self.default))
 
-    def __set__(self, instance: "TierABC", value: JSONIn) -> None:
-        setattr(instance.meta, self.name, self.pre_set(value))
+    def __set__(self, instance: Any, value: AttrType) -> None:
+        setattr(self.owner.metas[instance], self.name, self.pre_set(value))
 
-    def as_field(self) -> Tuple[str, Tuple[JSONOut, Field]]:
-        # this is nasty, see https://github.com/python/cpython/issues/101688
-        try:
-            JSONOut, T = get_args(self.__orig_class__)  # typing[attr-defined]
-        except AttributeError:
-            JSONOut = JsonValue
-
-        return self.name, Annotated[Optional[JSONOut], Field(default=self.default)]
-
-
-Kls = TypeVar('Kls', bound=type)
+    def as_field(self) -> Tuple[str, Tuple[Type[JSONType], FieldInfo]]:
+        return self.name, (self.json_type, Field(default=self.default))
 
 
 class MetaManager:
 
-    def connect_class(self, cls: Kls) -> Kls:
-        cls.__meta_manager__: Type[Self] = self
+    metas: ClassVar[Dict[Any, Meta]] = {}
+
+    def __init__(self) -> None:
+        self.cls: Union[Type, None] = None
+        self.meta_attrs: List[MetaAttr] = []
+
+    def connect_class(self, cls: Type) -> Type:
+        cls.__meta_manager__ = self  # type: ignore[attr-defined]
         self.cls = cls
         return cls
-
-    def __init__(self):
-        self.cls = None
-        self.meta_attrs = []
 
     def build_fields(self):
         fields = set()
@@ -225,16 +230,27 @@ class MetaManager:
         
         return {name: field for name, field in fields}
 
-    @property
-    def MetaAttr(self):
-        parent = self
-
-        class _MetaAttr(MetaAttr, Generic[JSONOut, JSONIn]):
-            def __init__(self_, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                parent.meta_attrs.append(self_)
+    def meta_attr(self,
+                  json_type: Type[JSONType],
+                  attr_type: Type[AttrType],
+                  post_get: Callable[[JSONType], AttrType] = _null_func,
+                  pre_set: Callable[[AttrType], JSONType] = _null_func,
+                  name: Union[str, None] = None,
+                  default: Union[AttrType, None] = None
+                  ):
         
-        return _MetaAttr
+        obj = MetaAttr(self,
+                       json_type=json_type,
+                       attr_type=attr_type,
+                       post_get=post_get,
+                       pre_set=pre_set,
+                       name=name,
+                       default=default)
+        
+        self.meta_attrs.append(obj)
+
+        return obj
     
-    def create_meta(self, path: Path):
-        return Meta(path, self.build_fields())
+    def create_meta(self, path: Path, owner: Any):
+        self.__class__.metas[owner] = Meta(path, self.build_fields())
+        return self.metas[owner]
