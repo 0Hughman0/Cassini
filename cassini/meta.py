@@ -22,7 +22,7 @@ JSONType = TypeVar("JSONType")
 AttrType = TypeVar("AttrType")
 
 
-class MetaJSON(BaseModel):
+class MetaCache(BaseModel):
     __pydantic_extra__: Dict[str, JsonValue] = Field(init=False)
     model_config = ConfigDict(
         extra="allow",
@@ -43,7 +43,7 @@ class Meta:
     """
 
     timeout: ClassVar[int] = 1
-    my_attrs: ClassVar[List[str]] = ["_model", "_cache_born", "file"]
+    my_attrs: ClassVar[List[str]] = ["model", "_cache", "_cache_born", "file"]
 
     def __init__(
         self, file: Path, fields: Optional[Dict[str, Tuple[Type, FieldInfo]]] = None
@@ -51,12 +51,13 @@ class Meta:
         if fields is None:
             fields = {}
 
-        model = create_model(
-            "CustomMetaJSON", __base__=MetaJSON, **fields
-        )  # type: ignore[call-overload]
-        self._model: MetaJSON = model()
         self._cache_born: float = 0.0
         self.file: Path = file
+
+        self.model: Type[MetaCache] = create_model(
+            "CustomMetaCache", __base__=MetaCache, **fields
+        )  # type: ignore[call-overload]
+        self._cache: MetaCache = self.model()
 
     @property
     def age(self) -> float:
@@ -65,7 +66,7 @@ class Meta:
         """
         return time.time() - self._cache_born
 
-    def fetch(self) -> MetaJSON:
+    def fetch(self) -> MetaCache:
         """
         Fetches values from the meta file and updates them into `self._cache`.
 
@@ -75,11 +76,11 @@ class Meta:
         overwritten, it'll just be loaded.
         """
         if self.file.exists():
-            self._model = self._model.model_validate_json(
+            self._cache = self._cache.model_validate_json(
                 self.file.read_text(), strict=False
             )
             self._cache_born = time.time()
-        return self._model
+        return self._cache
 
     def refresh(self) -> None:
         """
@@ -92,8 +93,7 @@ class Meta:
         """
         Overwrite contents of cache into file
         """
-        self._model.model_validate(self._model)  # maybe over-cautious!
-        jsons = self._model.model_dump_json(
+        jsons = self._cache.model_dump_json(
             exclude_defaults=True, exclude={"__pydantic_extra__"}
         )
         # Danger moment - writing bad cache to file.
@@ -103,7 +103,7 @@ class Meta:
     def __getitem__(self, item: str) -> Any:
         self.refresh()
         try:
-            return getattr(self._model, item)
+            return getattr(self._cache, item)
         except AttributeError as e:
             raise KeyError(e)
 
@@ -113,7 +113,7 @@ class Meta:
     def __getattr__(self, item: str) -> Any:
         self.refresh()
         try:
-            return getattr(self._model, item)
+            return getattr(self._cache, item)
         except KeyError:
             raise AttributeError(item)
 
@@ -122,18 +122,18 @@ class Meta:
             super().__setattr__(name, value)
         else:
             self.fetch()
-            setattr(self._model, name, value)
+            setattr(self._cache, name, value)
             self.write()
 
     def __delitem__(self, key: str) -> None:
         self.fetch()
-        excluded = self._model.model_dump(exclude={key})
-        self._model = self._model.model_validate(excluded)
+        excluded = self._cache.model_dump(exclude={"__pydantic_extra__", key}, exclude_defaults=True)
+        self._cache = self.model.model_validate(excluded)
         self.write()
 
     def __repr__(self) -> str:
         self.refresh()
-        return f"<Meta {self._model} ({self.age * 1000:.1f}ms)>"
+        return f"<Meta {self._cache} ({self.age * 1000:.1f}ms)>"
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -149,7 +149,7 @@ class Meta:
         like `dict.keys`
         """
         self.refresh()
-        return self._model.model_dump().keys()
+        return self._cache.model_dump(exclude={"__pydantic_extra__"}, exclude_defaults=True).keys()
 
 
 def _null_func(val: Any) -> Any:

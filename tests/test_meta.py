@@ -216,9 +216,9 @@ def test_meta_attr_discovery(tmp_path):
 
     assert obj.started
 
-    assert 'description' in obj.meta._model.model_fields
-    assert 'conclusion' in obj.meta._model.model_fields
-    assert 'started' in obj.meta._model.model_fields
+    assert 'description' in obj.meta.model.model_fields
+    assert 'conclusion' in obj.meta.model.model_fields
+    assert 'started' in obj.meta.model.model_fields
 
     assert obj.description is None
 
@@ -237,7 +237,7 @@ def test_meta_attr_discovery(tmp_path):
 
     assert obj.started
 
-    assert 'test_attr' in obj.meta._model.model_fields
-    assert 'description' in obj.meta._model.model_fields
-    assert 'conclusion' in obj.meta._model.model_fields
-    assert 'started' in obj.meta._model.model_fields
+    assert 'test_attr' in obj.meta.model.model_fields
+    assert 'description' in obj.meta.model.model_fields
+    assert 'conclusion' in obj.meta.model.model_fields
+    assert 'started' in obj.meta.model.model_fields
