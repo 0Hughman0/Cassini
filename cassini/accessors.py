@@ -12,7 +12,7 @@ from typing import (
     Generic,
     Optional,
     Type,
-    overload
+    overload,
 )
 from typing_extensions import Self
 

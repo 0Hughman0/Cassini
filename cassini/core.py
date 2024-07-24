@@ -1080,7 +1080,7 @@ class Project:
             match = re.search(pattern, name)
             if match and match.start(0) == 0:
                 ids.append(match.group(1))
-                name = name[match.end(0):]
+                name = name[match.end(0) :]
             else:
                 break
         if name:  # if there's any residual text then it's not a valid name!

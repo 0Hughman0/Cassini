@@ -127,7 +127,9 @@ class Meta:
 
     def __delitem__(self, key: str) -> None:
         self.fetch()
-        excluded = self._cache.model_dump(exclude={"__pydantic_extra__", key}, exclude_defaults=True)
+        excluded = self._cache.model_dump(
+            exclude={"__pydantic_extra__", key}, exclude_defaults=True
+        )
         self._cache = self.model.model_validate(excluded)
         self.write()
 
@@ -149,7 +151,9 @@ class Meta:
         like `dict.keys`
         """
         self.refresh()
-        return self._cache.model_dump(exclude={"__pydantic_extra__"}, exclude_defaults=True).keys()
+        return self._cache.model_dump(
+            exclude={"__pydantic_extra__"}, exclude_defaults=True
+        ).keys()
 
 
 def _null_func(val: Any) -> Any:
