@@ -835,7 +835,9 @@ class Project:
         self.__before_setup_files__: List[Callable[[Project], None]] = []
         self.__after_setup_files__: List[Callable[[Project], None]] = []
 
-        self.__before_launch__: List[Callable[[Project, Union[LabApp, None]], None]] = []
+        self.__before_launch__: List[
+            Callable[[Project, Union[LabApp, None]], None]
+        ] = []
         self.__after_launch__: List[Callable[[Project, Union[LabApp, None]], None]] = []
 
         self.hierarchy: List[Type[TierABC]] = hierarchy
@@ -1013,7 +1015,7 @@ class Project:
         """
         for func in self.__before_launch__:
             func(self, app)
-        
+
         self.setup_files()
 
         if patch_pythonpath:
