@@ -4,14 +4,12 @@ import datetime
 import html
 import json
 import os
-import time
 from pathlib import Path
 from abc import ABC, abstractmethod
 import re
 
 from typing import (
     Any,
-    KeysView,
     List,
     Type,
     Tuple,
@@ -26,13 +24,13 @@ from warnings import warn
 from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
 from typing_extensions import Self
 
+from cassini.meta import Meta, MetaManager
+
 from .ipygui import BaseTierGui
-from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType, soft_prop
+from .accessors import cached_prop, cached_class_prop, JSONType, soft_prop
 from .utils import (
     FileMaker,
     open_file,
-    str_to_date,
-    date_to_str,
     CassiniLabApp,
     PathLibEnv,
 )
@@ -41,116 +39,12 @@ from .config import config
 
 import jinja2
 
+
 MetaDict = Dict[str, JSONType]
-
-
-class Meta:
-    """
-    Like a dictionary, except linked to a json file on disk. Caches the value of the json in itself.
-
-    Arguments
-    ---------
-    file: Path
-           File Meta object stores information about.
-    """
-
-    timeout: ClassVar[int] = 1
-    my_attrs: ClassVar[List[str]] = ["_cache", "_cache_born", "file"]
-
-    def __init__(self, file: Path):
-        self._cache: MetaDict = {}
-        self._cache_born: float = 0.0
-        self.file: Path = file
-
-    @property
-    def age(self) -> float:
-        """
-        time in secs since last fetch
-        """
-        return time.time() - self._cache_born
-
-    def fetch(self) -> MetaDict:
-        """
-        Fetches values from the meta file and updates them into `self._cache`.
-
-        Notes
-        -----
-        This doesn't *overwrite* `self._cache` with meta contents, but updates it. Meaning new stuff to file won't be
-        overwritten, it'll just be loaded.
-        """
-        if self.file.exists():
-            self._cache.update(json.loads(self.file.read_text()))
-            self._cache_born = time.time()
-        return self._cache
-
-    def refresh(self) -> None:
-        """
-        Check age of cache, if stale then re-fetch
-        """
-        if self.age >= self.timeout:
-            self.fetch()
-
-    def write(self) -> None:
-        """
-        Overwrite contents of cache into file
-        """
-        # Danger moment - writing bad cache to file.
-        with self.file.open("w", encoding="utf-8") as f:
-            json.dump(self._cache, f)
-
-    def __getitem__(self, item: str) -> JSONType:
-        self.refresh()
-        return self._cache[item]
-
-    def __setitem__(self, key: str, value: JSONType) -> None:
-        self.__setattr__(key, value)
-
-    def __getattr__(self, item: str) -> JSONType:
-        self.refresh()
-        try:
-            return self[item]
-        except KeyError:
-            raise AttributeError(item)
-
-    def __setattr__(self, name: str, value: JSONType) -> None:
-        if name in self.my_attrs:
-            super().__setattr__(name, value)
-        else:
-            self.fetch()
-            self._cache[name] = value
-            self.write()
-
-    def __delitem__(self, key: str) -> None:
-        self.fetch()
-        del self._cache[key]
-        self.write()
-
-    def __repr__(self) -> str:
-        self.refresh()
-        return f"<Meta {self._cache} ({self.age * 1000:.1f}ms)>"
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """
-        Like `dict.get`
-        """
-        try:
-            return self.__getattr__(key)
-        except AttributeError:
-            return default
-
-    def keys(self) -> KeysView[str]:
-        """
-        like `dict.keys`
-        """
-        self.refresh()
-        return self._cache.keys()
 
 
 HighlightType = List[Dict[str, Dict[str, Any]]]
 HighlightsType = Dict[str, HighlightType]
-
-CacheItemType = HighlightType
-CachedType = HighlightsType
 
 
 class TierABC(ABC):
@@ -559,8 +453,13 @@ class FolderTierBase(TierABC):
         return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
 
 
+manager = MetaManager()
+
+
+@manager.connect_class
 class NotebookTierBase(FolderTierBase):
     meta: Meta
+    __meta_manager__: ClassVar[MetaManager]
 
     @cached_class_prop
     def _default_template(cls) -> Path:
@@ -601,7 +500,7 @@ class NotebookTierBase(FolderTierBase):
 
     def __init__(self, *identifiers: str):
         super().__init__(*identifiers)
-        self.meta: Meta = Meta(self.meta_file)
+        self.meta: Meta = self.__meta_manager__.create_meta(self.meta_file, owner=self)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -665,9 +564,9 @@ class NotebookTierBase(FolderTierBase):
         """
         return bool(self.file and self.folder.exists() and self.meta_file.exists())
 
-    description: MetaAttr[str, str] = MetaAttr()
-    conclusion: MetaAttr[str, str] = MetaAttr()
-    started: MetaAttr[str, datetime.datetime] = MetaAttr(str_to_date, date_to_str)
+    description = manager.meta_attr(str, str)
+    conclusion = manager.meta_attr(str, str)
+    started = manager.meta_attr(datetime.datetime, datetime.datetime)
 
     @cached_prop
     def meta_file(self) -> Path:
@@ -881,7 +780,7 @@ class HomeTierBase(FolderTierBase):
 
         with FileMaker() as maker:
             print(f"Creating {self.child_cls.pretty_type} folder")
-            maker.mkdir(self.folder)
+            maker.mkdir(self.folder, exist_ok=True)
             print("Success")
 
         with FileMaker() as maker:
