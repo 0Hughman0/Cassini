@@ -8,6 +8,7 @@ def test_setup_files_hook(patch_project):
     Tier, project = patch_project
 
     home = project.home
+    home.exists = lambda: False
 
     call_order = []
 
@@ -26,13 +27,14 @@ def test_setup_files_hook(patch_project):
     
     project.setup_files()
 
-    assert after_mock.call_args.args == (project,)
     assert before_mock.call_args.args == (project,)
+    assert after_mock.call_args.args == (project,)
     assert call_order == ['before', 'home', 'after']
 
 
 def test_launch_hook(patch_project):
     Tier, project = patch_project
+    project.exists = lambda self: False
 
     call_order = []
 
@@ -53,6 +55,6 @@ def test_launch_hook(patch_project):
 
     project.launch(app)
 
-    assert after_mock.call_args.args == (project, app)
     assert before_mock.call_args.args == (project, app)
+    assert after_mock.call_args.args == (project, app)
     assert call_order == ['before', 'project', 'after']
