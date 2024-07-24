@@ -18,6 +18,7 @@ from typing import (
     Dict,
     ClassVar,
     Optional,
+    Callable,
     cast,
 )
 from warnings import warn
@@ -831,6 +832,14 @@ class Project:
         self._rank_map: Dict[Type[TierABC], int] = {}
         self._hierarchy: List[Type[TierABC]] = []
 
+        self.__before_setup_files__: List[Callable[[Project], None]] = []
+        self.__after_setup_files__: List[Callable[[Project], None]] = []
+
+        self.__before_launch__: List[
+            Callable[[Project, Union[LabApp, None]], None]
+        ] = []
+        self.__after_launch__: List[Callable[[Project, Union[LabApp, None]], None]] = []
+
         self.hierarchy: List[Type[TierABC]] = hierarchy
 
         project_folder_path = Path(project_folder).resolve()
@@ -950,6 +959,9 @@ class Project:
 
         Will put everything you need in `project_folder` to get going.
         """
+        for func in self.__before_setup_files__:
+            func(self)
+
         home = self.home
 
         if home.exists():
@@ -978,6 +990,9 @@ class Project:
         home.setup_files()
         print("Success")
 
+        for func in self.__after_setup_files__:
+            func(self)
+
         return home
 
     def launch(
@@ -998,6 +1013,9 @@ class Project:
         patch_pythonpath : bool
             Add `self.project_folder` to the `PYTHONPATH`? (defaults to `True`)
         """
+        for func in self.__before_launch__:
+            func(self, app)
+
         self.setup_files()
 
         if patch_pythonpath:
@@ -1011,6 +1029,9 @@ class Project:
             app = CassiniLabApp()
 
         app.launch_instance()
+
+        for func in self.__after_launch__:
+            func(self, app)
 
         return app
 
