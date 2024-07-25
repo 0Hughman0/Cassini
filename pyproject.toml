@@ -31,6 +31,10 @@ sphinx = "^7.0"
 tomli = "^2.0.1"
 sphinx-rtd-theme = "^1.2.2"
 
+
+[tool.poetry.group.cassini_lib.dependencies]
+semantic-version = "^2.10.0"
+
 [tool.mypy]
 ignore_missing_imports = true
 

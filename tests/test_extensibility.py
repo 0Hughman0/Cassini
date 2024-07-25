@@ -1,7 +1,6 @@
 from unittest.mock import Mock
 from typing import Any
-
-from utils import patch_project
+from cassini.testing_utils import get_Project, patch_project
 
 
 def test_setup_files_hook(patch_project):
