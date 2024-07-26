@@ -8,9 +8,6 @@ from .import_tools import PatchImporter, latest_version
 from ... import Project, NotebookTierBase
 
 
-Internal = 'Internal'
-
-
 def extend_project(project: Project, cas_lib_dir: Union[str, Path] = 'cas_lib'):
     cas_lib_dir = project.project_folder / cas_lib_dir
     
@@ -24,10 +21,10 @@ def extend_project(project: Project, cas_lib_dir: Union[str, Path] = 'cas_lib'):
     for Tier in project.hierarchy:
         if issubclass(Tier, NotebookTierBase):
             # patch in the requried attributes to classes with notebooks!
-            Tier.cas_lib_version = Tier.__meta_manager__.meta_attr(json_type=Annotated[str, Internal], attr_type=Type[Version], 
+            Tier.cas_lib_version = Tier.__meta_manager__.meta_attr(json_type=str, attr_type=Version,  # type: ignore[attr-defined]
                                                                    post_get=lambda v: Version(v) if v else v,
                                                                    pre_set=str,
-                                                                   name="cas_lib_version")  # type: ignore[attr-defined]
+                                                                   name="cas_lib_version") 
             Tier.cas_lib = create_cas_lib(cas_lib_dir)  # type: ignore[attr-defined] 
     return project
 
