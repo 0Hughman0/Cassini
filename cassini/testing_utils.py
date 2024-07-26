@@ -1,8 +1,12 @@
-from cassini import Home, NotebookTierBase
-from cassini.core import Project
+from cassini import Home, HomeTierBase, NotebookTierBase, FolderTierBase, DEFAULT_TIERS
+from cassini.core import Project, TierABC
+from cassini.accessors import _CachedProp, _CachedClassProp
 
 
 import pytest
+
+
+ALL_TIERS = [*DEFAULT_TIERS, TierABC, HomeTierBase, FolderTierBase, NotebookTierBase]
 
 
 @pytest.fixture
@@ -12,6 +16,15 @@ def get_Project():
     Project.__after_setup_files__ = []
     Project.__before_launch__ = []
     Project.__after_launch__ = []
+
+    for Tier in ALL_TIERS:
+        Tier.cache = {}
+
+        for attr in dir(Tier):
+            val = Tier.__dict__.get(attr)
+
+            if isinstance(val, (_CachedProp, _CachedClassProp)):
+                val.cache = {}
 
     return Project
 

@@ -72,6 +72,7 @@ def test_tier_attrs(patch_project):
     assert Tier.name_part_regex == r'Tier(\d+)'
 
     assert Tier.parent_cls is Home
+    assert Tier.parent_cls.child_cls is Tier
     assert Tier.child_cls is None
     assert Tier.parse_name('Tier1') == ('1',)
 
