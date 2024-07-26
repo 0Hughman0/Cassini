@@ -766,7 +766,7 @@ class HomeTierBase(FolderTierBase):
     def folder(self) -> Path:
         assert env.project
         assert self.child_cls
-        return env.project.project_folder / (self.child_cls.pretty_type + 's')
+        return env.project.project_folder / (self.child_cls.pretty_type + "s")
 
     @cached_prop
     def file(self) -> Path:
