@@ -1,11 +1,11 @@
 import pytest # type: ignore[import]
 
 from cassini import DEFAULT_TIERS
-from cassini.core import Project
+from cassini.testing_utils import get_Project, patch_project
 
 @pytest.fixture
-def mk_project(tmp_path):
-    Project._instance = None
+def mk_project(get_Project, tmp_path):
+    Project = get_Project
 
     # this crazy line is required for testing because cachedclassprop values may be set by other tests!    
     project = Project([type(cls.__name__, (cls,), {}) for cls in DEFAULT_TIERS], tmp_path)

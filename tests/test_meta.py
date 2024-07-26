@@ -1,12 +1,13 @@
 import json
 
 import pytest # type: ignore[import]
-from cassini import Project, HomeTierBase, NotebookTierBase
+from cassini import HomeTierBase, NotebookTierBase
 from cassini.meta import MetaAttr, MetaManager, Meta
+from cassini.testing_utils import get_Project, patch_project
 
 import pydantic
 
-from utils import patch_project
+
 
 DEFAULT_CONTENTS = {'a_str': 'val', 'an_int': 1, 'a_float': 1.5}
 
@@ -157,14 +158,14 @@ def test_strict_attrs(tmp_path):
     assert meta['strict_str'] == 'new val'
 
 
-def test_meta_creation(tmp_path):
+def test_meta_creation(get_Project, tmp_path):
+    Project = get_Project
     class First(HomeTierBase):
         pass
 
     class Second(NotebookTierBase):
         pass
 
-    Project._instance = None
     project = Project([First, Second], tmp_path)
     project.setup_files()
 
@@ -183,7 +184,8 @@ def test_meta_creation(tmp_path):
     assert obj2.meta is obj2.__meta_manager__.metas[obj2]
 
 
-def test_meta_attr_discovery(tmp_path):
+def test_meta_attr_discovery(get_Project, tmp_path):
+    Project = get_Project
     class First(HomeTierBase):
         pass
 
@@ -207,7 +209,6 @@ def test_meta_attr_discovery(tmp_path):
     assert 'conclusion' in Fourth.__meta_manager__.build_fields()
     assert 'started' in Fourth.__meta_manager__.build_fields()
 
-    Project._instance = None
     project = Project([First, Second, Third, Fourth], tmp_path)
     project.setup_files()
 

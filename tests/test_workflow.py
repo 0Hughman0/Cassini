@@ -3,12 +3,12 @@ import datetime
 import pytest # type: ignore[import]
 
 from cassini import FolderTierBase, NotebookTierBase, Home
-from cassini.core import Project
+from cassini.testing_utils import get_Project, patch_project
 
 
 @pytest.fixture
-def mk_project(tmp_path):
-    Project._instance = None
+def mk_project(get_Project, tmp_path):
+    Project = get_Project
 
     class MyHome(Home):
         pass

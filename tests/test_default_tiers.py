@@ -5,10 +5,12 @@ import pytest # type: ignore[import]
 from cassini import DEFAULT_TIERS, Home, FolderTierBase, NotebookTierBase
 from cassini.core import Project
 from cassini.defaults import WorkPackage, Experiment, Sample, DataSet
-
+from cassini.testing_utils import get_Project, patch_project
 
 @pytest.fixture
-def mk_project(tmp_path):
+def mk_project(get_Project, tmp_path):
+    Project = get_Project
+
     Home.cache = {}
     WorkPackage.cache = {}
     Experiment.cache = {}

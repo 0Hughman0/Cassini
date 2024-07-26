@@ -216,7 +216,7 @@ class MetaAttr(Generic[AttrType, JSONType]):
     def __get__(
         self, instance: Union[Any, None], owner: object
     ) -> Union[AttrType, Self]:
-        if owner is None:
+        if owner is None or instance is None:
             return self
 
         if not self.owner.metas[instance]:

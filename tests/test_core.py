@@ -1,13 +1,14 @@
 import pytest # type: ignore[import]
 
 from cassini import FolderTierBase, NotebookTierBase, Home
-from cassini.core import Project, TierABC
+from cassini.core import TierABC
 from cassini.accessors import _CachedProp
+from cassini.testing_utils import get_Project, patch_project
 
-from utils import patch_project
 
+def test_project(get_Project, tmp_path):
+    Project = get_Project
 
-def test_project(tmp_path):
     class First(Home):
         pass
 
@@ -71,6 +72,7 @@ def test_tier_attrs(patch_project):
     assert Tier.name_part_regex == r'Tier(\d+)'
 
     assert Tier.parent_cls is Home
+    assert Tier.parent_cls.child_cls is Tier
     assert Tier.child_cls is None
     assert Tier.parse_name('Tier1') == ('1',)
 
