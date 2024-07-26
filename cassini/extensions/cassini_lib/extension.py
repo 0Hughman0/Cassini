@@ -23,7 +23,7 @@ def extend_project(project: Project, cas_lib_dir: Union[str, Path] = "cas_lib"):
             # patch in the requried attributes to classes with notebooks!
             Tier.cas_lib_version = Tier.__meta_manager__.meta_attr(  # type: ignore[attr-defined]
                 json_type=str,
-                attr_type=Version,  
+                attr_type=Version,
                 post_get=lambda v: Version(v) if v else v,
                 pre_set=str,
                 name="cas_lib_version",
