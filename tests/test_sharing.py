@@ -133,3 +133,25 @@ def test_stier_path_finding(get_Project, tmp_path):
     stier.folder / 'c' / 'cc'
 
     assert base / 'c' / 'cc' in stier.find_paths()
+
+
+def test_making_share(get_Project, tmp_path):
+    Project = get_Project
+    project = Project(DEFAULT_TIERS, tmp_path)
+    project.setup_files()
+
+    tier = project['WP1.1']
+    tier.parent.setup_files()
+    tier.setup_files()
+
+    tier.description = 'description'
+    (tier / 'data.txt').write_text('some data')
+
+    stier = shared_project.env('WP1.1')
+
+    stier / 'data.txt'
+
+    shared_project.make_shared(tmp_path / Path('WP1.1share'), [stier])
+    
+
+

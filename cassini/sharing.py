@@ -4,6 +4,8 @@ from types import MethodType
 from typing_extensions import Self
 import datetime
 from pathlib import Path
+import shutil
+import json
 
 from pydantic import JsonValue, BaseModel
 
@@ -145,8 +147,27 @@ class _SharedProject:
             self.find_project()
         return ShareableTier(name=name, project=self.project)
     
-    def make_shared(self):
-        pass
+    def make_shared(self, path: Path, stiers):
+        path.mkdir(exist_ok=True)
+        requires = path / 'requires'
+        requires.mkdir(exist_ok=True)
+
+        for stier in stiers:
+            tier_dir = path / stier.name
+            tier_dir.mkdir(exist_ok=True)
+
+            shutil.copy(stier.meta.file, tier_dir / 'meta.json')
+
+            stier.write_accessed(tier_dir / 'accessed.json')
+            stier.write_called(tier_dir / 'called.json')
+
+            for required in stier.find_paths():
+                if required.exists():
+                    destination = requires / required.relative_to(self.project.project_folder)
+                    directory = destination if required.is_dir() else destination.parent
+                    directory.mkdir(exist_ok=True, parents=True)
+                    
+                    shutil.copy(required, destination)
 
 
 shared_project = _SharedProject()
@@ -238,6 +259,14 @@ class ShareableTier:
         user can then just copy that folder and send to friend. They will need cassini installed, but it doesn't need to be set up.
         """
         pass
+
+    def write_accessed(self, path):
+        with open(path, 'w') as fs:
+            json.dump(list(self._accessed), fs)
+
+    def write_called(self, path):
+        with open(path, 'w') as fs:
+            json.dump(list(self._called), fs)
 
     def find_paths(self):
         """
