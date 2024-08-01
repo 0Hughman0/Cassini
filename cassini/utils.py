@@ -1,3 +1,4 @@
+import importlib
 from pathlib import Path
 import os
 import sys
@@ -19,6 +20,7 @@ import datetime
 
 from .config import config
 from .accessors import JSONType
+from .environment import env
 
 import jinja2
 
@@ -199,3 +201,58 @@ def win_open_file(filename: Union[str, Path]) -> None:
     Windows open file implementation.
     """
     os.startfile(filename)  # type: ignore[attr-defined]
+
+
+def find_project(import_string=None):
+    """
+    Gets ahold of the Project instance for this Jupyterlab server instance.
+
+    If server was launched via `cassini.Project.launch()`, this will already be set.
+
+    Otherwise, try using CASSINI_PROJECT environment variable to find the project.
+
+    This should be of the form:
+
+        CASSINI_PROJECT=path/to/module:project_obj
+
+    By default, `project_obj` is assumed to be called `project`. This will be imported from `module`. 
+
+    Note that for cassini to run with a regular jupyterlab instance, `ContentsManager.allow_hidden = True` must be set, either
+     via a config, or passed as a command line argument e.g. `--ContentsManager.allow_hidden=True`
+    """
+    if env.project:
+        return env.project
+    
+    if not import_string:
+        CASSINI_PROJECT = os.environ['CASSINI_PROJECT']
+    else:
+        CASSINI_PROJECT = import_string
+    
+    path = Path(CASSINI_PROJECT).absolute()
+
+    module = None
+    obj = None
+
+    if ':' in path.name:
+        module, obj = path.name.split(':')
+        module = module.replace('.py', '')
+        directory = path.parent.as_posix()
+    elif path.is_file() or path.with_suffix('.py').is_file():
+        directory = path.parent.as_posix()
+        module = path.stem
+        obj = 'project'
+    elif path.is_dir():
+        directory = path.as_posix()
+        module = 'project'
+        obj = 'project'
+    else:
+        raise RuntimeError(f"Cannot parse CASSINI_PROJECT environment variable {CASSINI_PROJECT}")
+
+    sys.path.insert(0, directory)
+
+    try:
+        env.project = getattr(importlib.import_module(module), obj)
+    finally:
+        sys.path.remove(directory)
+    
+    return env.project
