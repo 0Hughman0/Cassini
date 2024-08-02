@@ -1,25 +1,57 @@
 from collections import defaultdict
-from typing import Any
+from typing import Any, Dict, List
 from types import MethodType
-from typing_extensions import Self
+from typing_extensions import Self, Annotated
 import datetime
 from pathlib import Path
 import shutil
 import json
 
-from pydantic import JsonValue, BaseModel
+from pydantic import JsonValue, BaseModel, Field, ConfigDict, PlainSerializer, AfterValidator, WithJsonSchema
 
 from . import env
 from .core import TierABC
 from .utils import find_project
 
 
-class SharedTierData(BaseModel):
-    pass
+NoseyPathType = Annotated[
+                    Path,
+                    AfterValidator(lambda p: NoseyPath(Path(p))),
+                    PlainSerializer(lambda p: p._path, return_type=Path)
+                ]
+SharableTierType = Annotated[
+                    str,
+                    AfterValidator(lambda n: ShareableTier(n)),
+                    PlainSerializer(lambda t: t._name, return_type=str)
+                ]
 
 
 class SharedTierData(BaseModel):
-    pass
+    """
+    Ah crap, I have to create this dynamically I think, because round-trip validation can only work with strict types.
+    """
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        strict=True
+    )
+    name: str
+    conclusion: str
+    description: str
+    file: NoseyPathType
+    folder: NoseyPathType
+    parent: SharableTierType
+    href: str
+    id: str
+    identifiers: List[str]
+    meta_file: NoseyPathType
+    started: datetime.datetime
+    # 'meta' # requires special treatment!
+
+    # '__truediv__'
+    # '__getitem__'
+    # exists
+    # get_child
 
 
 class NoseyPath:
@@ -66,10 +98,14 @@ class NoseyPath:
         return self.__getattr__('__truediv__')(other)
     
     def __eq__(self, other):
-        return self.__getattr__('__eq__')(other)
+        if isinstance(other, NoseyPath):
+            other = other._path
+        return self._path.__eq__(other)
 
     def __req__(self, other):
-        return self.__getattr__('__req__')(other)
+        if isinstance(other, NoseyPath):
+            other = other._path
+        return self._path.__req__(other)
 
     def __repr__(self):
         return f'<NoseyPath ({self._path})>'
@@ -185,7 +221,7 @@ class ShareableTier:
             self._tier = project[name]
         else:
             self._tier = None
-            self._load_cache()
+            # self._load_cache()
 
     def handle_attr(self, name, val):
         if isinstance(val, (str, int, list, datetime.date)):
@@ -241,6 +277,12 @@ class ShareableTier:
     
     def __truediv__(self, other):
         return self.__getattr__('__truediv__')(other)
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self._name == other._name
+        else:
+            raise NotImplementedError()
         
     def make_shared(self):
         """

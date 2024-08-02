@@ -1,8 +1,13 @@
-from cassini.sharing import shared_project, NoseyPath
+
+from pathlib import Path
+import datetime
+
+from cassini.sharing import shared_project, NoseyPath, SharedTierData, ShareableTier
 from cassini.testing_utils import get_Project, patch_project
 from cassini import DEFAULT_TIERS
 
-from pathlib import Path
+import pytest
+import pydantic
 
 
 def test_nosey_path():
@@ -154,4 +159,35 @@ def test_making_share(get_Project, tmp_path):
     shared_project.make_shared(tmp_path / Path('WP1.1share'), [stier])
     
 
+def test_serialisation():
+    
+    m = SharedTierData(
+        name='WP1.1',
+        conclusion='a conclusion',
+        description='a description',
+        file=Path('a file'),
+        folder=Path('a folder'),
+        parent='WP1',
+        href='http://wut',
+        id='1',
+        identifiers=['1', '1'],
+        meta_file=Path('a meta_file'),
+        started=datetime.datetime.now()
+    )
 
+    assert m.name == 'WP1.1'
+    
+    assert m.file == Path('a file')
+    assert m.folder == Path('a folder')
+    assert m.meta_file == Path('a meta_file')
+
+    with pytest.raises((pydantic.ValidationError, TypeError)):
+        m.file = 1
+
+    assert isinstance(m.parent, ShareableTier)
+    assert m.parent._name == 'WP1'
+
+    with pytest.raises((pydantic.ValidationError, TypeError)):
+        m.parent = 1
+
+    assert m == SharedTierData.model_validate_json(m.model_dump_json())
