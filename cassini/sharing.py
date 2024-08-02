@@ -15,17 +15,9 @@ from .core import TierABC
 from .utils import find_project
 
 
-"""
-NoseyPathType = Annotated[
-                    Path,
-                    AfterValidator(lambda p: NoseyPath(p)),
-                    PlainSerializer(lambda p: p._path, return_type=Path)
-                ]
-"""
-
 SharableTierType = Annotated[
                     str,
-                    AfterValidator(lambda n: ShareableTier(n)),
+                    AfterValidator(lambda n: SharingTier(n)),
                     PlainSerializer(lambda t: t._name, return_type=str)
                 ]
 
@@ -52,7 +44,7 @@ class SharedTierData(BaseModel):
         strict=True
     )
     name: str
-    description: str = Field(default='')
+    description: str = Field(default='')  # these should probably just derive from the meta.
     conclusion: str = Field(default='')
     file: Optional[Path] = Field(default=None)
     folder: Optional[Path] = Field(default=None)
@@ -130,12 +122,6 @@ class NoseyPath:
     def __repr__(self):
         return f'<NoseyPath ({self._path})>'
     
-    def __copy__(self):
-        return self.__class__(self._path)
-    
-    def __deepcopy__(self, memo):
-        return self.__class__(self._path)
-    
     def _unchain(self):
         segments = {}
 
@@ -202,12 +188,12 @@ class _SharedProject:
     def env(self, name):
         if not self.project:
             self.find_project()
-        return ShareableTier(name=name, project=self.project)
+        return SharingTier(name=name, project=self.project)
     
     def __getitem__(self, name):
         if not self.project:
             self.find_project()
-        return ShareableTier(name=name, project=self.project)
+        return SharingTier(name=name, project=self.project)
     
     def make_shared(self, path: Path, stiers):
         path.mkdir(exist_ok=True)
@@ -235,13 +221,14 @@ class _SharedProject:
 shared_project = _SharedProject()
 
 
-class ShareableTier:
+class SharingTier:
 
     def __init__(self, name, project=None):
         self._accessed = {}
         self._called = defaultdict(dict)
         self._project = project
         self._name = name
+        self._paths_used = []
         
         if project:
             self._tier = project[name]
@@ -250,28 +237,27 @@ class ShareableTier:
             # self._load_cache()
 
     def handle_attr(self, name, val):
-        if isinstance(val, (str, int, list, datetime.date)):
+        if isinstance(val, (str, int, list, datetime.date, Path)):
             self._accessed[name] = val
 
         if isinstance(val, Path):
-            previous = self._accessed.get(name)
+            val = NoseyPath(val)
+            self._paths_used.append(val)
 
-            val = self._accessed[name] = NoseyPath(val) if not previous else NoseyPath.replace_instance(previous)
-            
         if isinstance(val, TierABC):
-            val = self._accessed[name] = ShareableTier(val, self._project)
+            val = self._accessed[name] = SharingTier(val, self._project)
 
         return val
     
-    def handle_call(self, method, args_kwargs, val):
-        if isinstance(val, Path):
-            previous = self._called[method].get(args_kwargs)
-            val = NoseyPath(val) if not previous else NoseyPath.replace_instance(previous)
-            
+    def handle_call(self, method, args_kwargs, val):    
         if isinstance(val, TierABC):
-            val = ShareableTier(val.name, self._project)
+            val = SharingTier(val.name, self._project)
 
         self._called[method][args_kwargs] = val
+
+        if isinstance(val, Path):
+            val = NoseyPath(val)
+            self._paths_used.append(val)
 
         return val
 
@@ -309,54 +295,11 @@ class ShareableTier:
             return self._name == other._name
         else:
             raise NotImplementedError()
-        
-    def make_shared(self):
-        """
-        makes a directory at set location!
-        
-        pickles self or something and pops us in the directory.
-
-        also copies whatever is at the end of those paths into directory.
-
-        err at some point makes the paths relative.
-
-        copies the notebook itself?
-
-        then maybe zip the folder.
-        
-        user can then just copy that folder and send to friend. They will need cassini installed, but it doesn't need to be set up.
-        """
-        pass
 
     def dump(self, fs):
-        accessed = copy.deepcopy(self._accessed)
-
-        accessed['name'] = self._name
-
-        for name in ['folder', 'file', 'meta_file']:
-            obj = accessed.get(name)
-            if isinstance(obj, NoseyPath):
-                accessed[name] = obj._path
-
-        called = copy.deepcopy(self._called)
-
-        called['getitem'] = called.get('__getitem__', {})
-        called['truediv'] = called.get('__truediv__', {})
-
-        methods = list(called)
-
-        for name in methods:
-            method = called[name]
-            calls = list(method)
-
-            for call in calls:
-                obj = method[call]
-                if isinstance(obj, NoseyPath):
-                    called[name][call] = obj._path
-
         model = SharedTierData(
-            **accessed,
-            called=called
+            **self._accessed,
+            called=self._called
         )
 
         json_str = model.model_dump_json()
@@ -380,13 +323,12 @@ class ShareableTier:
         """
         paths = []
 
-        for name, val in self._accessed.items():
-            if isinstance(val, NoseyPath):
-                paths.extend(val.compress())
-
-        for name, calls in self._called.items():
-            for args_kwargs, val in calls.items():
-                if isinstance(val, NoseyPath):
-                    paths.extend(val.compress())
+        for nosey_path in self._paths_used:
+            paths.extend(nosey_path.compress())
 
         return paths
+
+
+class SharedTier:
+    pass
+

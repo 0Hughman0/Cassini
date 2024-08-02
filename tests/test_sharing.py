@@ -2,7 +2,7 @@
 from pathlib import Path
 import datetime
 
-from cassini.sharing import shared_project, NoseyPath, SharedTierData, ShareableTier
+from cassini.sharing import shared_project, NoseyPath, SharedTierData, SharingTier
 from cassini.testing_utils import get_Project, patch_project
 from cassini import DEFAULT_TIERS
 
@@ -157,7 +157,9 @@ def test_making_share(get_Project, tmp_path):
     stier / 'data.txt'
 
     shared_project.make_shared(tmp_path / Path('WP1.1share'), [stier])
-    
+
+    pass
+
 
 def test_serialisation():
     
@@ -189,7 +191,7 @@ def test_serialisation():
     with pytest.raises(pydantic.ValidationError):
         m.file = 1
 
-    assert isinstance(m.parent, ShareableTier)
+    assert isinstance(m.parent, SharingTier)
     assert m.parent._name == 'WP1'
 
     with pytest.raises(pydantic.ValidationError):
@@ -197,10 +199,8 @@ def test_serialisation():
 
     assert m == SharedTierData.model_validate_json(m.model_dump_json())
 
-    m.called.get_child = {'WP1.1': 'WP1.1'}
+    m.called.get_child = {('WP1.1',): 'WP1.1'}
 
     with pytest.raises(pydantic.ValidationError):
         # expecting a string!
-        m.called.get_child = {'WP1.1': ShareableTier('WP1.1')}
-
-    pass
+        m.called.get_child = {('WP1.1',): SharingTier('WP1.1')}
