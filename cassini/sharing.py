@@ -1,11 +1,12 @@
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union, Optional, Tuple
 from types import MethodType
 from typing_extensions import Self, Annotated
 import datetime
 from pathlib import Path
 import shutil
-import json
+import copy
+
 
 from pydantic import JsonValue, BaseModel, Field, ConfigDict, PlainSerializer, AfterValidator, WithJsonSchema
 
@@ -14,16 +15,31 @@ from .core import TierABC
 from .utils import find_project
 
 
+"""
 NoseyPathType = Annotated[
                     Path,
-                    AfterValidator(lambda p: NoseyPath(Path(p))),
+                    AfterValidator(lambda p: NoseyPath(p)),
                     PlainSerializer(lambda p: p._path, return_type=Path)
                 ]
+"""
+
 SharableTierType = Annotated[
                     str,
                     AfterValidator(lambda n: ShareableTier(n)),
                     PlainSerializer(lambda t: t._name, return_type=str)
                 ]
+
+
+class ShareTierCalls(BaseModel):
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        strict=True
+    )
+
+    truediv: Dict[Tuple[Union[str, Path]], Path] = Field(default={})
+    getitem: Dict[Tuple[str], SharableTierType] = Field(default={})
+    get_child: Dict[Tuple[str], SharableTierType] = Field(default={})
 
 
 class SharedTierData(BaseModel):
@@ -36,22 +52,19 @@ class SharedTierData(BaseModel):
         strict=True
     )
     name: str
-    conclusion: str
-    description: str
-    file: NoseyPathType
-    folder: NoseyPathType
-    parent: SharableTierType
-    href: str
-    id: str
-    identifiers: List[str]
-    meta_file: NoseyPathType
-    started: datetime.datetime
-    # 'meta' # requires special treatment!
+    description: str = Field(default='')
+    conclusion: str = Field(default='')
+    file: Optional[Path] = Field(default=None)
+    folder: Optional[Path] = Field(default=None)
+    parent: Optional[SharableTierType] = Field(default=None)
+    href: Optional[str] = Field(default=None)
+    id: str = Field(default=None)
+    identifiers: List[str] = Field(default=None)
+    meta_file: Optional[Path] = Field(default=None)
+    started: Optional[datetime.datetime] = Field(default=None)
 
-    # '__truediv__'
-    # '__getitem__'
-    # exists
-    # get_child
+    called: ShareTierCalls
+    # 'meta' # requires special treatment!
 
 
 class NoseyPath:
@@ -67,6 +80,13 @@ class NoseyPath:
         obj = cls(path)
         obj._children = parent._children
         parent._children.append(obj)
+
+        return obj
+    
+    @classmethod
+    def from_path_list(cls, path_list):
+        obj = cls(path_list[0])
+        obj._children = path_list[1:]
 
         return obj
 
@@ -109,6 +129,12 @@ class NoseyPath:
 
     def __repr__(self):
         return f'<NoseyPath ({self._path})>'
+    
+    def __copy__(self):
+        return self.__class__(self._path)
+    
+    def __deepcopy__(self, memo):
+        return self.__class__(self._path)
     
     def _unchain(self):
         segments = {}
@@ -194,9 +220,9 @@ class _SharedProject:
 
             shutil.copy(stier.meta.file, tier_dir / 'meta.json')
 
-            stier.write_accessed(tier_dir / 'accessed.json')
-            stier.write_called(tier_dir / 'called.json')
-
+            with open(tier_dir / 'frozen.json', 'w') as fs:
+                stier.dump(fs)
+            
             for required in stier.find_paths():
                 if required.exists():
                     destination = requires / required.relative_to(self.project.project_folder)
@@ -277,7 +303,7 @@ class ShareableTier:
     
     def __truediv__(self, other):
         return self.__getattr__('__truediv__')(other)
-    
+        
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self._name == other._name
@@ -302,13 +328,51 @@ class ShareableTier:
         """
         pass
 
-    def write_accessed(self, path):
-        with open(path, 'w') as fs:
-            json.dump(list(self._accessed), fs)
+    def dump(self, fs):
+        accessed = copy.deepcopy(self._accessed)
 
-    def write_called(self, path):
-        with open(path, 'w') as fs:
-            json.dump(list(self._called), fs)
+        accessed['name'] = self._name
+
+        for name in ['folder', 'file', 'meta_file']:
+            obj = accessed.get(name)
+            if isinstance(obj, NoseyPath):
+                accessed[name] = obj._path
+
+        called = copy.deepcopy(self._called)
+
+        called['getitem'] = called.get('__getitem__', {})
+        called['truediv'] = called.get('__truediv__', {})
+
+        methods = list(called)
+
+        for name in methods:
+            method = called[name]
+            calls = list(method)
+
+            for call in calls:
+                obj = method[call]
+                if isinstance(obj, NoseyPath):
+                    called[name][call] = obj._path
+
+        model = SharedTierData(
+            **accessed,
+            called=called
+        )
+
+        json_str = model.model_dump_json()
+        fs.write(json_str)
+
+    def load(self, fs):
+        model = SharedTierData.model_validate_json(fs.read())
+
+        accessed = model.model_dump(exclude={'called'})
+        self._accessed = accessed
+
+        called = model.called.model_dump()
+
+        called['__truediv__'] = called.get('truediv', {})
+        called['__getitem__'] = called.get('getitem', {})
+        self._called = called
 
     def find_paths(self):
         """

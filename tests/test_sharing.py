@@ -172,7 +172,8 @@ def test_serialisation():
         id='1',
         identifiers=['1', '1'],
         meta_file=Path('a meta_file'),
-        started=datetime.datetime.now()
+        started=datetime.datetime.now(),
+        called={'get_child': {}, 'getitem': {}, 'truediv': {}}
     )
 
     assert m.name == 'WP1.1'
@@ -181,13 +182,25 @@ def test_serialisation():
     assert m.folder == Path('a folder')
     assert m.meta_file == Path('a meta_file')
 
-    with pytest.raises((pydantic.ValidationError, TypeError)):
+    m.file = Path('new file')
+
+    assert m.file == Path('new file')
+
+    with pytest.raises(pydantic.ValidationError):
         m.file = 1
 
     assert isinstance(m.parent, ShareableTier)
     assert m.parent._name == 'WP1'
 
-    with pytest.raises((pydantic.ValidationError, TypeError)):
+    with pytest.raises(pydantic.ValidationError):
         m.parent = 1
 
     assert m == SharedTierData.model_validate_json(m.model_dump_json())
+
+    m.called.get_child = {'WP1.1': 'WP1.1'}
+
+    with pytest.raises(pydantic.ValidationError):
+        # expecting a string!
+        m.called.get_child = {'WP1.1': ShareableTier('WP1.1')}
+
+    pass
