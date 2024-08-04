@@ -215,38 +215,40 @@ def find_project(import_string=None):
 
         CASSINI_PROJECT=path/to/module:project_obj
 
-    By default, `project_obj` is assumed to be called `project`. This will be imported from `module`. 
+    By default, `project_obj` is assumed to be called `project`. This will be imported from `module`.
 
     Note that for cassini to run with a regular jupyterlab instance, `ContentsManager.allow_hidden = True` must be set, either
      via a config, or passed as a command line argument e.g. `--ContentsManager.allow_hidden=True`
     """
     if env.project:
         return env.project
-    
+
     if not import_string:
-        CASSINI_PROJECT = os.environ['CASSINI_PROJECT']
+        CASSINI_PROJECT = os.environ["CASSINI_PROJECT"]
     else:
         CASSINI_PROJECT = import_string
-    
+
     path = Path(CASSINI_PROJECT).absolute()
 
     module = None
     obj = None
 
-    if ':' in path.name:
-        module, obj = path.name.split(':')
-        module = module.replace('.py', '')
+    if ":" in path.name:
+        module, obj = path.name.split(":")
+        module = module.replace(".py", "")
         directory = path.parent.as_posix()
-    elif path.is_file() or path.with_suffix('.py').is_file():
+    elif path.is_file() or path.with_suffix(".py").is_file():
         directory = path.parent.as_posix()
         module = path.stem
-        obj = 'project'
+        obj = "project"
     elif path.is_dir():
         directory = path.as_posix()
-        module = 'project'
-        obj = 'project'
+        module = "project"
+        obj = "project"
     else:
-        raise RuntimeError(f"Cannot parse CASSINI_PROJECT environment variable {CASSINI_PROJECT}")
+        raise RuntimeError(
+            f"Cannot parse CASSINI_PROJECT environment variable {CASSINI_PROJECT}"
+        )
 
     sys.path.insert(0, directory)
 
@@ -254,5 +256,5 @@ def find_project(import_string=None):
         env.project = getattr(importlib.import_module(module), obj)
     finally:
         sys.path.remove(directory)
-    
+
     return env.project

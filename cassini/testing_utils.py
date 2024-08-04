@@ -1,4 +1,11 @@
-from cassini import Home, HomeTierBase, NotebookTierBase, FolderTierBase, DEFAULT_TIERS, env
+from cassini import (
+    Home,
+    HomeTierBase,
+    NotebookTierBase,
+    FolderTierBase,
+    DEFAULT_TIERS,
+    env,
+)
 from cassini.core import Project, TierABC
 from cassini.accessors import _CachedProp, _CachedClassProp
 
@@ -19,7 +26,7 @@ def get_Project():
     Project.__after_setup_files__ = []
     Project.__before_launch__ = []
     Project.__after_launch__ = []
-    
+
     for Tier in ALL_TIERS:
         Tier.cache = {}
 
