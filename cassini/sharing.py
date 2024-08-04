@@ -11,7 +11,7 @@ import copy
 from pydantic import JsonValue, BaseModel, Field, ConfigDict, PlainSerializer, AfterValidator, WithJsonSchema
 
 from . import env
-from .core import TierABC
+from .core import TierABC, NotebookTierBase
 from .utils import find_project
 
 
@@ -44,8 +44,6 @@ class SharedTierData(BaseModel):
         strict=True
     )
     name: str
-    description: str = Field(default='')  # these should probably just derive from the meta.
-    conclusion: str = Field(default='')
     file: Optional[Path] = Field(default=None)
     folder: Optional[Path] = Field(default=None)
     parent: Optional[SharableTierType] = Field(default=None)
@@ -53,10 +51,7 @@ class SharedTierData(BaseModel):
     id: str = Field(default=None)
     identifiers: List[str] = Field(default=None)
     meta_file: Optional[Path] = Field(default=None)
-    started: Optional[datetime.datetime] = Field(default=None)
-
     called: ShareTierCalls
-    # 'meta' # requires special treatment!
 
 
 class NoseyPath:
@@ -223,18 +218,23 @@ shared_project = _SharedProject()
 
 class SharingTier:
 
-    def __init__(self, name, project=None):
+    def __init__(self, name, project):
         self._accessed = {}
         self._called = defaultdict(dict)
         self._project = project
         self._name = name
         self._paths_used = []
         
-        if project:
-            self._tier = project[name]
-        else:
-            self._tier = None
-            # self._load_cache()
+        self._tier = project[name]
+        self.meta = self._tier.meta
+        
+        # Link this instance's meta attributes to _tier's meta object
+        meta_manager = self._tier.__meta_manager__
+        meta_manager.metas[self] = meta_manager.metas[self._tier]
+    
+    description = NotebookTierBase.description
+    conclusion = NotebookTierBase.conclusion
+    started = NotebookTierBase.started
 
     def handle_attr(self, name, val):
         if isinstance(val, (str, int, list, datetime.date, Path)):
@@ -295,6 +295,9 @@ class SharingTier:
             return self._name == other._name
         else:
             raise NotImplementedError()
+        
+    def __hash__(self):
+        return hash(self._name)
 
     def dump(self, fs):
         model = SharedTierData(

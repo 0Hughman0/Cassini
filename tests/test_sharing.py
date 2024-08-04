@@ -99,7 +99,6 @@ def test_sharing(get_Project, tmp_path):
 
     assert stier._accessed['name'] == 'WP1'
     assert stier._accessed['id'] == '1'
-    assert stier._accessed['description'] == 'a description'
     
     assert stier._called['__truediv__'][('a path',)] == tmp_path / 'WorkPackages' / 'WP1' / 'a path'
     
@@ -204,3 +203,32 @@ def test_serialisation():
     with pytest.raises(pydantic.ValidationError):
         # expecting a string!
         m.called.get_child = {('WP1.1',): SharingTier('WP1.1')}
+
+
+def test_meta_wrapping(get_Project, tmp_path):
+    Project = get_Project
+    project = Project(DEFAULT_TIERS, tmp_path)
+    project.setup_files()
+
+    tier = project['WP1.1']
+    tier.parent.setup_files()
+    tier.setup_files()
+
+    stier = shared_project.env('WP1.1')
+
+    assert stier.meta is tier.meta
+
+    tier.description = "new description"
+
+    assert stier.description == "new description"
+    assert 'description' in stier.meta.keys()
+
+    tier.conclusion = 'c'
+
+    assert stier.conclusion == 'c'
+
+    now = datetime.datetime.now()
+
+    stier.started = now
+
+    assert tier.meta['started'] == now

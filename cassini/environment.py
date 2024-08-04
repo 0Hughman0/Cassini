@@ -48,6 +48,7 @@ class _Env:
     def __init__(self) -> None:
         self.project: Union[Project, None] = None
         self._o: Union[TierABC, None] = None
+        self.SHARED: bool = False
 
     def _has_instance(
         self, val: Union[ValWithInstance, None]
