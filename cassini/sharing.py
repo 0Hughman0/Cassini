@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Union, Optional, Tuple
+from typing import Any, Dict, List, Union, Optional, Tuple, Generic, TypeVar
 from types import MethodType
 from typing_extensions import Self, Annotated
 import datetime
@@ -12,14 +12,25 @@ from pydantic import JsonValue, BaseModel, Field, ConfigDict, PlainSerializer, A
 
 from . import env
 from .core import TierABC, NotebookTierBase
+from .meta import MetaManager
 from .utils import find_project
 
 
 SharableTierType = Annotated[
                     str,
-                    AfterValidator(lambda n: SharingTier(n)),
-                    PlainSerializer(lambda t: t._name, return_type=str)
+                    AfterValidator(lambda n: SharedTier(n)),
+                    PlainSerializer(lambda t: t.name, return_type=str)
                 ]
+
+ReturnType = TypeVar('ReturnType')
+ArgsType = TypeVar('ArgsType')
+KwargsType = TypeVar('KwargsType')
+
+
+class SharedTierCall(BaseModel, Generic[ArgsType, KwargsType, ReturnType]):
+    args: ArgsType
+    kwargs: KwargsType
+    returns: ReturnType
 
 
 class ShareTierCalls(BaseModel):
@@ -29,9 +40,9 @@ class ShareTierCalls(BaseModel):
         strict=True
     )
 
-    truediv: Dict[Tuple[Union[str, Path]], Path] = Field(default={})
-    getitem: Dict[Tuple[str], SharableTierType] = Field(default={})
-    get_child: Dict[Tuple[str], SharableTierType] = Field(default={})
+    truediv: List[SharedTierCall[Tuple[Union[str, Path]], Tuple, Path]] = Field(default=[])
+    getitem: List[SharedTierCall[Tuple[str], Tuple, SharableTierType]] = Field(default=[])
+    get_child: List[SharedTierCall[Tuple[str], Tuple, SharableTierType]] = Field(default=[])
 
 
 class SharedTierData(BaseModel):
@@ -42,25 +53,18 @@ class SharedTierData(BaseModel):
         extra="allow",
         validate_assignment=True,
         strict=True
-    )
-    name: str
+    )    
     file: Optional[Path] = Field(default=None)
     folder: Optional[Path] = Field(default=None)
     parent: Optional[SharableTierType] = Field(default=None)
     href: Optional[str] = Field(default=None)
-    id: str = Field(default=None)
-    identifiers: List[str] = Field(default=None)
+    id: Optional[str] = Field(default=None)
+    identifiers: Optional[List[str]] = Field(default=None)
     meta_file: Optional[Path] = Field(default=None)
     called: ShareTierCalls
 
 
 class NoseyPath:
-
-    @classmethod
-    def replace_instance(cls, instance):
-        obj = cls(instance._path)
-        obj._previous_instances.append(instance)
-        return obj
 
     @classmethod
     def from_parent(cls, path, parent):
@@ -70,17 +74,9 @@ class NoseyPath:
 
         return obj
     
-    @classmethod
-    def from_path_list(cls, path_list):
-        obj = cls(path_list[0])
-        obj._children = path_list[1:]
-
-        return obj
-
     def __init__(self, path):
         self._path = path
         self._children = []
-        self._previous_instances = []
 
     def __getattr__(self, name):
         val = getattr(self._path, name)
@@ -157,45 +153,50 @@ class NoseyPath:
 
         paths = [self._path.joinpath(*sub) for sub in sub_paths]
 
-        for previous in self._previous_instances:
-            subs = previous.compress()
-            paths.extend(subs)
-
         return paths
 
 
-class _SharedProject:
+class SharedProject:
 
-    def __init__(self):
-        self.import_string = None
-        self.project = None
-    
-    def __call__(self, import_string) -> Self:
-        self.import_string = import_string
-        return self
-    
-    def find_project(self):
+    def __init__(self, import_string=None, location=None):
         try:
-            self.project = find_project(import_string=self.import_string)
-        except RuntimeError:
-            self.project = None
-    
+            env.project = find_project(import_string)
+        except (RuntimeError, KeyError):
+            env.project = None
+
+        env.shareable_project = self
+
+        self.shared_tiers = []
+        self.location = location if location else Path('Shared')
+
     def env(self, name):
-        if not self.project:
-            self.find_project()
-        return SharingTier(name=name, project=self.project)
-    
+        if env.project:
+            return SharingTier(name=name)
+        else:
+            return SharedTier(name=name)
+        
     def __getitem__(self, name):
-        if not self.project:
-            self.find_project()
-        return SharingTier(name=name, project=self.project)
+        if env.project:
+            return SharingTier(name=name)
+        else:
+            return SharedTier(name=name)
+        
+    def make_paths(self, tier):
+        outer = self.location / tier.name
+
+        meta_file = outer / 'meta.json'
+        frozen_file = outer / 'frozen.json'
+
+        return outer, meta_file, frozen_file
     
-    def make_shared(self, path: Path, stiers):
+    def make_shared(self):
+        path = self.location
+        
         path.mkdir(exist_ok=True)
         requires = path / 'requires'
         requires.mkdir(exist_ok=True)
 
-        for stier in stiers:
+        for stier in self.shared_tiers:
             tier_dir = path / stier.name
             tier_dir.mkdir(exist_ok=True)
 
@@ -206,26 +207,24 @@ class _SharedProject:
             
             for required in stier.find_paths():
                 if required.exists():
-                    destination = requires / required.relative_to(self.project.project_folder)
+                    destination = requires / required.relative_to(env.project.project_folder)
                     directory = destination if required.is_dir() else destination.parent
                     directory.mkdir(exist_ok=True, parents=True)
                     
                     shutil.copy(required, destination)
 
 
-shared_project = _SharedProject()
-
-
 class SharingTier:
 
-    def __init__(self, name, project):
+    def __init__(self, name):
+        env.shareable_project.shared_tiers.append(self)
+
         self._accessed = {}
         self._called = defaultdict(dict)
-        self._project = project
-        self._name = name
+        self.name = name
         self._paths_used = []
         
-        self._tier = project[name]
+        self._tier = env.project[name]
         self.meta = self._tier.meta
         
         # Link this instance's meta attributes to _tier's meta object
@@ -245,13 +244,13 @@ class SharingTier:
             self._paths_used.append(val)
 
         if isinstance(val, TierABC):
-            val = self._accessed[name] = SharingTier(val, self._project)
+            val = self._accessed[name] = SharingTier(val)
 
         return val
     
     def handle_call(self, method, args_kwargs, val):    
         if isinstance(val, TierABC):
-            val = SharingTier(val.name, self._project)
+            val = SharingTier(val.name)
 
         self._called[method][args_kwargs] = val
 
@@ -262,28 +261,25 @@ class SharingTier:
         return val
 
     def __getattr__(self, name):
-        if self._project:
-            val = getattr(self._tier, name)
+        val = getattr(self._tier, name)
 
-            if isinstance(val, MethodType):
-                handle_call = self.handle_call
-                meth = val
+        if isinstance(val, MethodType):
+            handle_call = self.handle_call
+            meth = val
 
-                def wrapper(*args, **kwargs):
-                    args_kwargs = (*args, *tuple(kwargs.items()))
-                    
-                    result = meth(*args, **kwargs)
+            def wrapper(*args, **kwargs):
+                args_kwargs = (args, tuple(kwargs.items()))
+                
+                result = meth(*args, **kwargs)
 
-                    return handle_call(name, args_kwargs, result)
-        
-                val = wrapper
-            else:
-                val = self.handle_attr(name, val)
-            
-            return val
+                return handle_call(name, args_kwargs, result)
+    
+            val = wrapper
         else:
-            return self._accessed[name]
+            val = self.handle_attr(name, val)
         
+        return val
+    
     def __getitem__(self, other):
         return self.__getattr__('__getitem__')(other)
     
@@ -291,34 +287,32 @@ class SharingTier:
         return self.__getattr__('__truediv__')(other)
         
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self._name == other._name
+        if isinstance(other, (SharedTier, SharingTier)):
+            return self.name == other.name
         else:
             raise NotImplementedError()
         
     def __hash__(self):
-        return hash(self._name)
+        return hash(self.name)
 
     def dump(self, fs):
+        called = defaultdict(list)
+        
+        for meth, calls in self._called.items():
+            for args_kwargs, returns in calls.items():
+                called[meth.strip('_')].append({
+                        'args': args_kwargs[0],
+                        'kwargs': args_kwargs[1],
+                        'returns': returns
+                        })
+
         model = SharedTierData(
             **self._accessed,
-            called=self._called
+            called=called
         )
 
         json_str = model.model_dump_json()
         fs.write(json_str)
-
-    def load(self, fs):
-        model = SharedTierData.model_validate_json(fs.read())
-
-        accessed = model.model_dump(exclude={'called'})
-        self._accessed = accessed
-
-        called = model.called.model_dump()
-
-        called['__truediv__'] = called.get('truediv', {})
-        called['__getitem__'] = called.get('getitem', {})
-        self._called = called
 
     def find_paths(self):
         """
@@ -333,5 +327,63 @@ class SharingTier:
 
 
 class SharedTier:
-    pass
+    
+    def __init__(self, name):
+        self.name = name
 
+        if env.shareable_project:
+            folder, meta_file, frozen_file = env.shareable_project.make_paths(self)
+            self.meta = NotebookTierBase.__meta_manager__.create_meta(meta_file, self)
+            
+            with open(frozen_file) as fs:
+                model = SharedTierData.model_validate_json(fs.read())
+
+                accessed = model.model_dump(exclude={'called'})
+                self._accessed = accessed
+
+                raw_called = model.called.model_dump()
+
+                called = defaultdict(dict)
+
+                for method, calls in raw_called.items():
+                    if method in ['truediv', 'getitem']:
+                        method = f'__{method}__'
+                    
+                    for call in calls:
+                        called[method][(call['args'], call['kwargs'])] = call['returns']
+
+                self._called = called
+        else:
+            self.meta = None
+            self._accessed = {}
+            self._called = {}
+
+    description = NotebookTierBase.description
+    conclusion = NotebookTierBase.conclusion
+    started = NotebookTierBase.started
+
+    def __getattr__(self, name):
+        if name in self._accessed:
+            return self._accessed[name]
+        else:
+            def meth(*args, **kwargs):
+                args_kwargs = (args, tuple(kwargs))
+
+                return self._called[name][args_kwargs]
+            
+            return meth
+    
+    def __getitem__(self, other):
+        return self.__getattr__('__getitem__')(other)
+    
+    def __truediv__(self, other):
+        return self.__getattr__('__truediv__')(other)
+    
+    def __eq__(self, other):
+        if isinstance(other, (SharedTier, SharingTier)):
+            return self.name == other.name
+        else:
+            raise NotImplementedError()
+        
+    def __hash__(self) -> int:
+        return hash(self.name)

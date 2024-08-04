@@ -2,9 +2,9 @@
 from pathlib import Path
 import datetime
 
-from cassini.sharing import shared_project, NoseyPath, SharedTierData, SharingTier
+from cassini.sharing import SharedProject, NoseyPath, SharedTierData, SharingTier, SharedTier
 from cassini.testing_utils import get_Project, patch_project
-from cassini import DEFAULT_TIERS
+from cassini import DEFAULT_TIERS, env
 
 import pytest
 import pydantic
@@ -65,18 +65,11 @@ def test_nosey_path_compressing():
 
     assert base / 'a' not in paths
 
-    new_base = NoseyPath.replace_instance(nbase)
-
-    new_base / 'a'
-
-    paths = new_base.compress()
-
-    assert base / 'a' in paths
-
 
 def test_sharing(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
+    shared_project = SharedProject()
     project.setup_files()
 
     tier = project['WP1']
@@ -97,21 +90,20 @@ def test_sharing(get_Project, tmp_path):
     
     assert stier.description == 'a description'
 
-    assert stier._accessed['name'] == 'WP1'
     assert stier._accessed['id'] == '1'
     
-    assert stier._called['__truediv__'][('a path',)] == tmp_path / 'WorkPackages' / 'WP1' / 'a path'
+    assert stier._called['__truediv__'][(('a path',), tuple())] == tmp_path / 'WorkPackages' / 'WP1' / 'a path'
     
     child = stier['5']
 
     assert child.name == 'WP1.5'
-    assert child._accessed['name'] == 'WP1.5'
-    assert stier._called['__getitem__'][('5',)] is child
+    assert stier._called['__getitem__'][(('5',), tuple())] is child
 
 
 def test_stier_path_finding(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
+    shared_project = SharedProject()
     project.setup_files()
 
     tier = project['WP1.1']
@@ -142,6 +134,7 @@ def test_stier_path_finding(get_Project, tmp_path):
 def test_making_share(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
+    shared_project = SharedProject(location=tmp_path / 'shared')
     project.setup_files()
 
     tier = project['WP1.1']
@@ -155,17 +148,22 @@ def test_making_share(get_Project, tmp_path):
 
     stier / 'data.txt'
 
-    shared_project.make_shared(tmp_path / Path('WP1.1share'), [stier])
+    shared_project.make_shared()
 
-    pass
+    shared_project = SharedProject(location=tmp_path / 'shared')
+    env.project = None
 
+    shared_tier = shared_project.env('WP1.1')
 
-def test_serialisation():
+    shared_tier.name
+
+    assert shared_tier / 'data.txt' == tier / 'data.txt'
     
+
+
+def test_serialisation(get_Project, tmp_path):
+
     m = SharedTierData(
-        name='WP1.1',
-        conclusion='a conclusion',
-        description='a description',
         file=Path('a file'),
         folder=Path('a folder'),
         parent='WP1',
@@ -173,11 +171,8 @@ def test_serialisation():
         id='1',
         identifiers=['1', '1'],
         meta_file=Path('a meta_file'),
-        started=datetime.datetime.now(),
-        called={'get_child': {}, 'getitem': {}, 'truediv': {}}
+        called={'get_child': [], 'getitem': [], 'truediv': [{'args': ('args',), 'kwargs': tuple(), 'returns': Path('returned')}]}
     )
-
-    assert m.name == 'WP1.1'
     
     assert m.file == Path('a file')
     assert m.folder == Path('a folder')
@@ -190,19 +185,15 @@ def test_serialisation():
     with pytest.raises(pydantic.ValidationError):
         m.file = 1
 
-    assert isinstance(m.parent, SharingTier)
-    assert m.parent._name == 'WP1'
+    assert isinstance(m.parent, SharedTier)
+    assert m.parent.name == 'WP1'
 
     with pytest.raises(pydantic.ValidationError):
         m.parent = 1
 
     assert m == SharedTierData.model_validate_json(m.model_dump_json())
 
-    m.called.get_child = {('WP1.1',): 'WP1.1'}
-
-    with pytest.raises(pydantic.ValidationError):
-        # expecting a string!
-        m.called.get_child = {('WP1.1',): SharingTier('WP1.1')}
+    m.called.get_child = [{'args': ('WP1.1',), 'kwargs': tuple(), 'returns': 'WP1.1'}]
 
 
 def test_meta_wrapping(get_Project, tmp_path):
@@ -214,6 +205,7 @@ def test_meta_wrapping(get_Project, tmp_path):
     tier.parent.setup_files()
     tier.setup_files()
 
+    shared_project = SharedProject()
     stier = shared_project.env('WP1.1')
 
     assert stier.meta is tier.meta
