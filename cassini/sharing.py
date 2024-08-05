@@ -15,7 +15,7 @@ from pydantic import (
     ConfigDict,
     PlainSerializer,
     AfterValidator,
-    WithJsonSchema
+    WithJsonSchema,
 )
 
 from . import env
@@ -49,20 +49,14 @@ class SharedTierCalls(BaseModel):
     __pydantic_extra__: Dict[str, List[SharedTierCall]] = Field(init=False)
     model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
 
-    truediv: List[TrueDivCall] = Field(
-        default=[]
-    )
-    getitem: List[GetItemCall] = Field(
-        default=[]
-    )
-    get_child: List[GetChildCall] = Field(
-        default=[]
-    )
+    truediv: List[TrueDivCall] = Field(default=[])
+    getitem: List[GetItemCall] = Field(default=[])
+    get_child: List[GetChildCall] = Field(default=[])
 
 
 class SharedTierData(BaseModel):
     model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
-    
+
     file: Optional[Path] = Field(default=None)
     folder: Optional[Path] = Field(default=None)
     parent: Optional[ShareableTierType] = Field(default=None)
@@ -71,7 +65,7 @@ class SharedTierData(BaseModel):
     identifiers: Optional[List[str]] = Field(default=None)
     meta_file: Optional[Path] = Field(default=None)
     base_path: Path
-    
+
     called: SharedTierCalls
 
 
@@ -198,10 +192,10 @@ class SharedProject:
         frozen_file = outer / "frozen.json"
 
         return outer, meta_file, frozen_file
-    
+
     @property
     def requires_path(self):
-        return self.location / 'requires'
+        return self.location / "requires"
 
     def make_shared(self):
         path = self.location
@@ -322,9 +316,9 @@ class SharingTier:
                     }
                 )
 
-        model = SharedTierData(**self._accessed,
-                               base_path=env.project.project_folder,
-                               called=called)
+        model = SharedTierData(
+            **self._accessed, base_path=env.project.project_folder, called=called
+        )
 
         json_str = model.model_dump_json()
         fs.write(json_str)
@@ -379,10 +373,12 @@ class SharedTier:
     def __getattr__(self, name):
         if name in self._accessed:
             val = self._accessed[name]
-            
+
             if isinstance(val, Path):
-                val = env.shareable_project.requires_path / val.relative_to(self._accessed['base_path'])
-            
+                val = env.shareable_project.requires_path / val.relative_to(
+                    self._accessed["base_path"]
+                )
+
             return val
         else:
 
@@ -392,8 +388,10 @@ class SharedTier:
                 val = self._called[name][args_kwargs]
 
                 if isinstance(val, Path):
-                    val = env.shareable_project.requires_path / val.relative_to(self._accessed['base_path'])
-                
+                    val = env.shareable_project.requires_path / val.relative_to(
+                        self._accessed["base_path"]
+                    )
+
                 return val
 
             return meth
