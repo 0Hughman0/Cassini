@@ -46,7 +46,7 @@ SharedTierCall = _SharedTierCall[JsonValue]
 
 
 class SharedTierCalls(BaseModel):
-    __pydantic_extra__: Dict[str, List[SharedTierCall]] = Field(init=False, exclude=True)  
+    __pydantic_extra__: Dict[str, List[SharedTierCall]] = Field(init=False)
     model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
 
     truediv: List[TrueDivCall] = Field(
@@ -62,6 +62,7 @@ class SharedTierCalls(BaseModel):
 
 class SharedTierData(BaseModel):
     model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
+    
     file: Optional[Path] = Field(default=None)
     folder: Optional[Path] = Field(default=None)
     parent: Optional[ShareableTierType] = Field(default=None)
@@ -69,6 +70,8 @@ class SharedTierData(BaseModel):
     id: Optional[str] = Field(default=None)
     identifiers: Optional[List[str]] = Field(default=None)
     meta_file: Optional[Path] = Field(default=None)
+    base_path: Path
+    
     called: SharedTierCalls
 
 
@@ -195,13 +198,16 @@ class SharedProject:
         frozen_file = outer / "frozen.json"
 
         return outer, meta_file, frozen_file
+    
+    @property
+    def requires_path(self):
+        return self.location / 'requires'
 
     def make_shared(self):
         path = self.location
 
         path.mkdir(exist_ok=True)
-        requires = path / "requires"
-        requires.mkdir(exist_ok=True)
+        self.requires_path.mkdir(exist_ok=True)
 
         for stier in self.shared_tiers:
             tier_dir, meta_file, frozen_file = self.make_paths(stier)
@@ -214,7 +220,7 @@ class SharedProject:
 
             for required in stier.find_paths():
                 if required.exists():
-                    destination = requires / required.relative_to(
+                    destination = self.requires_path / required.relative_to(
                         env.project.project_folder
                     )
                     directory = destination if required.is_dir() else destination.parent
@@ -316,7 +322,9 @@ class SharingTier:
                     }
                 )
 
-        model = SharedTierData(**self._accessed, called=called)
+        model = SharedTierData(**self._accessed,
+                               base_path=env.project.project_folder,
+                               called=called)
 
         json_str = model.model_dump_json()
         fs.write(json_str)
@@ -370,13 +378,23 @@ class SharedTier:
 
     def __getattr__(self, name):
         if name in self._accessed:
-            return self._accessed[name]
+            val = self._accessed[name]
+            
+            if isinstance(val, Path):
+                val = env.shareable_project.requires_path / val.relative_to(self._accessed['base_path'])
+            
+            return val
         else:
 
             def meth(*args, **kwargs):
                 args_kwargs = (args, tuple(kwargs))
 
-                return self._called[name][args_kwargs]
+                val = self._called[name][args_kwargs]
+
+                if isinstance(val, Path):
+                    val = env.shareable_project.requires_path / val.relative_to(self._accessed['base_path'])
+                
+                return val
 
             return meth
 

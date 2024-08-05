@@ -151,6 +151,7 @@ def test_serialisation(get_Project, tmp_path):
         id='1',
         identifiers=['1', '1'],
         meta_file=Path('a meta_file'),
+        base_path=Path('base path'),
         called=SharedTierCalls(
             get_child=[get_child_call],
             getitem=[getitem_call],
@@ -192,6 +193,7 @@ def test_serialisation(get_Project, tmp_path):
 
     assert isinstance(m2.file, Path)
     assert isinstance(m2.called.truediv[0].returns, Path)
+    assert m2.called.my_method[0].returns == [100]
 
 
 def test_meta_wrapping(get_Project, tmp_path):
@@ -248,6 +250,13 @@ def test_making_share(get_Project, tmp_path):
 
     shared_tier = shared_project.env('WP1.1')
 
-    shared_tier.name
+    assert shared_tier.name == 'WP1.1'
+    assert shared_tier.description == 'description' == tier.description
+    
+    shared_tier.description = 'new description'
 
-    assert shared_tier / 'data.txt' == tier / 'data.txt'
+    assert shared_tier.description == 'new description'
+    assert shared_tier.description != tier.description
+
+    assert shared_tier / 'data.txt' != tier / 'data.txt'
+    assert (shared_tier / 'data.txt').read_text() == (tier / 'data.txt').read_text()
