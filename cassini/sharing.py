@@ -15,7 +15,7 @@ from pydantic import (
     ConfigDict,
     PlainSerializer,
     AfterValidator,
-    WithJsonSchema,
+    WithJsonSchema
 )
 
 from . import env
@@ -24,51 +24,52 @@ from .meta import MetaManager
 from .utils import find_project
 
 
-SharableTierType = Annotated[
+ShareableTierType = Annotated[
     str,
     AfterValidator(lambda n: SharedTier(n)),
     PlainSerializer(lambda t: t.name, return_type=str),
 ]
 
 ReturnType = TypeVar("ReturnType")
-ArgsType = TypeVar("ArgsType")
-KwargsType = TypeVar("KwargsType")
 
 
-class SharedTierCall(BaseModel, Generic[ArgsType, KwargsType, ReturnType]):
-    args: ArgsType
-    kwargs: KwargsType
+class _SharedTierCall(BaseModel, Generic[ReturnType]):
+    args: Tuple[JsonValue, ...]
+    kwargs: Tuple[Tuple[str, JsonValue], ...]
     returns: ReturnType
 
 
-class ShareTierCalls(BaseModel):
+TrueDivCall = _SharedTierCall[Path]
+GetItemCall = _SharedTierCall[ShareableTierType]
+GetChildCall = _SharedTierCall[ShareableTierType]
+SharedTierCall = _SharedTierCall[JsonValue]
+
+
+class SharedTierCalls(BaseModel):
+    __pydantic_extra__: Dict[str, List[SharedTierCall]] = Field(init=False, exclude=True)  
     model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
 
-    truediv: List[SharedTierCall[Tuple[Union[str, Path]], Tuple, Path]] = Field(
+    truediv: List[TrueDivCall] = Field(
         default=[]
     )
-    getitem: List[SharedTierCall[Tuple[str], Tuple, SharableTierType]] = Field(
+    getitem: List[GetItemCall] = Field(
         default=[]
     )
-    get_child: List[SharedTierCall[Tuple[str], Tuple, SharableTierType]] = Field(
+    get_child: List[GetChildCall] = Field(
         default=[]
     )
 
 
 class SharedTierData(BaseModel):
-    """
-    Ah crap, I have to create this dynamically I think, because round-trip validation can only work with strict types.
-    """
-
     model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
     file: Optional[Path] = Field(default=None)
     folder: Optional[Path] = Field(default=None)
-    parent: Optional[SharableTierType] = Field(default=None)
+    parent: Optional[ShareableTierType] = Field(default=None)
     href: Optional[str] = Field(default=None)
     id: Optional[str] = Field(default=None)
     identifiers: Optional[List[str]] = Field(default=None)
     meta_file: Optional[Path] = Field(default=None)
-    called: ShareTierCalls
+    called: SharedTierCalls
 
 
 class NoseyPath:
@@ -190,7 +191,7 @@ class SharedProject:
     def make_paths(self, tier):
         outer = self.location / tier.name
 
-        meta_file = outer / "meta.json"
+        meta_file = outer / f"{tier.name}.json"
         frozen_file = outer / "frozen.json"
 
         return outer, meta_file, frozen_file
@@ -203,12 +204,12 @@ class SharedProject:
         requires.mkdir(exist_ok=True)
 
         for stier in self.shared_tiers:
-            tier_dir = path / stier.name
+            tier_dir, meta_file, frozen_file = self.make_paths(stier)
             tier_dir.mkdir(exist_ok=True)
 
-            shutil.copy(stier.meta.file, tier_dir / "meta.json")
+            shutil.copy(stier.meta.file, meta_file)
 
-            with open(tier_dir / "frozen.json", "w") as fs:
+            with open(frozen_file, "w") as fs:
                 stier.dump(fs)
 
             for required in stier.find_paths():
