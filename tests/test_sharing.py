@@ -260,3 +260,36 @@ def test_making_share(get_Project, tmp_path):
 
     assert shared_tier / 'data.txt' != tier / 'data.txt'
     assert (shared_tier / 'data.txt').read_text() == (tier / 'data.txt').read_text()
+
+
+def test_no_meta(get_Project, tmp_path):
+    Project = get_Project
+    project = Project(DEFAULT_TIERS, tmp_path)
+    shared_project = SharedProject(location=tmp_path / 'shared')
+    project.setup_files()
+
+    project['WP1'].setup_files()
+    project['WP1.1'].setup_files()
+    project['WP1.1a'].setup_files()
+    tier = project['WP1.1a-Data']
+    tier.setup_files()
+
+    stier = shared_project['WP1.1a-Data']
+    
+    with pytest.raises((AttributeError, KeyError)):
+        stier.description
+
+    data = stier / 'data.csv'
+    data.write_text('some data')
+
+    assert stier.meta is None
+
+    shared_project.make_shared()
+
+    env.project = None
+
+    shared_tier = shared_project['WP1.1a-Data']
+
+    assert shared_tier.meta is None
+    assert shared_tier / 'data.csv' != tier / 'data.csv'
+    assert (shared_tier / 'data.csv').read_text() == (tier / 'data.csv').read_text()    
