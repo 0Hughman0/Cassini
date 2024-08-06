@@ -10,6 +10,7 @@ from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
     from .core import TierABC, Project
+    from .sharing import SharedProject
 
 
 ValWithInstance = TypeVar("ValWithInstance")
@@ -48,7 +49,7 @@ class _Env:
     def __init__(self) -> None:
         self.project: Union[Project, None] = None
         self._o: Union[TierABC, None] = None
-        self.shareable_project = None
+        self.shareable_project: Union[SharedProject, None] = None
 
     def _has_instance(
         self, val: Union[ValWithInstance, None]
