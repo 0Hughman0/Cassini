@@ -159,10 +159,11 @@ ArgsKwargsType = Tuple[Tuple[Any, ...], Tuple[Tuple[str, Any], ...]]
 
 
 class SharingTier:
-    def __init__(self, name: str):
-        assert env.project
-        assert env.shareable_project
 
+    def __init__(self, name: str):
+        if not env.is_sharing(env):
+            raise RuntimeError("SharingTier objects should only be created in a sharing context i.e. via SharedProject instances")
+    
         env.shareable_project.shared_tiers.append(self)
 
         self._accessed: Dict[str, Any] = {}
@@ -282,39 +283,41 @@ class SharingTier:
 
 class SharedTier:
     def __init__(self, name: str) -> None:
+        if not env.is_shared(env):
+            raise RuntimeError("SharedTier instances should only be created in a Shared context i.e. one where SharedProject is used with no Project instances")
+        
         self.name = name
         self.base_path: Union[Path, None] = None
         self.meta: Union[Meta, None] = None
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = {}
 
-        if env.shareable_project:
-            folder, meta_file, frozen_file = env.shareable_project.make_paths(self)
+        folder, meta_file, frozen_file = env.shareable_project.make_paths(self)
 
-            if meta_file.exists():
-                self.meta = NotebookTierBase.__meta_manager__.create_meta(
-                    meta_file, self
-                )
+        if meta_file.exists():
+            self.meta = NotebookTierBase.__meta_manager__.create_meta(
+                meta_file, self
+            )
 
-            with open(frozen_file) as fs:
-                model = SharedTierData.model_validate_json(fs.read())
-                self.base_path = model.base_path
+        with open(frozen_file) as fs:
+            model = SharedTierData.model_validate_json(fs.read())
+            self.base_path = model.base_path
 
-                accessed = model.model_dump(exclude={"called", "base_path"})
-                self._accessed = accessed
+            accessed = model.model_dump(exclude={"called", "base_path"})
+            self._accessed = accessed
 
-                raw_called = model.called.model_dump()
+            raw_called = model.called.model_dump()
 
-                called: Dict[str, Any] = defaultdict(dict)
+            called: Dict[str, Any] = defaultdict(dict)
 
-                for method, calls in raw_called.items():
-                    if method in ["truediv", "getitem"]:
-                        method = f"__{method}__"
+            for method, calls in raw_called.items():
+                if method in ["truediv", "getitem"]:
+                    method = f"__{method}__"
 
-                    for call in calls:
-                        called[method][(call["args"], call["kwargs"])] = call["returns"]
+                for call in calls:
+                    called[method][(call["args"], call["kwargs"])] = call["returns"]
 
-                self._called = called
+            self._called = called
 
     description = NotebookTierBase.description
     conclusion = NotebookTierBase.conclusion
@@ -412,7 +415,8 @@ class SharedProject:
         return self.location / "requires"
 
     def make_shared(self) -> None:
-        assert env.project
+        if not env.is_sharing(env):
+            raise RuntimeError("Trying to share tiers when not in a sharing context.")
 
         path = self.location
 

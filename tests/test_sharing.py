@@ -5,10 +5,39 @@ from typing import List, Any
 
 from cassini.sharing import SharedProject, NoseyPath, SharedTierData, SharedTier, SharedTierCalls, GetChildCall, GetItemCall, TrueDivCall, SharedTierCall
 from cassini.testing_utils import get_Project, patch_project
+from cassini.magics import hlt
 from cassini import DEFAULT_TIERS, env
 
 import pytest
 import pydantic
+
+
+@pytest.fixture
+def mk_shared_project(tmp_path):
+    shared = tmp_path / 'Shared'
+
+    requires = shared / 'requires'
+    requires.mkdir(parents=True)
+
+    for name in ['WP1', 'WP1.1', 'WP1.1a', 'WP1.1a-Data']:
+        tier = shared / name
+        tier.mkdir()
+
+        frozen = tier / 'frozen.json'
+        frozen.write_text('{"base_path": "C:/None", "called": {}}')
+
+        if name == 'WP1.1a-Data':
+            continue
+
+        meta = tier / f'{name}.json'
+        meta.write_text('{"a": 1}')
+
+    env.project = None
+    env.sharing_project = None
+
+    shared_project = SharedProject(location=shared)
+    stier = shared_project['WP1.1']
+    return stier, shared_project
 
 
 def test_nosey_path():
@@ -138,9 +167,9 @@ def test_stier_path_finding(get_Project, tmp_path):
     assert base / 'c' / 'cc' in stier.find_paths()
 
 
-def test_serialisation(get_Project, tmp_path):
-    getitem_call = GetItemCall(args=('3',), kwargs=tuple(), returns='WP1.3')
-    get_child_call = GetChildCall(args=tuple(), kwargs=(('id', 'hello'),), returns='WP1.2')
+def test_serialisation(mk_shared_project):
+    getitem_call = GetItemCall(args=('3',), kwargs=tuple(), returns='WP1.1a')
+    get_child_call = GetChildCall(args=tuple(), kwargs=(('id', 'hello'),), returns='WP1.1a')
     truediv_call = TrueDivCall(args=('args',), kwargs=tuple(), returns=Path('returned'))
     
     m = SharedTierData(
@@ -293,3 +322,13 @@ def test_no_meta(get_Project, tmp_path):
     assert shared_tier.meta is None
     assert shared_tier / 'data.csv' != tier / 'data.csv'
     assert (shared_tier / 'data.csv').read_text() == (tier / 'data.csv').read_text()    
+
+
+def test_no_magics(mk_shared_project):
+    *_, shared_project = mk_shared_project
+    stier = shared_project['WP1.1']
+
+    with pytest.warns(match="shared context"):
+        out = hlt('hlt', 'print("cell")')
+    
+    assert out == 'print("cell")'
