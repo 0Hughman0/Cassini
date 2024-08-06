@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    Union,
-    TYPE_CHECKING,
-    TypeVar,
-    Any
-)
+from typing import Union, TYPE_CHECKING, TypeVar, Any
 from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
@@ -50,13 +45,13 @@ class _Env:
         self.project: Union[Project, None] = None
         self._o: Union[TierABC, None] = None
         self.shareable_project: Union[SharedProject, None] = None
-    
+
     @staticmethod
-    def is_sharing(instance: _Env) -> TypeGuard['_SharingInstance']:
+    def is_sharing(instance: _Env) -> TypeGuard["_SharingInstance"]:
         return bool(instance.shareable_project and instance.project)
-    
+
     @staticmethod
-    def is_shared(instance: _Env) -> TypeGuard['_SharedInstance']:
+    def is_shared(instance: _Env) -> TypeGuard["_SharedInstance"]:
         return bool(instance.shareable_project and not instance.project)
 
     def _has_instance(

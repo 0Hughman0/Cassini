@@ -10,7 +10,9 @@ from .core import NotebookTierBase
 
 def hlt(line: str, cell: str):
     if env.is_shared(env):
-        warn("This notebook is in a shared context and therefore highlights magics won't work")
+        warn(
+            "This notebook is in a shared context and therefore highlights magics won't work"
+        )
         return cell
 
     if not isinstance(env.o, NotebookTierBase):

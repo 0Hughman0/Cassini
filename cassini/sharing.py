@@ -159,11 +159,12 @@ ArgsKwargsType = Tuple[Tuple[Any, ...], Tuple[Tuple[str, Any], ...]]
 
 
 class SharingTier:
-
     def __init__(self, name: str):
         if not env.is_sharing(env):
-            raise RuntimeError("SharingTier objects should only be created in a sharing context i.e. via SharedProject instances")
-    
+            raise RuntimeError(
+                "SharingTier objects should only be created in a sharing context i.e. via SharedProject instances"
+            )
+
         env.shareable_project.shared_tiers.append(self)
 
         self._accessed: Dict[str, Any] = {}
@@ -284,8 +285,10 @@ class SharingTier:
 class SharedTier:
     def __init__(self, name: str) -> None:
         if not env.is_shared(env):
-            raise RuntimeError("SharedTier instances should only be created in a Shared context i.e. one where SharedProject is used with no Project instances")
-        
+            raise RuntimeError(
+                "SharedTier instances should only be created in a Shared context i.e. one where SharedProject is used with no Project instances"
+            )
+
         self.name = name
         self.base_path: Union[Path, None] = None
         self.meta: Union[Meta, None] = None
@@ -295,9 +298,7 @@ class SharedTier:
         folder, meta_file, frozen_file = env.shareable_project.make_paths(self)
 
         if meta_file.exists():
-            self.meta = NotebookTierBase.__meta_manager__.create_meta(
-                meta_file, self
-            )
+            self.meta = NotebookTierBase.__meta_manager__.create_meta(meta_file, self)
 
         with open(frozen_file) as fs:
             model = SharedTierData.model_validate_json(fs.read())
