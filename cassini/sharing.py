@@ -12,7 +12,7 @@ from pydantic import (
     Field,
     ConfigDict,
     PlainSerializer,
-    AfterValidator
+    AfterValidator,
 )
 
 from . import env
@@ -67,7 +67,6 @@ class SharedTierData(BaseModel):
 
 
 class NoseyPath:
-
     @classmethod
     def from_parent(cls, path: Path, parent: Self):
         obj = cls(path)
@@ -129,7 +128,9 @@ class NoseyPath:
 
         return segments
 
-    def _recurse_segments(self, level: Dict[str, Any], path: List[str], sub_paths: List[List[str]]):
+    def _recurse_segments(
+        self, level: Dict[str, Any], path: List[str], sub_paths: List[List[str]]
+    ):
         for name, branch in level.items():
             path.append(name)
 
@@ -146,19 +147,18 @@ class NoseyPath:
         tree = self._unchain()
         path: List[str] = []
         sub_paths: List[List[str]] = []
-        
+
         self._recurse_segments(tree, path, sub_paths)
 
         paths = [self._path.joinpath(*sub) for sub in sub_paths]
 
         return paths
-    
+
 
 ArgsKwargsType = Tuple[Tuple[Any, ...], Tuple[Tuple[str, Any], ...]]
 
 
 class SharingTier:
-
     def __init__(self, name: str):
         assert env.project
         assert env.shareable_project
@@ -171,8 +171,8 @@ class SharingTier:
         self._paths_used: List[NoseyPath] = []
 
         self._tier: TierABC = env.project[name]
-        self.meta: Union[Meta, None] = getattr(self._tier, 'meta', None)
-        
+        self.meta: Union[Meta, None] = getattr(self._tier, "meta", None)
+
         if self.meta:
             # Link this instance's meta attributes to _tier's meta object
             meta_manager: MetaManager = self._tier.__meta_manager__  # type: ignore[assignment]
@@ -290,9 +290,11 @@ class SharedTier:
 
         if env.shareable_project:
             folder, meta_file, frozen_file = env.shareable_project.make_paths(self)
-            
+
             if meta_file.exists():
-                self.meta = NotebookTierBase.__meta_manager__.create_meta(meta_file, self)
+                self.meta = NotebookTierBase.__meta_manager__.create_meta(
+                    meta_file, self
+                )
 
             with open(frozen_file) as fs:
                 model = SharedTierData.model_validate_json(fs.read())
@@ -300,7 +302,7 @@ class SharedTier:
 
                 accessed = model.model_dump(exclude={"called", "base_path"})
                 self._accessed = accessed
-                
+
                 raw_called = model.called.model_dump()
 
                 called: Dict[str, Any] = defaultdict(dict)
@@ -364,13 +366,15 @@ class SharedTier:
 
 class SharedProject:
     """
-    Shareable version of `Project`. Allows sharing of notebooks that use Cassini with users who don't have 
+    Shareable version of `Project`. Allows sharing of notebooks that use Cassini with users who don't have
     Cassini set up.
-    
+
     This class automatically detects if it's being used in a _sharing_ or _shared_ context and returns the appropriate values.
     """
 
-    def __init__(self, import_string: Union[str, None] = None, location: Union[Path, None] = None) -> None:
+    def __init__(
+        self, import_string: Union[str, None] = None, location: Union[Path, None] = None
+    ) -> None:
         try:
             env.project = find_project(import_string)
         except (RuntimeError, KeyError):
@@ -393,7 +397,9 @@ class SharedProject:
         else:
             return SharedTier(name=name)
 
-    def make_paths(self, tier: Union[SharedTier, SharingTier]) -> Tuple[Path, Path, Path]:
+    def make_paths(
+        self, tier: Union[SharedTier, SharingTier]
+    ) -> Tuple[Path, Path, Path]:
         outer = self.location / tier.name
 
         meta_file = outer / f"{tier.name}.json"
