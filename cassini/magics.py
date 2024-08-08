@@ -1,3 +1,5 @@
+from warnings import warn
+
 from IPython.core.magic import register_cell_magic
 from IPython.core.interactiveshell import InteractiveShell
 from IPython.display import Markdown, publish_display_data  # type: ignore[attr-defined]
@@ -7,6 +9,12 @@ from .core import NotebookTierBase
 
 
 def hlt(line: str, cell: str):
+    if env.is_shared(env):
+        warn(
+            "This notebook is in a shared context and therefore highlights magics won't work"
+        )
+        return cell
+
     if not isinstance(env.o, NotebookTierBase):
         raise ValueError(
             "Highlights can only be added to tiers that subclass NotebookTierBase"

@@ -1,4 +1,5 @@
 import json
+import pathlib
 
 import pytest # type: ignore[import]
 from cassini import HomeTierBase, NotebookTierBase
@@ -133,6 +134,9 @@ def test_jsonable(mk_meta):
     with pytest.raises(pydantic.ValidationError):
         meta['object'] = object
 
+    # values must be json values. If you want type coersion, define a meta attr!
+    with pytest.raises(pydantic.ValidationError):
+        meta['pathlike'] = pathlib.Path().absolute()
 
     # type changes are allowed without meta definition.
     meta['type-change'] = 'text'

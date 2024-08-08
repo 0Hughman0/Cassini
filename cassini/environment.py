@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import (
-    Union,
-    TYPE_CHECKING,
-    TypeVar,
-    Any,
-)
+from typing import Union, TYPE_CHECKING, TypeVar, Any
 from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
     from .core import TierABC, Project
+    from .sharing import SharedProject
 
 
 ValWithInstance = TypeVar("ValWithInstance")
@@ -48,6 +44,15 @@ class _Env:
     def __init__(self) -> None:
         self.project: Union[Project, None] = None
         self._o: Union[TierABC, None] = None
+        self.shareable_project: Union[SharedProject, None] = None
+
+    @staticmethod
+    def is_sharing(instance: _Env) -> TypeGuard["_SharingInstance"]:
+        return bool(instance.shareable_project and instance.project)
+
+    @staticmethod
+    def is_shared(instance: _Env) -> TypeGuard["_SharedInstance"]:
+        return bool(instance.shareable_project and not instance.project)
 
     def _has_instance(
         self, val: Union[ValWithInstance, None]
@@ -66,6 +71,16 @@ class _Env:
 
     def update(self, obj: TierABC) -> None:
         self._o = obj
+
+
+class _SharingInstance(_Env):
+    shareable_project: SharedProject
+    project: Project
+
+
+class _SharedInstance(_Env):
+    shareable_project: SharedProject
+    project: None
 
 
 env = _Env()
