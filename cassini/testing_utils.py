@@ -27,14 +27,8 @@ def get_Project():
     Project.__before_launch__ = []
     Project.__after_launch__ = []
 
-    for Tier in ALL_TIERS:
-        Tier.cache = {}
-
-        for attr in dir(Tier):
-            val = Tier.__dict__.get(attr)
-
-            if isinstance(val, (_CachedProp, _CachedClassProp)):
-                val.cache = {}
+    for cache in env.caches:
+        cache.clear()
 
     return Project
 

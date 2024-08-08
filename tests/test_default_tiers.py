@@ -10,13 +10,6 @@ from cassini.testing_utils import get_Project, patch_project
 @pytest.fixture
 def mk_project(get_Project, tmp_path):
     Project = get_Project
-
-    Home.cache = {}
-    WorkPackage.cache = {}
-    Experiment.cache = {}
-    Sample.cache = {}
-    DataSet.cache = {}
-    Project._instance = None
     project = Project(DEFAULT_TIERS, tmp_path)
     project.setup_files()
     return project

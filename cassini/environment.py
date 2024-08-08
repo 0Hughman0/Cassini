@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, TYPE_CHECKING, TypeVar, Any
+from typing import Union, TYPE_CHECKING, TypeVar, Any, List, Dict
 from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
@@ -45,6 +45,7 @@ class _Env:
         self.project: Union[Project, None] = None
         self._o: Union[TierABC, None] = None
         self.shareable_project: Union[SharedProject, None] = None
+        self.caches: List[Dict[Any, Any]] = []
 
     @staticmethod
     def is_sharing(instance: _Env) -> TypeGuard["_SharingInstance"]:
@@ -71,6 +72,11 @@ class _Env:
 
     def update(self, obj: TierABC) -> None:
         self._o = obj
+
+    def create_cache(self):
+        cache = dict()
+        self.caches.append(cache)
+        return cache
 
 
 class _SharingInstance(_Env):

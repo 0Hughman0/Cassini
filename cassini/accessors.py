@@ -16,6 +16,8 @@ from typing import (
 )
 from typing_extensions import Self
 
+from .environment import env
+
 T = TypeVar("T")
 V = TypeVar("V")
 
@@ -80,7 +82,7 @@ class _CachedProp(Generic[T, V]):
 
     def __init__(self, func: Callable[[T], V]):
         self.func = func
-        self.cache: Dict[T, V] = {}
+        self.cache: Dict[T, V] = env.create_cache()
 
         self.__wrapped__ = func
 
@@ -130,7 +132,7 @@ class _CachedClassProp(Generic[T, V]):
 
     def __init__(self, func: Callable[[Type[T]], V]):
         self.func = func
-        self.cache: Dict[Type[T], V] = {}
+        self.cache: Dict[Type[T], V] = env.create_cache()
 
         self.__wrapped__ = func
 
