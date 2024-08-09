@@ -25,6 +25,7 @@ class Home(HomeTierBase):
 
     Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
+
     pass
 
 
@@ -36,6 +37,7 @@ class WorkPackage(NotebookTierBase):
 
     Next level down are `Experiment`s.
     """
+
     name_part_template = "WP{}"
     short_type = "wp"
 
@@ -56,6 +58,7 @@ class Experiment(NotebookTierBase):
 
     Each `Experiment` has a number of samples.
     """
+
     name_part_template = ".{}"
     short_type = "exp"
 
@@ -113,6 +116,7 @@ class Sample(NotebookTierBase):
     -----
     A `Sample` id can't start with a number and can't contain `'-'` (dashes), as these confuse the name parser.
     """
+
     name_part_template = "{}"
     id_regex = r"([^0-9^-][^-]*)"
 
@@ -146,6 +150,7 @@ class DataSet(FolderTierBase):
 
     The final tier, intended to represent a folder containing a collection of files relating to a particular `Sample`.
     """
+
     short_type = "dset"
     name_part_template = "-{}"
 

@@ -303,7 +303,7 @@ class BaseTierGui:
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
-    
+
     def __init__(self, tier: T):
         self.tier = tier
 

@@ -12,5 +12,5 @@ def extend_project(project: "Project") -> "Project":
     for Tier in project.hierarchy:
         gui_cls = GUIS.get(Tier, BaseTierGui)
         Tier.gui_cls = gui_cls
-    
+
     return project

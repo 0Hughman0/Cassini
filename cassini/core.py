@@ -20,7 +20,7 @@ from typing import (
     Optional,
     Callable,
     cast,
-    Protocol
+    Protocol,
 )
 from warnings import warn
 from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
@@ -42,7 +42,6 @@ from .jlgui import JLGui
 
 
 class TierGuiProtocol(Protocol):
-
     def __init__(self, tier: TierABC):
         pass
 

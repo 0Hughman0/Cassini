@@ -90,5 +90,5 @@ GUIS: Dict[Type[TierABC], Type[TierGuiProtocol]] = {
     WorkPackage: BaseTierGui,
     Experiment: ExperimentGui,
     Sample: SampleGui,
-    DataSet: BaseTierGui
+    DataSet: BaseTierGui,
 }
