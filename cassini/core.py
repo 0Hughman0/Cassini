@@ -81,11 +81,11 @@ class TierABC(ABC):
          as first argument.
     """
 
-    cache: ClassVar[Dict[Tuple[str, ...], TierABC]]
+    _cache: ClassVar[Dict[Tuple[str, ...], TierABC]] = env.create_cache()
 
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
-        cls.cache = {}  # ensures each TierBase class has its own cache
+        cls._cache = env.create_cache()  # ensures each TierBase class has its own cache
 
     id_regex: ClassVar[str] = r"(\d+)"
 
@@ -161,11 +161,11 @@ class TierABC(ABC):
         pass
 
     def __new__(cls, *args: str, **kwargs: Dict[str, Any]) -> TierABC:
-        obj = cls.cache.get(args)
+        obj = cls._cache.get(args)
         if obj:
             return obj
         obj = object.__new__(cls)
-        cls.cache[args] = obj
+        cls._cache[args] = obj
         return obj
 
     @classmethod
@@ -814,15 +814,12 @@ class Project:
     This class is a singleton i.e. only 1 instance per interpreter can be created.
     """
 
-    _instance: Union[Project, None] = None
-
     def __new__(cls, *args: Any, **kwargs: Any) -> Project:
-        if cls._instance:
+        if env.project:
             raise RuntimeError(
                 "Attempted to create new Project instance, only 1 instance permitted per interpreter"
             )
         instance = object.__new__(cls)
-        cls._instance = instance
         env.project = instance
         return instance
 
