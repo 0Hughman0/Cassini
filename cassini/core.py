@@ -814,15 +814,12 @@ class Project:
     This class is a singleton i.e. only 1 instance per interpreter can be created.
     """
 
-    _instance: Union[Project, None] = None
-
     def __new__(cls, *args: Any, **kwargs: Any) -> Project:
-        if cls._instance:
+        if env.project:
             raise RuntimeError(
                 "Attempted to create new Project instance, only 1 instance permitted per interpreter"
             )
         instance = object.__new__(cls)
-        cls._instance = instance
         env.project = instance
         return instance
 

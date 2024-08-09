@@ -7,8 +7,6 @@ from cassini import (
     env,
 )
 from cassini.core import Project, TierABC
-from cassini.accessors import _CachedProp, _CachedClassProp
-
 
 import pytest
 
@@ -21,7 +19,6 @@ def get_Project():
     env.shareable_project = None
     env.project = None
 
-    Project._instance = None
     Project.__before_setup_files__ = []
     Project.__after_setup_files__ = []
     Project.__before_launch__ = []
