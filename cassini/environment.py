@@ -77,7 +77,7 @@ class _Env:
         cache = dict()
         self._caches.append(cache)
         return cache
-    
+
     def _reset(self):
         self.shareable_project = None
         self.project = None
