@@ -20,13 +20,15 @@ from typing import (
     Optional,
     Callable,
     cast,
+    Protocol
 )
 from warnings import warn
 from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
 from typing_extensions import Self
 
-from cassini.meta import Meta, MetaManager
+import jinja2
 
+from .meta import Meta, MetaManager
 from .accessors import cached_prop, cached_class_prop, JSONType, soft_prop
 from .utils import (
     FileMaker,
@@ -36,17 +38,14 @@ from .utils import (
 )
 from .environment import env
 from .config import config
+from .jlgui import JLGui
 
-import jinja2
 
+class TierGuiProtocol(Protocol):
 
-class TierGuiABC(ABC):
-
-    @abstractmethod
     def __init__(self, tier: TierABC):
         pass
 
-    @abstractmethod
     def header(self):
         pass
 
@@ -99,7 +98,7 @@ class TierABC(ABC):
 
     id_regex: ClassVar[str] = r"(\d+)"
 
-    gui_cls: Type[TierGuiABC]
+    gui_cls: Type[TierGuiProtocol]
 
     @cached_class_prop
     def _pretty_type(cls) -> str:
@@ -190,7 +189,7 @@ class TierABC(ABC):
         return env.project.parse_name(name)
 
     _identifiers: Tuple[str, ...]
-    gui: TierGuiABC
+    gui: TierGuiProtocol
 
     def __init__(self: Self, *args: str):
         assert env.project
@@ -405,6 +404,8 @@ class TierABC(ABC):
 
 
 class FolderTierBase(TierABC):
+    gui_cls = JLGui
+
     @classmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
         # TODO: shouldn't project also handle this?

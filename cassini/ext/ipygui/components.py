@@ -25,7 +25,6 @@ from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layou
 from IPython.display import display, Markdown, publish_display_data  # type: ignore[attr-defined]
 
 from ...environment import env
-from ...core import TierGuiABC
 
 
 if TYPE_CHECKING:
@@ -300,11 +299,11 @@ class SearchWidget:
 T = TypeVar("T", bound="TierABC")
 
 
-class BaseTierGui(TierGuiABC):
+class BaseTierGui:
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
-
+    
     def __init__(self, tier: T):
         self.tier = tier
 

@@ -6,7 +6,6 @@ from typing import Iterator, List, Any, cast
 from ..core import TierABC, FolderTierBase, NotebookTierBase, HomeTierBase
 from ..accessors import cached_prop
 from ..utils import FileMaker
-from ..jlgui import JLGui
 
 
 def ignore_dir(name: str) -> bool:
@@ -26,7 +25,7 @@ class Home(HomeTierBase):
 
     Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
-    gui_cls = JLGui
+    pass
 
 
 class WorkPackage(NotebookTierBase):
@@ -37,8 +36,6 @@ class WorkPackage(NotebookTierBase):
 
     Next level down are `Experiment`s.
     """
-    gui_cls = JLGui
-
     name_part_template = "WP{}"
     short_type = "wp"
 
@@ -59,8 +56,6 @@ class Experiment(NotebookTierBase):
 
     Each `Experiment` has a number of samples.
     """
-    gui_cls = JLGui
-
     name_part_template = ".{}"
     short_type = "exp"
 
@@ -118,11 +113,8 @@ class Sample(NotebookTierBase):
     -----
     A `Sample` id can't start with a number and can't contain `'-'` (dashes), as these confuse the name parser.
     """
-    gui_cls = JLGui
-
     name_part_template = "{}"
     id_regex = r"([^0-9^-][^-]*)"
-
 
     @cached_prop
     def folder(self) -> Path:
@@ -154,8 +146,6 @@ class DataSet(FolderTierBase):
 
     The final tier, intended to represent a folder containing a collection of files relating to a particular `Sample`.
     """
-    gui_cls = JLGui
-
     short_type = "dset"
     name_part_template = "-{}"
 

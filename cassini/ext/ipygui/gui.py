@@ -7,7 +7,7 @@ from .components import BaseTierGui, SearchWidget, widgetify_html, InputSequence
 from ...defaults import Home, WorkPackage, Experiment, Sample, DataSet
 
 if TYPE_CHECKING:
-    from cassini.core import TierABC, TierGuiABC
+    from cassini.core import TierABC, TierGuiProtocol
 
 
 class HomeGui(BaseTierGui):
@@ -85,7 +85,7 @@ class SampleGui(BaseTierGui):
         return components
 
 
-GUIS: Dict[Type["TierABC"], Type["TierGuiABC"]] = {
+GUIS: Dict[Type[TierABC], Type[TierGuiProtocol]] = {
     Home: HomeGui,
     WorkPackage: BaseTierGui,
     Experiment: ExperimentGui,
