@@ -2,15 +2,13 @@ from typing import List, Union, TYPE_CHECKING
 
 from IPython.display import publish_display_data
 
-from .core import Project
-from .ipygui import BaseTierGui
 
 if TYPE_CHECKING:
-    from .core import TierABC
+    from .core import TierABC, Project
 
 
-class JLGui(BaseTierGui["TierABC"]):
-    def __init__(self, tier):
+class JLGui:
+    def __init__(self, tier: "TierABC"):
         self.tier = tier
 
     def header(self):
@@ -23,7 +21,7 @@ class JLGui(BaseTierGui["TierABC"]):
         publish_display_data({"application/cassini.metaeditor+json": {"values": name}})
 
 
-def extend_project(project: Project):
+def extend_project(project: "Project"):
     for tier_class in project.hierarchy:
         tier_class.gui_cls = JLGui
 

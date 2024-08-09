@@ -1,15 +1,11 @@
 from pathlib import Path
 import os
 
-from typing import Iterator, List, Any, cast, Dict
-
-from IPython.display import display
-from ipywidgets import SelectMultiple, Text, HBox, Button, DOMWidget
+from typing import Iterator, List, Any, cast
 
 from ..core import TierABC, FolderTierBase, NotebookTierBase, HomeTierBase
 from ..accessors import cached_prop
 from ..utils import FileMaker
-from ..ipygui import InputSequence, widgetify_html, BaseTierGui, SearchWidget
 
 
 def ignore_dir(name: str) -> bool:
@@ -18,19 +14,6 @@ def ignore_dir(name: str) -> bool:
     if name.startswith("_"):
         return True
     return False
-
-
-class HomeGui(BaseTierGui["Home"]):
-    def _get_header_components(self) -> Dict[str, DOMWidget]:
-        components = dict()
-        components["Search"] = lambda: SearchWidget().as_widget()
-        child = self.tier.child_cls
-        if child:
-            child_name = child.pretty_type
-            components[f"{child_name}s"] = self._build_children
-            components[f"New {child_name}"] = self.new_child
-
-        return components
 
 
 class Home(HomeTierBase):
@@ -43,7 +26,7 @@ class Home(HomeTierBase):
     Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
 
-    gui_cls = HomeGui
+    pass
 
 
 class WorkPackage(NotebookTierBase):
@@ -66,37 +49,6 @@ class WorkPackage(NotebookTierBase):
         return list(self)
 
 
-class ExperimentGui(BaseTierGui["Experiment"]):
-    def new_dataset(self) -> DOMWidget:
-        """
-        A handy widget for creating new `DataSets`.
-        """
-        samples = list(self.tier)
-        option_map = {sample.name: sample for sample in samples}
-
-        selection = SelectMultiple(options=option_map.keys(), description="Auto Add")
-
-        def create(name, auto_add):
-            with form.status:
-                self.tier.setup_technique(name)
-                if auto_add:
-                    for sample in (option_map[name] for name in auto_add):
-                        o = sample[name]
-                        o.setup_files()
-                        display(widgetify_html(o._repr_html_()))
-
-        form = InputSequence(
-            create, Text(description="Name:", placeholder="e.g. XRD"), selection
-        )
-
-        return form.as_widget()
-
-    def _get_header_components(self) -> Dict[str, DOMWidget]:
-        components = super()._get_header_components()
-        components["New Data"] = self.new_dataset
-        return components
-
-
 class Experiment(NotebookTierBase):
     """
     Experiment `Tier`.
@@ -109,8 +61,6 @@ class Experiment(NotebookTierBase):
 
     name_part_template = ".{}"
     short_type = "exp"
-
-    gui_cls = ExperimentGui
 
     @property
     def techniques(self) -> List[str]:
@@ -154,37 +104,6 @@ class Experiment(NotebookTierBase):
         return list(self)
 
 
-class SampleGui(BaseTierGui["Sample"]):
-    def new_child(self) -> DOMWidget:
-        def create(name):
-            with form.status:
-                o = self.tier[name]
-                o.setup_files()
-
-        form = InputSequence(create, Text(description="Name:", placeholder="e.g. XRD"))
-
-        return form.as_widget()
-
-    def _build_children(self) -> DOMWidget:
-        buttons = []
-        for dataset in self.tier.datasets:
-            b = Button(description=dataset.id)
-
-            def make_callback(dataset):
-                def open_folder(change):
-                    dataset.open_folder()
-
-                return open_folder
-
-            b.on_click(make_callback(dataset))
-            buttons.append(b)
-        return HBox(tuple(buttons))
-
-    def _get_header_components(self) -> Dict[str, DOMWidget]:
-        components = super()._get_header_components()
-        return components
-
-
 class Sample(NotebookTierBase):
     """
     Sample `Tier`.
@@ -199,10 +118,7 @@ class Sample(NotebookTierBase):
     """
 
     name_part_template = "{}"
-
     id_regex = r"([^0-9^-][^-]*)"
-
-    gui_cls = SampleGui
 
     @cached_prop
     def folder(self) -> Path:

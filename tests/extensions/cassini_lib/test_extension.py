@@ -6,8 +6,8 @@ from semantic_version import Version
 
 from cassini import DEFAULT_TIERS, NotebookTierBase
 
-from cassini.extensions.cassini_lib import extend_project
-from cassini.extensions.cassini_lib.import_tools import PatchImporter
+from cassini.ext.cassini_lib import extend_project
+from cassini.ext.cassini_lib.import_tools import PatchImporter
 
 from cassini.testing_utils import get_Project
 
