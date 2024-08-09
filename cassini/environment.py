@@ -45,7 +45,7 @@ class _Env:
         self.project: Union[Project, None] = None
         self._o: Union[TierABC, None] = None
         self.shareable_project: Union[SharedProject, None] = None
-        self.caches: List[Dict[Any, Any]] = []
+        self._caches: List[Dict[Any, Any]] = []
 
     @staticmethod
     def is_sharing(instance: _Env) -> TypeGuard["_SharingInstance"]:
@@ -75,8 +75,15 @@ class _Env:
 
     def create_cache(self):
         cache = dict()
-        self.caches.append(cache)
+        self._caches.append(cache)
         return cache
+    
+    def _reset(self):
+        self.shareable_project = None
+        self.project = None
+
+        for cache in self._caches:
+            cache.clear()
 
 
 class _SharingInstance(_Env):

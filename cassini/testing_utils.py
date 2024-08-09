@@ -16,16 +16,12 @@ ALL_TIERS = [*DEFAULT_TIERS, TierABC, HomeTierBase, FolderTierBase, NotebookTier
 
 @pytest.fixture
 def get_Project():
-    env.shareable_project = None
-    env.project = None
+    env._reset()
 
     Project.__before_setup_files__ = []
     Project.__after_setup_files__ = []
     Project.__before_launch__ = []
     Project.__after_launch__ = []
-
-    for cache in env.caches:
-        cache.clear()
 
     return Project
 
