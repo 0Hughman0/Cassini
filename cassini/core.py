@@ -27,7 +27,6 @@ from typing_extensions import Self
 
 from cassini.meta import Meta, MetaManager
 
-from .ipygui import BaseTierGui
 from .accessors import cached_prop, cached_class_prop, JSONType, soft_prop
 from .utils import (
     FileMaker,
@@ -39,6 +38,17 @@ from .environment import env
 from .config import config
 
 import jinja2
+
+
+class TierGuiABC(ABC):
+
+    @abstractmethod
+    def __init__(self, tier: TierABC):
+        pass
+
+    @abstractmethod
+    def header(self):
+        pass
 
 
 MetaDict = Dict[str, JSONType]
@@ -89,7 +99,7 @@ class TierABC(ABC):
 
     id_regex: ClassVar[str] = r"(\d+)"
 
-    gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
+    gui_cls: Type[TierGuiABC]
 
     @cached_class_prop
     def _pretty_type(cls) -> str:
@@ -180,7 +190,7 @@ class TierABC(ABC):
         return env.project.parse_name(name)
 
     _identifiers: Tuple[str, ...]
-    gui: BaseTierGui[Self]
+    gui: TierGuiABC
 
     def __init__(self: Self, *args: str):
         assert env.project

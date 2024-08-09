@@ -24,10 +24,12 @@ import pandas.api.types as pd_types
 from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layout, Accordion, DOMWidget  # type: ignore[import]
 from IPython.display import display, Markdown, publish_display_data  # type: ignore[attr-defined]
 
-from .environment import env
+from ...environment import env
+from ...core import TierGuiABC
+
 
 if TYPE_CHECKING:
-    from .core import TierABC, NotebookTierBase
+    from ...core import TierABC, NotebookTierBase
 
 
 def create_children_df(
@@ -298,7 +300,7 @@ class SearchWidget:
 T = TypeVar("T", bound="TierABC")
 
 
-class BaseTierGui(Generic[T]):
+class BaseTierGui(TierGuiABC):
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
