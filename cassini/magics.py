@@ -3,7 +3,6 @@ from warnings import warn
 from IPython.core.magic import register_cell_magic
 from IPython.core.interactiveshell import InteractiveShell
 from IPython.display import Markdown, publish_display_data  # type: ignore[attr-defined]
-from IPython
 
 from .environment import env
 from .core import NotebookTierBase
