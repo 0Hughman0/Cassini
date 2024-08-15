@@ -138,30 +138,6 @@ class TierABC(ABC):
 
     name_part_regex = _name_part_regex
 
-    @cached_class_prop
-    def _parent_cls(cls) -> Union[Type[TierABC], None]:
-        """
-        `Tier` above this `Tier`, `None` if doesn't have one
-
-        TODO: Make project oriented.
-        """
-        assert env.project
-        return env.project.get_parent_cls(cls)
-
-    parent_cls = _parent_cls
-
-    @cached_class_prop
-    def _child_cls(cls) -> Union[Type[TierABC], None]:
-        """
-        `Tier` below this `Tier`, `None` if doesn't have one
-
-        TODO: Make project oriented.
-        """
-        assert env.project
-        return env.project.get_child_cls(cls)
-
-    child_cls = _child_cls
-
     @classmethod
     @abstractmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
@@ -176,27 +152,16 @@ class TierABC(ABC):
         cls._cache[args] = obj
         return obj
 
-    @classmethod
-    def parse_name(cls, name: str) -> Tuple[str, ...]:
-        """
-        Ask `env.project` to parse name.
-        """
-        if not env.project:
-            raise RuntimeError(
-                "Attempting to parse a name before a project is initialised"
-            )
-        return env.project.parse_name(name)
-
     _identifiers: Tuple[str, ...]
     gui: TierGuiProtocol
 
-    def __init__(self: Self, *args: str):
-        assert env.project
+    def __init__(self: Self, *args: str, project: Project):
+        self.project = project
 
         self._identifiers = tuple(filter(None, args))
         self.gui = self.gui_cls(self)
 
-        rank = env.project.rank_map[self.__class__]
+        rank = self.project.rank_map[self.__class__]
 
         if len(self._identifiers) != rank:
             raise ValueError(
@@ -207,6 +172,34 @@ class TierABC(ABC):
             raise ValueError(
                 f"Invalid identifiers - {self._identifiers}, resulting name ('{self.name}') not in a parsable form "
             )
+        
+    @cached_prop
+    def _parent_cls(self) -> Union[Type[TierABC], None]:
+        """
+        `Tier` above this `Tier`, `None` if doesn't have one
+
+        TODO: Make project oriented.
+        """
+        return self.project.get_parent_cls(self.__class__)
+
+    parent_cls = _parent_cls
+
+    @cached_prop
+    def _child_cls(self) -> Union[Type[TierABC], None]:
+        """
+        `Tier` below this `Tier`, `None` if doesn't have one
+
+        TODO: Make project oriented.
+        """
+        return self.project.get_child_cls(self.__class__)
+
+    child_cls = _child_cls
+
+    def parse_name(self, name: str) -> Tuple[str, ...]:
+        """
+        Ask `env.project` to parse name.
+        """
+        return self.project.parse_name(name)
 
     @abstractmethod
     def setup_files(
@@ -305,7 +298,7 @@ class TierABC(ABC):
         Parent of this `Tier` _instance, `None` if has no parent :'(
         """
         if self.parent_cls:
-            return self.parent_cls(*self._identifiers[:-1])
+            return self.parent_cls(*self._identifiers[:-1], project=self.project)
         return None
 
     @cached_prop
@@ -348,7 +341,7 @@ class TierABC(ABC):
             child `Tier` object.
         """
         assert self.child_cls
-        return self.child_cls(*self._identifiers, id)
+        return self.child_cls(*self._identifiers, id, project=self.project)
 
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)
@@ -491,13 +484,6 @@ class NotebookTierBase(FolderTierBase):
     meta_folder_name = _meta_folder_name
 
     @classmethod
-    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
-        for meta_file in os.scandir(path):
-            if not meta_file.is_file() or not meta_file.name.endswith(".json"):
-                continue
-            yield cls.parse_name(meta_file.name[:-5])
-
-    @classmethod
     def iter_siblings(cls, parent):
         meta_folder = parent.folder / config.META_DIR_TEMPLATE.format(cls.short_type)
 
@@ -507,10 +493,10 @@ class NotebookTierBase(FolderTierBase):
         for meta_file in os.scandir(meta_folder):
             if not meta_file.is_file() or not meta_file.name.endswith(".json"):
                 continue
-            yield cls(*cls.parse_name(meta_file.name[:-5]))
+            yield cls(*parent.parse_name(meta_file.name[:-5]), project=parent.project)  # I don't like this.
 
-    def __init__(self, *identifiers: str):
-        super().__init__(*identifiers)
+    def __init__(self, *identifiers: str, project: Project):
+        super().__init__(*identifiers, project=project)
         self.meta: Meta = self.__meta_manager__.create_meta(self.meta_file, owner=self)
 
     def setup_files(
@@ -623,11 +609,9 @@ class NotebookTierBase(FolderTierBase):
         """
         Get all the templates for this `Tier`.
         """
-        assert env.project
-
         return [
             Path(cls.pretty_type) / entry.name
-            for entry in os.scandir(env.project.template_folder / cls.pretty_type)
+            for entry in os.scandir(self.project.template_folder / cls.pretty_type)
             if entry.is_file()
         ]
 
@@ -881,7 +865,7 @@ class Project:
         """
         Get the home `Tier`.
         """
-        return self.hierarchy[0]()
+        return self.hierarchy[0](project=self)
 
     def env(self, name: str) -> TierABC:
         """
@@ -910,19 +894,19 @@ class Project:
 
     def get_tier(self, identifiers: Tuple[str, ...]) -> TierABC:
         cls = self.hierarchy[len(identifiers)]
-        return cls(*identifiers)
+        return cls(*identifiers, project=self)
 
-    def get_child_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
+    def get_child_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:
         rank = self.rank_map[tier_cls]
         if rank + 1 > (len(self.hierarchy) - 1):
             return None
         else:
-            cls: Type[TierABC] = self.hierarchy[
+            cls = self.hierarchy[
                 rank + 1
             ]  # I don't understand why annotation needed?
             return cls
 
-    def get_parent_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
+    def get_parent_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:
         rank = self.rank_map[tier_cls]
         if rank - 1 < 0:
             return None

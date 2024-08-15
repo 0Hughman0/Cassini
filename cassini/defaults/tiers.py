@@ -135,7 +135,7 @@ class Sample(NotebookTierBase):
 
         techs = []
         for technique in self.parent.techniques:
-            dataset = self.child_cls(*self.identifiers, technique)
+            dataset = self.child_cls(*self.identifiers, technique, project=self.project)
             if dataset.exists():
                 techs.append(dataset)
         return techs
