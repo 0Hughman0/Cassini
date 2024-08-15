@@ -250,11 +250,9 @@ class TierABC(ABC):
             >>> smpl.name  # all 3 joined together
             WP2.3c
         """
-        assert env.project
-
         return "".join(
             cls.name_part_template.format(id)
-            for cls, id in zip(env.project.hierarchy[1:], self.identifiers)
+            for cls, id in zip(self.project.hierarchy[1:], self.identifiers)
         )
 
     @property
@@ -374,19 +372,6 @@ class TierABC(ABC):
             f' target="_blank"><{block}>{html.escape(self.name)}</{block}</a>'
         )
 
-    def __getattr__(self, item: str) -> TierABC:
-        if env.project:
-            short_map = {cls.short_type: cls for cls in env.project.hierarchy}
-            tier_cls = short_map.get(item)
-
-            if tier_cls is None:
-                raise AttributeError(item)
-
-            rank = env.project.rank_map[tier_cls]
-
-            return tier_cls(*self.identifiers[:rank], project=self.project)
-        raise AttributeError(item)
-
     @abstractmethod
     def remove_files(self) -> None:
         """
@@ -407,7 +392,7 @@ class FolderTierBase(TierABC):
         for folder in os.scandir(parent.folder):
             if not folder.is_dir():
                 continue
-            yield cls(*cls.parse_name(folder.name))
+            yield cls(*parent.parse_name(folder.name), project=parent.project)
 
     @cached_prop
     def folder(self) -> Path:
@@ -605,13 +590,13 @@ class NotebookTierBase(FolderTierBase):
         return self.parent.folder / (self.name + ".ipynb")
 
     @classmethod
-    def get_templates(cls) -> List[Path]:
+    def get_templates(cls, project: Project) -> List[Path]:
         """
         Get all the templates for this `Tier`.
         """
         return [
             Path(cls.pretty_type) / entry.name
-            for entry in os.scandir(self.project.template_folder / cls.pretty_type)
+            for entry in os.scandir(project.template_folder / cls.pretty_type)
             if entry.is_file()
         ]
 
@@ -629,9 +614,7 @@ class NotebookTierBase(FolderTierBase):
         rendered_text : str
             template rendered with `self`.
         """
-        assert env.project
-
-        template = env.project.template_env.get_template(template_path)
+        template = self.project.template_env.get_template(template_path)
         return template.render(**{self.short_type: self, "tier": self})
 
     def get_highlights(self) -> Union[HighlightsType, None]:
@@ -753,19 +736,16 @@ class HomeTierBase(FolderTierBase):
 
     @classmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
-        assert env.project
-        yield env.project.home
+        raise NotImplementedError("Home tier cannot be iterated over.")
 
     @cached_prop
     def folder(self) -> Path:
-        assert env.project
         assert self.child_cls
-        return env.project.project_folder / (self.child_cls.pretty_type + "s")
+        return self.project.project_folder / (self.child_cls.pretty_type + "s")
 
     @cached_prop
     def file(self) -> Path:
-        assert env.project
-        return env.project.project_folder / f"{self.name}.ipynb"
+        return self.project.project_folder / f"{self.name}.ipynb"
 
     def exists(self) -> bool:
         return bool(self.folder and self.file.exists())

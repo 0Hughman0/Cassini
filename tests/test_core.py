@@ -88,7 +88,6 @@ def test_tier_attrs(patch_project):
     assert tier.file == project.project_folder / 'Tiers' / 'Tier1.ipynb'
 
     assert tier.parent == Home(project=project)
-    assert tier.hm == Home(project=project)
 
     assert tier.exists() is False
 

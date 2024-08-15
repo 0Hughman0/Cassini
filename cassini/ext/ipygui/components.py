@@ -499,7 +499,7 @@ class BaseTierGui:
 
             return form.as_widget()
         else:
-            options = child_cls.get_templates()
+            options = child_cls.get_templates(self.tier.project)
             mapping = {path.name: path for path in options}
             selection = Select(options=mapping.keys(), description="Template")
 
