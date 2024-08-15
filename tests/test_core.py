@@ -37,7 +37,7 @@ def test_project(get_Project, tmp_path):
 
 def test_home_attr(patch_project):
     Tier, project = patch_project
-    home = Home()
+    home = Home(project=project)
 
     assert home.name == 'Home'
     assert home.pretty_type == 'Home'
@@ -50,16 +50,16 @@ def test_construct(patch_project):
     Tier, project = patch_project
 
     with pytest.raises(ValueError):
-        home = Home('Not Needed')
+        home = Home('Not Needed', project=project)
 
     with pytest.raises(ValueError):
-        tier = Tier()
+        tier = Tier(project=project)
 
     with pytest.raises(ValueError):
-        tier = Tier('1', '2')
+        tier = Tier('1', '2', project=project)
 
     with pytest.raises(ValueError):
-        tier = Tier('l')
+        tier = Tier('l', project=project)
 
 
 def test_tier_attrs(patch_project):
@@ -71,12 +71,12 @@ def test_tier_attrs(patch_project):
     assert Tier.name_part_template == 'Tier{}'
     assert Tier.name_part_regex == r'Tier(\d+)'
 
-    assert Tier.parent_cls is Home
-    assert Tier.parent_cls.child_cls is Tier
-    assert Tier.child_cls is None
-    assert Tier.parse_name('Tier1') == ('1',)
+    tier = Tier('1', project=project)
 
-    tier = Tier('1')
+    assert tier.parent_cls is Home
+    assert tier.parent.child_cls is Tier
+    assert tier.child_cls is None
+    assert tier.parse_name('Tier1') == ('1',)
 
     assert tier.id == '1'
     assert tier.identifiers == ('1',)
@@ -87,8 +87,8 @@ def test_tier_attrs(patch_project):
     assert tier.highlights_file == project.project_folder / 'Tiers' / '.trs' / 'Tier1.hlts'
     assert tier.file == project.project_folder / 'Tiers' / 'Tier1.ipynb'
 
-    assert tier.parent == Home()
-    assert tier.hm == Home()
+    assert tier.parent == Home(project=project)
+    assert tier.hm == Home(project=project)
 
     assert tier.exists() is False
 
@@ -102,7 +102,7 @@ def test_tier_accessors(patch_project):
 
     assert Tier.pretty_type is Tier.pretty_type
 
-    obj = Tier('1')
+    obj = Tier('1', project=project)
 
     assert obj.name is obj.name
 

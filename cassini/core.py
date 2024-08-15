@@ -384,7 +384,7 @@ class TierABC(ABC):
 
             rank = env.project.rank_map[tier_cls]
 
-            return tier_cls(*self.identifiers[:rank])
+            return tier_cls(*self.identifiers[:rank], project=self.project)
         raise AttributeError(item)
 
     @abstractmethod
