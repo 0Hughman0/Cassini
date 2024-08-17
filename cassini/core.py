@@ -172,7 +172,7 @@ class TierABC(ABC):
             raise ValueError(
                 f"Invalid identifiers - {self._identifiers}, resulting name ('{self.name}') not in a parsable form "
             )
-        
+
     @cached_prop
     def _parent_cls(self) -> Union[Type[TierABC], None]:
         """
@@ -478,7 +478,9 @@ class NotebookTierBase(FolderTierBase):
         for meta_file in os.scandir(meta_folder):
             if not meta_file.is_file() or not meta_file.name.endswith(".json"):
                 continue
-            yield cls(*parent.parse_name(meta_file.name[:-5]), project=parent.project)  # I don't like this.
+            yield cls(
+                *parent.parse_name(meta_file.name[:-5]), project=parent.project
+            )  # I don't like this.
 
     def __init__(self, *identifiers: str, project: Project):
         super().__init__(*identifiers, project=project)
@@ -881,9 +883,7 @@ class Project:
         if rank + 1 > (len(self.hierarchy) - 1):
             return None
         else:
-            cls = self.hierarchy[
-                rank + 1
-            ]  # I don't understand why annotation needed?
+            cls = self.hierarchy[rank + 1]  # I don't understand why annotation needed?
             return cls
 
     def get_parent_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:

@@ -69,7 +69,6 @@ class SharedTierData(BaseModel):
 
 
 class NoseyPath:
-
     @classmethod
     def from_parent(cls, path: Path, parent: Self):
         obj = cls(path)
@@ -164,12 +163,12 @@ ArgsKwargsType = Tuple[Tuple[Any, ...], Tuple[Tuple[str, Any], ...]]
 class SharingTier:
     def __init__(self, name: str):
         self.shared_project: Union[None, SharedProject] = None
-        
+
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = defaultdict(dict)
         self.name = name
         self._paths_used: List[NoseyPath] = []
-        
+
         self._tier: Union[TierABC, None] = None
         self.meta: Union[Meta, None] = None
 
@@ -193,7 +192,7 @@ class SharingTier:
             # Link this instance's meta attributes to _tier's meta object
             meta_manager: MetaManager = self._tier.__meta_manager__  # type: ignore[attr-defined]
             meta_manager.metas[self] = meta_manager.metas[self._tier]
-    
+
     description = NotebookTierBase.description
     conclusion = NotebookTierBase.conclusion
     started = NotebookTierBase.started
@@ -295,7 +294,6 @@ class SharingTier:
 
 
 class SharedTier:
-
     def __init__(self, name: str) -> None:
         self.name = name
         self.shared_project: Union[None, SharedProject] = None
@@ -312,7 +310,7 @@ class SharedTier:
 
     def load(self, shared_project: SharedProject):
         self.shared_project = shared_project
-        
+
         folder, meta_file, frozen_file = shared_project.make_paths(self)
 
         if meta_file.exists():
@@ -396,8 +394,10 @@ class SharedProject:
 
     def __new__(cls, *args, **kwargs) -> Self:
         if env.shareable_project:
-            raise RuntimeError("Only one shareable project instance should be created per interpretter")
-        
+            raise RuntimeError(
+                "Only one shareable project instance should be created per interpretter"
+            )
+
         obj = super().__new__(cls)
         env.shareable_project = obj
         return obj
@@ -442,7 +442,7 @@ class SharedProject:
     def make_shared(self) -> None:
         if not self.project:
             raise RuntimeError("Trying to share tiers when not in a sharing context.")
-        
+
         project = self.project
 
         path = self.location

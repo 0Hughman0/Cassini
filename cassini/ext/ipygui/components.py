@@ -360,7 +360,7 @@ class BaseTierGui(Generic[T]):
         Creates a widget that displays the motivation for a `Tier`.
         """
         if isinstance(self.tier, NotebookTierBase):
-            description = self.tier.description        
+            description = self.tier.description
             return widgetify(Markdown(description))
         else:
             return None
