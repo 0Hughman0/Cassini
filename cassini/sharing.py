@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from typing import Any, Dict, List, Union, Optional, Tuple, Generic, TypeVar
 from types import MethodType
@@ -67,6 +69,7 @@ class SharedTierData(BaseModel):
 
 
 class NoseyPath:
+
     @classmethod
     def from_parent(cls, path: Path, parent: Self):
         obj = cls(path)
@@ -160,26 +163,37 @@ ArgsKwargsType = Tuple[Tuple[Any, ...], Tuple[Tuple[str, Any], ...]]
 
 class SharingTier:
     def __init__(self, name: str):
-        if not env.is_sharing(env):
-            raise RuntimeError(
-                "SharingTier objects should only be created in a sharing context i.e. via SharedProject instances"
-            )
-
-        env.shareable_project.shared_tiers.append(self)
-
+        self.shared_project: Union[None, SharedProject] = None
+        
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = defaultdict(dict)
         self.name = name
         self._paths_used: List[NoseyPath] = []
+        
+        self._tier: Union[TierABC, None] = None
+        self.meta: Union[Meta, None] = None
 
-        self._tier: TierABC = env.project[name]
-        self.meta: Union[Meta, None] = getattr(self._tier, "meta", None)
+    @classmethod
+    def with_project(cls, name: str, shared_project: SharedProject):
+        tier = cls(name)
+        tier.load(shared_project=shared_project)
 
-        if self.meta:
+        shared_project.shared_tiers.append(tier)
+
+        return tier
+
+    def load(self, shared_project: SharedProject):
+        self.shared_project = shared_project
+
+        self._tier = shared_project.project[self.name]
+
+        self.meta = getattr(self._tier, "meta", None)
+
+        if isinstance(self._tier, NotebookTierBase) and self.meta:
             # Link this instance's meta attributes to _tier's meta object
-            meta_manager: MetaManager = self._tier.__meta_manager__  # type: ignore[assignment]
+            meta_manager: MetaManager = self._tier.__meta_manager__  # type: ignore[attr-defined]
             meta_manager.metas[self] = meta_manager.metas[self._tier]
-
+    
     description = NotebookTierBase.description
     conclusion = NotebookTierBase.conclusion
     started = NotebookTierBase.started
@@ -245,8 +259,6 @@ class SharingTier:
         return hash(self.name)
 
     def dump(self, fs) -> SharedTierData:
-        assert env.project
-
         called = defaultdict(list)
 
         for meth, calls in self._called.items():
@@ -262,7 +274,7 @@ class SharingTier:
         called_obj = SharedTierCalls(**called)  # type: ignore[arg-type]
 
         model = SharedTierData(
-            **self._accessed, base_path=env.project.project_folder, called=called_obj
+            **self._accessed, base_path=self.project.project_folder, called=called_obj
         )
 
         json_str = model.model_dump_json()
@@ -283,19 +295,25 @@ class SharingTier:
 
 
 class SharedTier:
-    def __init__(self, name: str) -> None:
-        if not env.is_shared(env):
-            raise RuntimeError(
-                "SharedTier instances should only be created in a Shared context i.e. one where SharedProject is used with no Project instances"
-            )
 
+    def __init__(self, name: str) -> None:
         self.name = name
+        self.shared_project: Union[None, SharedProject] = None
         self.base_path: Union[Path, None] = None
         self.meta: Union[Meta, None] = None
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = {}
 
-        folder, meta_file, frozen_file = env.shareable_project.make_paths(self)
+    @classmethod
+    def with_project(cls, name: str, shared_project: SharedProject):
+        tier = cls(name)
+        tier.load(shared_project)
+        return tier
+
+    def load(self, shared_project: SharedProject):
+        self.shared_project = shared_project
+        
+        folder, meta_file, frozen_file = shared_project.make_paths(self)
 
         if meta_file.exists():
             self.meta = NotebookTierBase.__meta_manager__.create_meta(meta_file, self)
@@ -325,10 +343,10 @@ class SharedTier:
     started = NotebookTierBase.started
 
     def adjust_path(self, path: Path) -> Path:
-        assert env.shareable_project
+        assert self.shared_project
         assert self.base_path
 
-        return env.shareable_project.requires_path / path.relative_to(self.base_path)
+        return self.shared_project.requires_path / path.relative_to(self.base_path)
 
     def __getattr__(self, name: str) -> Any:
         if name in self._accessed:
@@ -376,30 +394,36 @@ class SharedProject:
     This class automatically detects if it's being used in a _sharing_ or _shared_ context and returns the appropriate values.
     """
 
+    def __new__(cls, *args, **kwargs) -> Self:
+        if env.shareable_project:
+            raise RuntimeError("Only one shareable project instance should be created per interpretter")
+        
+        obj = super().__new__(cls)
+        env.shareable_project = obj
+        return obj
+
     def __init__(
         self, import_string: Union[str, None] = None, location: Union[Path, None] = None
     ) -> None:
         try:
-            env.project = find_project(import_string)
+            self.project = find_project(import_string)
         except (RuntimeError, KeyError):
-            env.project = None
-
-        env.shareable_project = self
+            self.project = None
 
         self.shared_tiers: List[SharingTier] = []
         self.location = location if location else Path("Shared")
 
     def env(self, name: str) -> Union[SharedTier, SharingTier]:
-        if env.project:
-            return SharingTier(name=name)
+        if self.project:
+            return SharingTier.with_project(name=name, shared_project=self)
         else:
-            return SharedTier(name=name)
+            return SharedTier.with_project(name=name, shared_project=self)
 
     def __getitem__(self, name: str) -> Union[SharedTier, SharingTier]:
-        if env.project:
-            return SharingTier(name=name)
+        if self.project:
+            return SharingTier.with_project(name=name, shared_project=self)
         else:
-            return SharedTier(name=name)
+            return SharedTier.with_project(name=name, shared_project=self)
 
     def make_paths(
         self, tier: Union[SharedTier, SharingTier]
@@ -416,8 +440,10 @@ class SharedProject:
         return self.location / "requires"
 
     def make_shared(self) -> None:
-        if not env.is_sharing(env):
+        if not self.project:
             raise RuntimeError("Trying to share tiers when not in a sharing context.")
+        
+        project = self.project
 
         path = self.location
 
@@ -437,7 +463,7 @@ class SharedProject:
             for required in stier.find_paths():
                 if required.exists():
                     destination = self.requires_path / required.relative_to(
-                        env.project.project_folder
+                        project.project_folder
                     )
                     directory = destination if required.is_dir() else destination.parent
                     directory.mkdir(exist_ok=True, parents=True)

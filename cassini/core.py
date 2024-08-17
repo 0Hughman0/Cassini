@@ -104,7 +104,7 @@ class TierABC(ABC):
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
-        return cast(str, cls.__name__)
+        return cls.__name__  # type: ignore[attr-defined]
 
     pretty_type: str = _pretty_type  # to please type checker.
 
