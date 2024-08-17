@@ -297,7 +297,7 @@ class SearchWidget:
 T = TypeVar("T", bound="TierABC")
 
 
-class BaseTierGui:
+class BaseTierGui(Generic[T]):
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """

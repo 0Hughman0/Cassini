@@ -4,13 +4,12 @@ from IPython.display import display
 from ipywidgets import Button, DOMWidget, HBox, SelectMultiple, Text
 
 from .components import BaseTierGui, SearchWidget, widgetify_html, InputSequence
-from ...defaults import Home, WorkPackage, Experiment, Sample, DataSet
 
-if TYPE_CHECKING:
-    from cassini.core import TierABC, TierGuiProtocol
+from cassini.defaults import Home, WorkPackage, Experiment, Sample, DataSet
+from cassini.core import TierABC, TierGuiProtocol
 
 
-class HomeGui(BaseTierGui):
+class HomeGui(BaseTierGui[Home]):
     def _get_header_components(self) -> Dict[str, DOMWidget]:
         components = dict()
         components["Search"] = lambda: SearchWidget().as_widget()
@@ -23,7 +22,7 @@ class HomeGui(BaseTierGui):
         return components
 
 
-class ExperimentGui(BaseTierGui):
+class ExperimentGui(BaseTierGui[Experiment]):
     def new_dataset(self) -> DOMWidget:
         """
         A handy widget for creating new `DataSets`.
@@ -54,7 +53,7 @@ class ExperimentGui(BaseTierGui):
         return components
 
 
-class SampleGui(BaseTierGui):
+class SampleGui(BaseTierGui[Sample]):
     def new_child(self) -> DOMWidget:
         def create(name):
             with form.status:
@@ -87,8 +86,8 @@ class SampleGui(BaseTierGui):
 
 GUIS: Dict[Type[TierABC], Type[TierGuiProtocol]] = {
     Home: HomeGui,
-    WorkPackage: BaseTierGui,
+    WorkPackage: BaseTierGui[WorkPackage],
     Experiment: ExperimentGui,
     Sample: SampleGui,
-    DataSet: BaseTierGui,
+    DataSet: BaseTierGui[DataSet],
 }

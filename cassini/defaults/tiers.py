@@ -132,6 +132,7 @@ class Sample(NotebookTierBase):
         """
         assert self.parent
         assert self.child_cls
+        assert isinstance(self.parent, Experiment)
 
         techs = []
         for technique in self.parent.techniques:
