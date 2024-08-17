@@ -26,9 +26,7 @@ from IPython.display import display, Markdown, publish_display_data  # type: ign
 
 from ...environment import env
 
-
-if TYPE_CHECKING:
-    from ...core import TierABC, NotebookTierBase
+from ...core import TierABC, NotebookTierBase
 
 
 def create_children_df(
@@ -299,7 +297,7 @@ class SearchWidget:
 T = TypeVar("T", bound="TierABC")
 
 
-class BaseTierGui:
+class BaseTierGui(Generic[T]):
     """
     Mixin to provide nice notebook outputs for Jupyter Notebooks.
     """
@@ -361,10 +359,11 @@ class BaseTierGui:
         """
         Creates a widget that displays the motivation for a `Tier`.
         """
-        description = self.tier.description
-        if not description:
+        if isinstance(self.tier, NotebookTierBase):
+            description = self.tier.description
+            return widgetify(Markdown(description))
+        else:
             return None
-        return widgetify(Markdown(description))
 
     def _build_highlights_accordion(self) -> Union[DOMWidget, None]:
         """
@@ -394,10 +393,11 @@ class BaseTierGui:
         """
         Build widget to display conclusion of this `Tier` object.
         """
-        conclusion = self.tier.conclusion
-        if not conclusion:
+        if isinstance(self.tier, NotebookTierBase):
+            conclusion = self.tier.conclusion
+            return widgetify(Markdown(conclusion))
+        else:
             return None
-        return widgetify(Markdown(self.tier.conclusion))
 
     def _build_children(self) -> DOMWidget:
         """
@@ -499,7 +499,7 @@ class BaseTierGui:
 
             return form.as_widget()
         else:
-            options = child_cls.get_templates()
+            options = child_cls.get_templates(self.tier.project)
             mapping = {path.name: path for path in options}
             selection = Select(options=mapping.keys(), description="Template")
 

@@ -33,7 +33,7 @@ def mk_shared_project(tmp_path):
         meta.write_text('{"a": 1}')
 
     env.project = None
-    env.sharing_project = None
+    env.shareable_project = None
 
     shared_project = SharedProject(location=shared)
     stier = shared_project['WP1.1']
@@ -274,8 +274,9 @@ def test_making_share(get_Project, tmp_path):
 
     shared_project.make_shared()
 
+    env.shareable_project = None
     shared_project = SharedProject(location=tmp_path / 'shared')
-    env.project = None
+    shared_project.project = None
 
     shared_tier = shared_project.env('WP1.1')
 
@@ -314,8 +315,7 @@ def test_no_meta(get_Project, tmp_path):
     assert stier.meta is None
 
     shared_project.make_shared()
-
-    env.project = None
+    shared_project.project = None
 
     shared_tier = shared_project['WP1.1a-Data']
 

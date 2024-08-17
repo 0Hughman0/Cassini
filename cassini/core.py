@@ -104,7 +104,7 @@ class TierABC(ABC):
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
-        return cast(str, cls.__name__)
+        return cls.__name__  # type: ignore[attr-defined]
 
     pretty_type: str = _pretty_type  # to please type checker.
 
@@ -138,30 +138,6 @@ class TierABC(ABC):
 
     name_part_regex = _name_part_regex
 
-    @cached_class_prop
-    def _parent_cls(cls) -> Union[Type[TierABC], None]:
-        """
-        `Tier` above this `Tier`, `None` if doesn't have one
-
-        TODO: Make project oriented.
-        """
-        assert env.project
-        return env.project.get_parent_cls(cls)
-
-    parent_cls = _parent_cls
-
-    @cached_class_prop
-    def _child_cls(cls) -> Union[Type[TierABC], None]:
-        """
-        `Tier` below this `Tier`, `None` if doesn't have one
-
-        TODO: Make project oriented.
-        """
-        assert env.project
-        return env.project.get_child_cls(cls)
-
-    child_cls = _child_cls
-
     @classmethod
     @abstractmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
@@ -176,27 +152,16 @@ class TierABC(ABC):
         cls._cache[args] = obj
         return obj
 
-    @classmethod
-    def parse_name(cls, name: str) -> Tuple[str, ...]:
-        """
-        Ask `env.project` to parse name.
-        """
-        if not env.project:
-            raise RuntimeError(
-                "Attempting to parse a name before a project is initialised"
-            )
-        return env.project.parse_name(name)
-
     _identifiers: Tuple[str, ...]
     gui: TierGuiProtocol
 
-    def __init__(self: Self, *args: str):
-        assert env.project
+    def __init__(self: Self, *args: str, project: Project):
+        self.project = project
 
         self._identifiers = tuple(filter(None, args))
         self.gui = self.gui_cls(self)
 
-        rank = env.project.rank_map[self.__class__]
+        rank = self.project.rank_map[self.__class__]
 
         if len(self._identifiers) != rank:
             raise ValueError(
@@ -207,6 +172,34 @@ class TierABC(ABC):
             raise ValueError(
                 f"Invalid identifiers - {self._identifiers}, resulting name ('{self.name}') not in a parsable form "
             )
+
+    @cached_prop
+    def _parent_cls(self) -> Union[Type[TierABC], None]:
+        """
+        `Tier` above this `Tier`, `None` if doesn't have one
+
+        TODO: Make project oriented.
+        """
+        return self.project.get_parent_cls(self.__class__)
+
+    parent_cls = _parent_cls
+
+    @cached_prop
+    def _child_cls(self) -> Union[Type[TierABC], None]:
+        """
+        `Tier` below this `Tier`, `None` if doesn't have one
+
+        TODO: Make project oriented.
+        """
+        return self.project.get_child_cls(self.__class__)
+
+    child_cls = _child_cls
+
+    def parse_name(self, name: str) -> Tuple[str, ...]:
+        """
+        Ask `env.project` to parse name.
+        """
+        return self.project.parse_name(name)
 
     @abstractmethod
     def setup_files(
@@ -257,11 +250,9 @@ class TierABC(ABC):
             >>> smpl.name  # all 3 joined together
             WP2.3c
         """
-        assert env.project
-
         return "".join(
             cls.name_part_template.format(id)
-            for cls, id in zip(env.project.hierarchy[1:], self.identifiers)
+            for cls, id in zip(self.project.hierarchy[1:], self.identifiers)
         )
 
     @property
@@ -305,7 +296,7 @@ class TierABC(ABC):
         Parent of this `Tier` _instance, `None` if has no parent :'(
         """
         if self.parent_cls:
-            return self.parent_cls(*self._identifiers[:-1])
+            return self.parent_cls(*self._identifiers[:-1], project=self.project)
         return None
 
     @cached_prop
@@ -348,7 +339,7 @@ class TierABC(ABC):
             child `Tier` object.
         """
         assert self.child_cls
-        return self.child_cls(*self._identifiers, id)
+        return self.child_cls(*self._identifiers, id, project=self.project)
 
     def __truediv__(self, other: Any) -> Path:
         return cast(Path, self.folder / other)
@@ -381,19 +372,6 @@ class TierABC(ABC):
             f' target="_blank"><{block}>{html.escape(self.name)}</{block}</a>'
         )
 
-    def __getattr__(self, item: str) -> TierABC:
-        if env.project:
-            short_map = {cls.short_type: cls for cls in env.project.hierarchy}
-            tier_cls = short_map.get(item)
-
-            if tier_cls is None:
-                raise AttributeError(item)
-
-            rank = env.project.rank_map[tier_cls]
-
-            return tier_cls(*self.identifiers[:rank])
-        raise AttributeError(item)
-
     @abstractmethod
     def remove_files(self) -> None:
         """
@@ -414,7 +392,7 @@ class FolderTierBase(TierABC):
         for folder in os.scandir(parent.folder):
             if not folder.is_dir():
                 continue
-            yield cls(*cls.parse_name(folder.name))
+            yield cls(*parent.parse_name(folder.name), project=parent.project)
 
     @cached_prop
     def folder(self) -> Path:
@@ -491,13 +469,6 @@ class NotebookTierBase(FolderTierBase):
     meta_folder_name = _meta_folder_name
 
     @classmethod
-    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
-        for meta_file in os.scandir(path):
-            if not meta_file.is_file() or not meta_file.name.endswith(".json"):
-                continue
-            yield cls.parse_name(meta_file.name[:-5])
-
-    @classmethod
     def iter_siblings(cls, parent):
         meta_folder = parent.folder / config.META_DIR_TEMPLATE.format(cls.short_type)
 
@@ -507,10 +478,12 @@ class NotebookTierBase(FolderTierBase):
         for meta_file in os.scandir(meta_folder):
             if not meta_file.is_file() or not meta_file.name.endswith(".json"):
                 continue
-            yield cls(*cls.parse_name(meta_file.name[:-5]))
+            yield cls(
+                *parent.parse_name(meta_file.name[:-5]), project=parent.project
+            )  # I don't like this.
 
-    def __init__(self, *identifiers: str):
-        super().__init__(*identifiers)
+    def __init__(self, *identifiers: str, project: Project):
+        super().__init__(*identifiers, project=project)
         self.meta: Meta = self.__meta_manager__.create_meta(self.meta_file, owner=self)
 
     def setup_files(
@@ -619,15 +592,13 @@ class NotebookTierBase(FolderTierBase):
         return self.parent.folder / (self.name + ".ipynb")
 
     @classmethod
-    def get_templates(cls) -> List[Path]:
+    def get_templates(cls, project: Project) -> List[Path]:
         """
         Get all the templates for this `Tier`.
         """
-        assert env.project
-
         return [
             Path(cls.pretty_type) / entry.name
-            for entry in os.scandir(env.project.template_folder / cls.pretty_type)
+            for entry in os.scandir(project.template_folder / cls.pretty_type)
             if entry.is_file()
         ]
 
@@ -645,9 +616,7 @@ class NotebookTierBase(FolderTierBase):
         rendered_text : str
             template rendered with `self`.
         """
-        assert env.project
-
-        template = env.project.template_env.get_template(template_path)
+        template = self.project.template_env.get_template(template_path)
         return template.render(**{self.short_type: self, "tier": self})
 
     def get_highlights(self) -> Union[HighlightsType, None]:
@@ -769,19 +738,16 @@ class HomeTierBase(FolderTierBase):
 
     @classmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
-        assert env.project
-        yield env.project.home
+        raise NotImplementedError("Home tier cannot be iterated over.")
 
     @cached_prop
     def folder(self) -> Path:
-        assert env.project
         assert self.child_cls
-        return env.project.project_folder / (self.child_cls.pretty_type + "s")
+        return self.project.project_folder / (self.child_cls.pretty_type + "s")
 
     @cached_prop
     def file(self) -> Path:
-        assert env.project
-        return env.project.project_folder / f"{self.name}.ipynb"
+        return self.project.project_folder / f"{self.name}.ipynb"
 
     def exists(self) -> bool:
         return bool(self.folder and self.file.exists())
@@ -881,7 +847,7 @@ class Project:
         """
         Get the home `Tier`.
         """
-        return self.hierarchy[0]()
+        return self.hierarchy[0](project=self)
 
     def env(self, name: str) -> TierABC:
         """
@@ -910,19 +876,17 @@ class Project:
 
     def get_tier(self, identifiers: Tuple[str, ...]) -> TierABC:
         cls = self.hierarchy[len(identifiers)]
-        return cls(*identifiers)
+        return cls(*identifiers, project=self)
 
-    def get_child_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
+    def get_child_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:
         rank = self.rank_map[tier_cls]
         if rank + 1 > (len(self.hierarchy) - 1):
             return None
         else:
-            cls: Type[TierABC] = self.hierarchy[
-                rank + 1
-            ]  # I don't understand why annotation needed?
+            cls = self.hierarchy[rank + 1]  # I don't understand why annotation needed?
             return cls
 
-    def get_parent_cls(self, tier_cls: TierABC) -> Union[None, Type[TierABC]]:
+    def get_parent_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:
         rank = self.rank_map[tier_cls]
         if rank - 1 < 0:
             return None
