@@ -19,8 +19,8 @@ def refresh_project():
         Project._instance = None
         env.project = None
 
-        if 'project' in sys.modules:
-            del sys.modules['project']
+        if 'cas_project' in sys.modules:
+            del sys.modules['cas_project']
         if 'my_project' in sys.modules:
             del sys.modules['my_project']
     
@@ -33,7 +33,7 @@ def refresh_project():
 
 
 def test_find_not_set(tmp_path, refresh_project):
-    project = shutil.copy('tests/project_cases/basic.py', tmp_path / 'project.py')
+    project = shutil.copy('tests/project_cases/basic.py', tmp_path / 'cas_project.py')
 
     refresh_project()
 
@@ -49,7 +49,7 @@ def test_find_not_set(tmp_path, refresh_project):
         itertools.product(
         ['basic.py', 'not_project.py'],
         ['', 'subdir'],
-        ['project.py', 'my_project.py'],
+        ['cas_project.py', 'my_project.py'],
         ['{module}', '{module_file}', '{directory}'],
         ['', ':{project_obj}'],
         [False, True]
@@ -63,8 +63,8 @@ def cas_project(request, tmp_path, refresh_project):
     if obj_format == ':{project_obj}' and module_format == '{directory}':
         return pytest.skip("Valid CASSINI_PATH cannot be constructed from directory and object specifier")
 
-    if module_format == '{directory}' and project_out != 'project.py':
-        return pytest.skip("Valid CASSINI_PATH cannot be constructed from directory if project not called project.py")
+    if module_format == '{directory}' and project_out != 'cas_project.py':
+        return pytest.skip("Valid CASSINI_PATH cannot be constructed from directory if project not called cas_project.py")
     
     if module_format == '{module}' and subdir:
         return pytest.skip("Valid CASSINI_PATH cannot be constructed from just module if it's inside a subdir")
