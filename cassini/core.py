@@ -457,7 +457,7 @@ class NotebookTierBase(FolderTierBase):
     Base class for tiers which have a notebook and meta associated with them.
     """
     meta: Meta
-    __meta_manager__: ClassVar[MetaManager]
+    __meta_manager__: ClassVar[MetaManager]    
 
     @cached_class_prop
     def _default_template(cls) -> Path:

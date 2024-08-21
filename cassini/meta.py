@@ -40,6 +40,13 @@ class Meta:
     ---------
     file: Path
            File Meta object stores information about.
+
+    Attributes
+    ----------
+    file: Path
+        Path to the meta file.
+    model: MetaCache
+        Pydantic model representation of this meta object. Used to perform validation, and serial/deserialisation.
     """
 
     timeout: ClassVar[int] = 1
@@ -76,7 +83,7 @@ class Meta:
         overwritten, it'll just be loaded.
         """
         if self.file.exists():
-            self._cache = self._cache.model_validate_json(
+            self._cache = self.model.model_validate_json(
                 self.file.read_text(), strict=False
             )
             self._cache_born = time.time()
@@ -169,7 +176,7 @@ class MetaAttr(Generic[AttrType, JSONType]):
     Isn't fussy, in that it won't raise an exception if it can't find its key.
 
     Arguments
-    =========
+    ---------
     post_get: func
         function to apply to data after being loaded from json file
     pre_set: func
@@ -234,6 +241,12 @@ class MetaAttr(Generic[AttrType, JSONType]):
 
 
 class MetaManager:
+    """
+    Class for the creation of meta objects. 
+
+    This needs to exist in order for the model of meta objects to work and allows 
+    meta objects to serialise attributes into types beyond `JsonValue`s.
+    """
     metas: ClassVar[Dict[Any, Meta]] = {}
 
     def __init__(self) -> None:
@@ -246,6 +259,11 @@ class MetaManager:
         return cls
 
     def build_fields(self):
+        """
+        Look through the meta attributes of this class and its base classes and find all the 
+        meta attributes it should have. Then generate pydantic compatible Field definitions
+        for those fields.
+        """
         fields = set()
 
         for cls in self.cls.__mro__:
@@ -264,6 +282,23 @@ class MetaManager:
         name: Union[str, None] = None,
         default: Union[AttrType, None] = None,
     ):
+        """
+        Add a meta attribute to this class. 
+
+        json_type: Any
+            Type to pass to pydantic when creating the `Meta.model`. This can be any type supported by pydantic,
+            `see here <https://docs.pydantic.dev/latest/concepts/conversion_table/>`_, i.e. not just `JsonValue`s.
+        attr_type: Any
+            Type actually returned by meta attribute i.e. accounting for `post_get`.
+        post_get: func
+        function to apply to data after being loaded from json file
+        pre_set: func
+            function to apply to data before stored in json file.
+        name: str
+            key to lookup in meta
+        default:
+            value to return if key not found in meta (note post_get isn't called on this).
+        """
         obj = MetaAttr(
             self,
             json_type=json_type,
@@ -279,5 +314,10 @@ class MetaManager:
         return obj
 
     def create_meta(self, path: Path, owner: Any):
+        """
+        Create meta object at `path`.
+
+        The appropraite additional fields for each meta attribute are passed on. 
+        """
         self.__class__.metas[owner] = Meta(path, self.build_fields())
         return self.metas[owner]
