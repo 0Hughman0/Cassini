@@ -9,6 +9,9 @@ if TYPE_CHECKING:
 
 
 def extend_project(project: "Project") -> "Project":
+    """
+    Extend `project` to use the IPython gui.
+    """
     for Tier in project.hierarchy:
         gui_cls = GUIS.get(Tier, BaseTierGui)
         Tier.gui_cls = gui_cls
