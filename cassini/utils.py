@@ -18,8 +18,6 @@ from jupyterlab.labapp import LabApp, LabServerApp
 from typing_extensions import Self, ParamSpec
 import datetime
 
-from .config import config
-from .accessors import JSONType
 from .environment import env
 
 import jinja2

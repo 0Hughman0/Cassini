@@ -27,9 +27,10 @@ from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
 from typing_extensions import Self
 
 import jinja2
+from pydantic import JsonValue
 
 from .meta import Meta, MetaManager
-from .accessors import cached_prop, cached_class_prop, JSONType, soft_prop
+from .accessors import cached_prop, cached_class_prop, soft_prop
 from .utils import (
     FileMaker,
     open_file,
@@ -57,7 +58,7 @@ class TierGuiProtocol(Protocol):
         pass
 
 
-MetaDict = Dict[str, JSONType]
+MetaDict = Dict[str, JsonValue]
 
 
 HighlightType = List[Dict[str, Dict[str, Any]]]

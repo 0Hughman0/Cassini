@@ -21,27 +21,6 @@ from .environment import env
 T = TypeVar("T")
 V = TypeVar("V")
 
-JSONPrimative = Union[str, int, float, bool, None]
-JSONType = Union[
-    Dict[JSONPrimative, "JSONType"],
-    List["JSONType"],
-    Tuple[JSONPrimative],
-    JSONPrimative,
-]
-JSONProcessor = Callable[[JSONType], T]
-
-JOut = TypeVar(
-    "JOut",
-    Dict[JSONPrimative, JSONType],
-    List[JSONType],
-    Tuple[JSONType, ...],
-    str,
-    int,
-    float,
-    bool,
-    None,
-)
-
 
 class _SoftProp(Generic[T, V]):
     """
