@@ -27,9 +27,10 @@ from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
 from typing_extensions import Self
 
 import jinja2
+from pydantic import JsonValue
 
 from .meta import Meta, MetaManager
-from .accessors import cached_prop, cached_class_prop, JSONType, soft_prop
+from .accessors import cached_prop, cached_class_prop, soft_prop
 from .utils import (
     FileMaker,
     open_file,
@@ -42,14 +43,23 @@ from .jlgui import JLGui
 
 
 class TierGuiProtocol(Protocol):
+    """
+    Protocol for providing a gui for tiers.
+
+    Must provide a header method and take the tier to provide a gui for as the first argument.
+    """
+
     def __init__(self, tier: TierABC):
         pass
 
     def header(self):
+        """
+        The header is the UI that is goes at the top of a notebook.
+        """
         pass
 
 
-MetaDict = Dict[str, JSONType]
+MetaDict = Dict[str, JsonValue]
 
 
 HighlightType = List[Dict[str, Dict[str, Any]]]
@@ -58,7 +68,10 @@ HighlightsType = Dict[str, HighlightType]
 
 class TierABC(ABC):
     """
-    Base class for creating Tiers
+    Abstract Base class for creating Tiers objects. Tiers should correspond to a folder on your disk.
+
+    Instances of this class or subclasses should not be created directly. Instead a Project instance
+    should create them.
 
     Parameters
     ----------
@@ -67,21 +80,11 @@ class TierABC(ABC):
 
     Attributes
     ----------
-    rank : int
-        Class attribute, specifying the rank of this `Tier`
     id_regex: str
         Class attribute, regex that defines a group that matches the id of a `Tier` object from a name... except the
         name isn't the full name, but with parent names stripped, see examples basically!
     hierarchy : list
         Class attribute, hierarchy of `Tier`s.
-    description : str
-        returns the description found in a `Tier` _instance's meta file
-    started : datetime
-        return a datetime parsed using `config.DATE_FORMAT` found in meta file
-    conclusion : str
-        return the conclusion found in a `Tier` _instance's meta file.
-    rank : int
-        (class attribute) rank of this `Tier` class (not to be set directly)
     id_regex : str
         (class attribute) regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id.
     gui_cls : Any
@@ -141,7 +144,10 @@ class TierABC(ABC):
     @classmethod
     @abstractmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
-        """"""
+        """
+        Provide an iterator for the siblings of this tier for a given parent i.e.
+        iterate over parent's children.
+        """
         pass
 
     def __new__(cls, *args: str, **kwargs: Dict[str, Any]) -> TierABC:
@@ -177,8 +183,6 @@ class TierABC(ABC):
     def _parent_cls(self) -> Union[Type[TierABC], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
-
-        TODO: Make project oriented.
         """
         return self.project.get_parent_cls(self.__class__)
 
@@ -188,8 +192,6 @@ class TierABC(ABC):
     def _child_cls(self) -> Union[Type[TierABC], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
-
-        TODO: Make project oriented.
         """
         return self.project.get_child_cls(self.__class__)
 
@@ -258,6 +260,9 @@ class TierABC(ABC):
     @property
     @abstractmethod
     def folder(self) -> Path:
+        """
+        The folder this tier corresponds to.
+        """
         pass
 
     def open_folder(self) -> None:
@@ -381,6 +386,10 @@ class TierABC(ABC):
 
 
 class FolderTierBase(TierABC):
+    """
+    Base class for a tier which has a folder, but not notebook/ meta.
+    """
+
     gui_cls = JLGui
 
     @classmethod
@@ -447,6 +456,10 @@ manager = MetaManager()
 
 @manager.connect_class
 class NotebookTierBase(FolderTierBase):
+    """
+    Base class for tiers which have a notebook and meta associated with them.
+    """
+
     meta: Meta
     __meta_manager__: ClassVar[MetaManager]
 
@@ -785,9 +798,20 @@ class Project:
         path to home directory. Note this also accepts a path to a file, but will take `project_folder.parent` in that
         case. This enables `__file__` to be used if you want `project_folder` to be based in the same dir.
 
+
     Notes
     -----
     This class is a singleton i.e. only 1 instance per interpreter can be created.
+
+    Project provides the following hooks, to allow customization of setting up and launching projects. These are
+    lists of functions, which are called in order at the specified time:
+
+        `__before_setup_files__` and `__after_setup_files__` - These are called when `project.setup_files()` is
+        called. These can be used, for example, to create additional directories or files. These callables
+        should take the project instance as an argument.
+
+        `__before_launch__` and `__after_launch__` - These are called during and after `project.launch()` is
+        called. These take the project and LabApp instance as an argument.
     """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Project:
@@ -875,10 +899,16 @@ class Project:
         return obj
 
     def get_tier(self, identifiers: Tuple[str, ...]) -> TierABC:
+        """
+        Get a tier for a given set of identifiers.
+        """
         cls = self.hierarchy[len(identifiers)]
         return cls(*identifiers, project=self)
 
     def get_child_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:
+        """
+        Get the child class of a given tier class. Returns None if there is no child class
+        """
         rank = self.rank_map[tier_cls]
         if rank + 1 > (len(self.hierarchy) - 1):
             return None
@@ -887,6 +917,9 @@ class Project:
             return cls
 
     def get_parent_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:
+        """
+        Get the parent class of a given tier class. Returns None if there is no parent class
+        """
         rank = self.rank_map[tier_cls]
         if rank - 1 < 0:
             return None

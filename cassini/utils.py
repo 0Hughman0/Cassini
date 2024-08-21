@@ -18,20 +18,9 @@ from jupyterlab.labapp import LabApp, LabServerApp
 from typing_extensions import Self, ParamSpec
 import datetime
 
-from .config import config
-from .accessors import JSONType
 from .environment import env
 
 import jinja2
-
-
-def str_to_date(val: JSONType) -> datetime.datetime:
-    assert isinstance(val, str)
-    return datetime.datetime.strptime(val, config.DATE_FORMAT)
-
-
-def date_to_str(date: datetime.datetime) -> str:
-    return date.strftime(config.DATE_FORMAT)
 
 
 class PathLibEnv(jinja2.Environment):
@@ -209,11 +198,11 @@ def find_project(import_string=None):
 
     If server was launched via `cassini.Project.launch()`, this will already be set.
 
-    Otherwise, try using CASSINI_PROJECT environment variable to find the project.
+    Otherwise, `import_string` or CASSINI_PROJECT environment variable can be set.
 
     This should be of the form:
 
-        CASSINI_PROJECT=path/to/module:project_obj
+        path/to/module:project_obj
 
     By default, `project_obj` is assumed to be called `project`. This will be imported from `module`.
 
@@ -246,9 +235,7 @@ def find_project(import_string=None):
         module = "project"
         obj = "project"
     else:
-        raise RuntimeError(
-            f"Cannot parse CASSINI_PROJECT environment variable {CASSINI_PROJECT}"
-        )
+        raise RuntimeError(f"Cannot parse CASSINI_PROJECT {CASSINI_PROJECT}")
 
     sys.path.insert(0, directory)
 

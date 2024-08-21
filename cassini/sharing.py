@@ -7,6 +7,7 @@ from typing_extensions import Self, Annotated
 import datetime
 from pathlib import Path
 import shutil
+from io import TextIOWrapper
 
 from pydantic import (
     JsonValue,
@@ -54,6 +55,31 @@ class SharedTierCalls(BaseModel):
 
 
 class SharedTierData(BaseModel):
+    """
+    Serialised form of a shared tier.
+
+    Attributes
+    ----------
+    file: Optional[Path]
+        Absolute path to the file for the notebook.
+    folder: Optional[Path]
+        Absolute path for folder for the tier.
+    parent: Optional[str]
+        name of the tier's parent
+    href: Optional[str]
+        tier's href url
+    id: Optional[str]
+        the tier's id
+    identifiers: List[str]
+        the tier's identifiers
+    meta_file: Optional[Path]
+        Absolute path to the meta file.
+    base_path: Path
+        Base path used when generating URLs.
+    called: SharedTierCalls
+        Serialised version of calls made to this tier prior to sharing.
+    """
+
     model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
 
     file: Optional[Path] = Field(default=None)
@@ -69,8 +95,24 @@ class SharedTierData(BaseModel):
 
 
 class NoseyPath:
+    """
+    Wrapper for `Path` objects that allows tracking of what paths have been generated from that object.
+
+    This 'nosey' behaviour is used to keep track of which files are accessed through `Path` objects.
+
+    Parameters
+    ----------
+    path: Path
+        path to wrap around.
+    """
+
     @classmethod
     def from_parent(cls, path: Path, parent: Self):
+        """
+        Create a new `NoseyPath` as a 'child' of `parent`.
+
+        Allows parent to keep track of its child paths.
+        """
         obj = cls(path)
         obj._children = parent._children
         parent._children.append(obj)
@@ -113,6 +155,9 @@ class NoseyPath:
         return f"<NoseyPath ({self._path})>"
 
     def _unchain(self) -> Dict[str, Any]:
+        """
+        Creates a tree structure that contains all segments of the children of this object.
+        """
         segments: Dict[str, Any] = {}
 
         for child in self._children:
@@ -133,6 +178,9 @@ class NoseyPath:
     def _recurse_segments(
         self, level: Dict[str, Any], path: List[str], sub_paths: List[List[str]]
     ):
+        """
+        Recurse through the `level`, keeping track of the `path` and add complete paths to sub_paths.
+        """
         for name, branch in level.items():
             path.append(name)
 
@@ -143,6 +191,9 @@ class NoseyPath:
                 self._recurse_segments(branch, path, sub_paths)
 
     def compress(self) -> List[Path]:
+        """
+        Create a list of complete paths that result from this path object e.g. through `__truediv__` calls.
+        """
         if not self._children:
             return [self._path]
 
@@ -161,6 +212,25 @@ ArgsKwargsType = Tuple[Tuple[Any, ...], Tuple[Tuple[str, Any], ...]]
 
 
 class SharingTier:
+    """
+    Wrapper around a `TierABC` object that keeps track of what attributes are accessed
+    and what methods are called.
+
+    This class can then create a serialised version of `tier` using `SharedTierData`, which can
+    allow a `SharedTier` object to be created that emulates this `SharingTier`.
+
+    This class should not be created directly. Instead, `SharedProject` objects should be used.
+
+    Parameters
+    ----------
+    name: str
+        The name of the tier to wrap around.
+
+    Notes
+    -----
+    This class is not in a valid state until `SharingTier.load` has been called.
+    """
+
     def __init__(self, name: str):
         self.shared_project: Union[None, SharedProject] = None
 
@@ -174,6 +244,11 @@ class SharingTier:
 
     @classmethod
     def with_project(cls, name: str, shared_project: SharedProject):
+        """
+        Create a `SharingTier` object, and load it from `shared_project`.
+
+        Recommended way to create `SharingTier` objects in contexts where the `shared_project` is available.
+        """
         tier = cls(name)
         tier.load(shared_project=shared_project)
 
@@ -182,6 +257,9 @@ class SharingTier:
         return tier
 
     def load(self, shared_project: SharedProject):
+        """
+        Sync this `SharingTier` to wrap around the tier with name `self.name` from the `shared_project`.
+        """
         self.shared_project = shared_project
 
         self._tier = shared_project.project[self.name]
@@ -198,6 +276,9 @@ class SharingTier:
     started = NotebookTierBase.started
 
     def handle_attr(self, name: str, val: Any) -> Any:
+        """
+        Handle attribute access to cache the result appropriately.
+        """
         if isinstance(val, (str, int, list, datetime.date, Path)):
             self._accessed[name] = val
 
@@ -211,6 +292,9 @@ class SharingTier:
         return val
 
     def handle_call(self, method: str, args_kwargs: ArgsKwargsType, val: Any) -> Any:
+        """
+        Handle call to a method to allow caching of the result.
+        """
         if isinstance(val, TierABC):
             val = SharingTier(val.name)
 
@@ -257,7 +341,21 @@ class SharingTier:
     def __hash__(self):
         return hash(self.name)
 
-    def dump(self, fs) -> SharedTierData:
+    def dump(self, fs: TextIOWrapper) -> SharedTierData:
+        """
+        Serialise the cached version of the attribute and function calls to wrapped tier.
+
+        Parameters
+        ----------
+        fs: TextIOWrapper
+            Stream to write serialised data to.
+
+        Returns
+        -------
+        model: SharedTierData
+            Model of this instance.
+        """
+
         called = defaultdict(list)
 
         for meth, calls in self._called.items():
@@ -294,6 +392,22 @@ class SharingTier:
 
 
 class SharedTier:
+    """
+    A class that emulates a `TierABC` object without needing a full cassini `Project` configured.
+
+    This class is the mirror of `SharingTier` objects, which create the serialised files required
+    to load these objects.
+
+    Parameters
+    ----------
+    name: str
+        The name of the tier to emulate.
+
+    Notes
+    -----
+    This class is not in a valid state until `SharingTier.load` has been called.
+    """
+
     def __init__(self, name: str) -> None:
         self.name = name
         self.shared_project: Union[None, SharedProject] = None
@@ -304,11 +418,17 @@ class SharedTier:
 
     @classmethod
     def with_project(cls, name: str, shared_project: SharedProject):
+        """
+        Create a `SharedTier` instance, and load it from `shared_project`.
+        """
         tier = cls(name)
         tier.load(shared_project)
         return tier
 
     def load(self, shared_project: SharedProject):
+        """
+        Load the contents of the shared tier into this object from the `shared_project`.
+        """
         self.shared_project = shared_project
 
         folder, meta_file, frozen_file = shared_project.make_paths(self)
@@ -341,6 +461,9 @@ class SharedTier:
     started = NotebookTierBase.started
 
     def adjust_path(self, path: Path) -> Path:
+        """
+        Correct path to account for new base path.
+        """
         assert self.shared_project
         assert self.base_path
 
@@ -390,6 +513,18 @@ class SharedProject:
     Cassini set up.
 
     This class automatically detects if it's being used in a _sharing_ or _shared_ context and returns the appropriate values.
+    It does this by trying to use `cassini.utils.find_project` to get ahold of your project instance. If it can't find
+    one, it assumes the code context is _shared_. If it does find one, it assumes you are still sharing this project.
+
+    This object can be used as a substitute for a `Project` instance.
+
+    Parameters
+    ----------
+    import_string: Optional[str]
+        If created in a sharing context, this is used to find the `project` object, using the syntax specified
+        in `cassini.utils.find_project`.
+    location: Optional[Path]
+        location to store/ load the shared project data. Defaults to `Path("Shared")`.
     """
 
     def __new__(cls, *args, **kwargs) -> Self:
@@ -414,12 +549,32 @@ class SharedProject:
         self.location = location if location else Path("Shared")
 
     def env(self, name: str) -> Union[SharedTier, SharingTier]:
+        """
+        Equivalent to `Project.env`, except will return the appropriate `SharingTier` or `SharedTier`, depending
+        on which is appropriate.
+
+        Parameters
+        ----------
+        name: str
+            Name of the tier to get.
+        """
         if self.project:
-            return SharingTier.with_project(name=name, shared_project=self)
+            tier = SharingTier.with_project(name=name, shared_project=self)
+            env.update(tier)
+            return tier
         else:
             return SharedTier.with_project(name=name, shared_project=self)
 
     def __getitem__(self, name: str) -> Union[SharedTier, SharingTier]:
+        """
+        Equivalent to `Project.env`, except will return the appropriate `SharingTier` or `SharedTier`, depending
+        on which is appropriate.
+
+        Parameters
+        ----------
+        name: str
+            Name of the tier to get.
+        """
         if self.project:
             return SharingTier.with_project(name=name, shared_project=self)
         else:
@@ -428,6 +583,18 @@ class SharedProject:
     def make_paths(
         self, tier: Union[SharedTier, SharingTier]
     ) -> Tuple[Path, Path, Path]:
+        """
+        Build paths required for sharing a given tier object.
+
+        Returns
+        -------
+        outer: Path
+            The folder the tier data is stored in.
+        meta_file: Path
+            A path to the meta_file of that tier
+        frozen_file: Path
+            The path to the `frozen.json` file, where the tier's attributes and calls are stored.
+        """
         outer = self.location / tier.name
 
         meta_file = outer / f"{tier.name}.json"
@@ -437,9 +604,20 @@ class SharedProject:
 
     @property
     def requires_path(self) -> Path:
+        """
+        Path for requires folder.
+        """
         return self.location / "requires"
 
     def make_shared(self) -> None:
+        """
+        Create a shared version of this project.
+
+        Will create a folder a `self.location`. Will then iterate all `tier` objects accessed in this context
+        and serialise them.
+
+        Additionally, and files that tiers used access will be copied into the `self.requires_path`.
+        """
         if not self.project:
             raise RuntimeError("Trying to share tiers when not in a sharing context.")
 

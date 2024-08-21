@@ -16,6 +16,9 @@ ALL_TIERS = [*DEFAULT_TIERS, TierABC, HomeTierBase, FolderTierBase, NotebookTier
 
 @pytest.fixture
 def get_Project():
+    """
+    Get a clean version of the Project class, with caches and other class attributes appropriately reset.
+    """
     env._reset()
 
     Project.__before_setup_files__ = []

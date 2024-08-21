@@ -9,6 +9,9 @@ from ... import Project, NotebookTierBase
 
 
 def extend_project(project: Project, cas_lib_dir: Union[str, Path] = "cas_lib"):
+    """
+    Extend project to add `cas_lib` attribute to Tiers.
+    """
     cas_lib_dir = project.project_folder / cas_lib_dir
 
     def make_cas_lib_folder(project, cas_lib_dir=cas_lib_dir):
@@ -33,7 +36,20 @@ def extend_project(project: Project, cas_lib_dir: Union[str, Path] = "cas_lib"):
 
 
 def create_cas_lib(cas_lib_dir: Path):
+    """
+    Create `cas_lib` attribute for a given `cas_lib_dir`.
+    """
+
     def cas_lib(self, version=None):
+        """
+        Allow importing from the appropraite `cas_lib` subdirectory for this tier.
+
+        If the version not provided or `tier.cas_lib_version` not set, is set to the
+        latest version found in `cas_lib_dir`, which is then stored in the tier's meta.
+
+        As `cas_lib_version` is persistent after being set the first time, this will pin this version,
+        unless either an explicit `version` parameter is provided, or `tier.cas_lib_version` is updated.
+        """
         if version is None:
             if self.cas_lib_version:
                 version = self.cas_lib_version

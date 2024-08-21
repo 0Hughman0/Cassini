@@ -8,9 +8,6 @@ if TYPE_CHECKING:
     from .sharing import SharedProject
 
 
-ValWithInstance = TypeVar("ValWithInstance")
-
-
 class _Env:
     """
     Essentially a global object that describes the state of the project for this interpreter.
@@ -55,30 +52,35 @@ class _Env:
     def is_shared(instance: _Env) -> TypeGuard["_SharedInstance"]:
         return bool(instance.shareable_project and not instance.project)
 
-    def _has_instance(
-        self, val: Union[ValWithInstance, None]
-    ) -> TypeGuard[ValWithInstance]:
-        return self.instance is not None
-
     @property
     def o(self) -> Union[TierABC, None]:
         """
         Reference to current Tier object.
         """
-        if self._has_instance(self._o):
-            return self._o
-
-        return None
+        return self._o
 
     def update(self, obj: TierABC) -> None:
         self._o = obj
 
     def create_cache(self):
+        """
+        Method for creating various caches throughout cassini.
+
+        the env instances keeps track of these, to allow them to be cleared
+        cleanly during testing.
+
+        This is an internal feature.
+        """
         cache = dict()
         self._caches.append(cache)
         return cache
 
     def _reset(self):
+        """
+        Reset env instance to initial state. Used for testing.
+
+        `project`, `shareable_project` and `caches` are cleared.
+        """
         self.shareable_project = None
         self.project = None
 
