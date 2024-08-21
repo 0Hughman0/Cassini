@@ -204,7 +204,7 @@ def find_project(import_string=None):
 
         path/to/module:project_obj
 
-    By default, `project_obj` is assumed to be called `project`. This will be imported from `module`, which by default is 
+    By default, `project_obj` is assumed to be called `project`. This will be imported from `module`, which by default is
     assumed to be `cas_project`.
 
     Note that for cassini to run with a regular jupyterlab instance, `ContentsManager.allow_hidden = True` must be set, either
