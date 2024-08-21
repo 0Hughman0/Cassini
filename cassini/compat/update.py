@@ -1,5 +1,7 @@
+import json
 import re
 from typing import List, Callable, TypeVar
+import datetime
 
 import nbformat
 from nbformat import NotebookNode
@@ -110,3 +112,42 @@ class V0_1to0_2(BaseUpdater):
             except Exception:
                 print("Exception occured, rolling back")
                 new_name.rename(smpl.file.name)
+
+
+class V0_2to0_3(BaseUpdater):
+
+    def __init__(self) -> None:
+        from .. import env
+
+        assert env.project
+
+        self.home = env.project.home
+
+    def walk_tiers(self):
+        for wp in self.home:
+            for exp in wp:
+                for smpl in exp:
+                    yield smpl
+
+    def update(self):
+        from cassini import NotebookTierBase
+
+        for tier in self.walk_tiers():
+            if not isinstance(tier, NotebookTierBase):
+                continue
+            
+            with open(tier.meta_file, 'w') as fs:
+                meta = json.load(fs)
+
+            started = meta.get('started')
+
+            if started:
+                started_dt = datetime.datetime.strptime(started, "%d/%m/%Y")
+                meta['started'] = str(started_dt)
+            
+            with open(tier.meta_file, 'w') as fs:
+                json.dump(meta, fs)
+
+
+
+                
