@@ -242,11 +242,12 @@ class MetaAttr(Generic[AttrType, JSONType]):
 
 class MetaManager:
     """
-    Class for the creation of meta objects. 
+    Class for the creation of meta objects.
 
-    This needs to exist in order for the model of meta objects to work and allows 
+    This needs to exist in order for the model of meta objects to work and allows
     meta objects to serialise attributes into types beyond `JsonValue`s.
     """
+
     metas: ClassVar[Dict[Any, Meta]] = {}
 
     def __init__(self) -> None:
@@ -260,7 +261,7 @@ class MetaManager:
 
     def build_fields(self):
         """
-        Look through the meta attributes of this class and its base classes and find all the 
+        Look through the meta attributes of this class and its base classes and find all the
         meta attributes it should have. Then generate pydantic compatible Field definitions
         for those fields.
         """
@@ -283,7 +284,7 @@ class MetaManager:
         default: Union[AttrType, None] = None,
     ):
         """
-        Add a meta attribute to this class. 
+        Add a meta attribute to this class.
 
         json_type: Any
             Type to pass to pydantic when creating the `Meta.model`. This can be any type supported by pydantic,
@@ -317,7 +318,7 @@ class MetaManager:
         """
         Create meta object at `path`.
 
-        The appropraite additional fields for each meta attribute are passed on. 
+        The appropraite additional fields for each meta attribute are passed on.
         """
         self.__class__.metas[owner] = Meta(path, self.build_fields())
         return self.metas[owner]

@@ -235,9 +235,7 @@ def find_project(import_string=None):
         module = "project"
         obj = "project"
     else:
-        raise RuntimeError(
-            f"Cannot parse CASSINI_PROJECT {CASSINI_PROJECT}"
-        )
+        raise RuntimeError(f"Cannot parse CASSINI_PROJECT {CASSINI_PROJECT}")
 
     sys.path.insert(0, directory)
 

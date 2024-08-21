@@ -79,6 +79,7 @@ class SharedTierData(BaseModel):
     called: SharedTierCalls
         Serialised version of calls made to this tier prior to sharing.
     """
+
     model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
 
     file: Optional[Path] = Field(default=None)
@@ -104,6 +105,7 @@ class NoseyPath:
     path: Path
         path to wrap around.
     """
+
     @classmethod
     def from_parent(cls, path: Path, parent: Self):
         """
@@ -211,10 +213,10 @@ ArgsKwargsType = Tuple[Tuple[Any, ...], Tuple[Tuple[str, Any], ...]]
 
 class SharingTier:
     """
-    Wrapper around a `TierABC` object that keeps track of what attributes are accessed 
+    Wrapper around a `TierABC` object that keeps track of what attributes are accessed
     and what methods are called.
 
-    This class can then create a serialised version of `tier` using `SharedTierData`, which can 
+    This class can then create a serialised version of `tier` using `SharedTierData`, which can
     allow a `SharedTier` object to be created that emulates this `SharingTier`.
 
     This class should not be created directly. Instead, `SharedProject` objects should be used.
@@ -228,6 +230,7 @@ class SharingTier:
     -----
     This class is not in a valid state until `SharingTier.load` has been called.
     """
+
     def __init__(self, name: str):
         self.shared_project: Union[None, SharedProject] = None
 
@@ -345,7 +348,7 @@ class SharingTier:
         Parameters
         ----------
         fs: TextIOWrapper
-            Stream to write serialised data to. 
+            Stream to write serialised data to.
 
         Returns
         -------
@@ -393,7 +396,7 @@ class SharedTier:
     A class that emulates a `TierABC` object without needing a full cassini `Project` configured.
 
     This class is the mirror of `SharingTier` objects, which create the serialised files required
-    to load these objects. 
+    to load these objects.
 
     Parameters
     ----------
@@ -404,6 +407,7 @@ class SharedTier:
     -----
     This class is not in a valid state until `SharingTier.load` has been called.
     """
+
     def __init__(self, name: str) -> None:
         self.name = name
         self.shared_project: Union[None, SharedProject] = None
@@ -509,7 +513,7 @@ class SharedProject:
     Cassini set up.
 
     This class automatically detects if it's being used in a _sharing_ or _shared_ context and returns the appropriate values.
-    It does this by trying to use `cassini.utils.find_project` to get ahold of your project instance. If it can't find 
+    It does this by trying to use `cassini.utils.find_project` to get ahold of your project instance. If it can't find
     one, it assumes the code context is _shared_. If it does find one, it assumes you are still sharing this project.
 
     This object can be used as a substitute for a `Project` instance.
@@ -517,7 +521,7 @@ class SharedProject:
     Parameters
     ----------
     import_string: Optional[str]
-        If created in a sharing context, this is used to find the `project` object, using the syntax specified 
+        If created in a sharing context, this is used to find the `project` object, using the syntax specified
         in `cassini.utils.find_project`.
     location: Optional[Path]
         location to store/ load the shared project data. Defaults to `Path("Shared")`.
@@ -609,10 +613,10 @@ class SharedProject:
         """
         Create a shared version of this project.
 
-        Will create a folder a `self.location`. Will then iterate all `tier` objects accessed in this context 
-        and serialise them. 
+        Will create a folder a `self.location`. Will then iterate all `tier` objects accessed in this context
+        and serialise them.
 
-        Additionally, and files that tiers used access will be copied into the `self.requires_path`. 
+        Additionally, and files that tiers used access will be copied into the `self.requires_path`.
         """
         if not self.project:
             raise RuntimeError("Trying to share tiers when not in a sharing context.")

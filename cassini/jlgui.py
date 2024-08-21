@@ -17,6 +17,7 @@ class JLGui:
         Tier to provide a gui for.
 
     """
+
     def __init__(self, tier: "TierABC"):
         self.tier = tier
 

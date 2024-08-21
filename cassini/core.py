@@ -44,10 +44,11 @@ from .jlgui import JLGui
 
 class TierGuiProtocol(Protocol):
     """
-    Protocol for providing a gui for tiers. 
-    
+    Protocol for providing a gui for tiers.
+
     Must provide a header method and take the tier to provide a gui for as the first argument.
     """
+
     def __init__(self, tier: TierABC):
         pass
 
@@ -69,7 +70,7 @@ class TierABC(ABC):
     """
     Abstract Base class for creating Tiers objects. Tiers should correspond to a folder on your disk.
 
-    Instances of this class or subclasses should not be created directly. Instead a Project instance 
+    Instances of this class or subclasses should not be created directly. Instead a Project instance
     should create them.
 
     Parameters
@@ -144,7 +145,7 @@ class TierABC(ABC):
     @abstractmethod
     def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
         """
-        Provide an iterator for the siblings of this tier for a given parent i.e. 
+        Provide an iterator for the siblings of this tier for a given parent i.e.
         iterate over parent's children.
         """
         pass
@@ -388,6 +389,7 @@ class FolderTierBase(TierABC):
     """
     Base class for a tier which has a folder, but not notebook/ meta.
     """
+
     gui_cls = JLGui
 
     @classmethod
@@ -457,8 +459,9 @@ class NotebookTierBase(FolderTierBase):
     """
     Base class for tiers which have a notebook and meta associated with them.
     """
+
     meta: Meta
-    __meta_manager__: ClassVar[MetaManager]    
+    __meta_manager__: ClassVar[MetaManager]
 
     @cached_class_prop
     def _default_template(cls) -> Path:
@@ -795,20 +798,20 @@ class Project:
         path to home directory. Note this also accepts a path to a file, but will take `project_folder.parent` in that
         case. This enables `__file__` to be used if you want `project_folder` to be based in the same dir.
 
-    
+
     Notes
     -----
     This class is a singleton i.e. only 1 instance per interpreter can be created.
 
-    Project provides the following hooks, to allow customization of setting up and launching projects. These are 
+    Project provides the following hooks, to allow customization of setting up and launching projects. These are
     lists of functions, which are called in order at the specified time:
 
-        `__before_setup_files__` and `__after_setup_files__` - These are called when `project.setup_files()` is 
-        called. These can be used, for example, to create additional directories or files. These callables 
+        `__before_setup_files__` and `__after_setup_files__` - These are called when `project.setup_files()` is
+        called. These can be used, for example, to create additional directories or files. These callables
         should take the project instance as an argument.
 
         `__before_launch__` and `__after_launch__` - These are called during and after `project.launch()` is
-        called. These take the project and LabApp instance as an argument. 
+        called. These take the project and LabApp instance as an argument.
     """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Project:

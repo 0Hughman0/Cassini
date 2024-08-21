@@ -66,7 +66,7 @@ class _Env:
         """
         Method for creating various caches throughout cassini.
 
-        the env instances keeps track of these, to allow them to be cleared 
+        the env instances keeps track of these, to allow them to be cleared
         cleanly during testing.
 
         This is an internal feature.
