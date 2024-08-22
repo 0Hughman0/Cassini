@@ -3,7 +3,7 @@ from pathlib import Path
 import datetime
 from typing import List, Any
 
-from cassini.sharing import SharedProject, NoseyPath, SharedTierData, SharedTier, SharedTierCalls, GetChildCall, GetItemCall, TrueDivCall, SharedTierCall
+from cassini.sharing import ShareableProject, NoseyPath, SharedTierData, SharedTier, SharedTierCalls, GetChildCall, GetItemCall, TrueDivCall, SharedTierCall
 from cassini.testing_utils import get_Project, patch_project
 from cassini.magics import hlt
 from cassini import DEFAULT_TIERS, env
@@ -35,7 +35,7 @@ def mk_shared_project(tmp_path):
     env.project = None
     env.shareable_project = None
 
-    shared_project = SharedProject(location=shared)
+    shared_project = ShareableProject(location=shared)
     stier = shared_project['WP1.1']
     return stier, shared_project
 
@@ -99,7 +99,7 @@ def test_nosey_path_compressing():
 def test_attribute_caching(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
-    shared_project = SharedProject()
+    shared_project = ShareableProject()
     project.setup_files()
 
     tier = project['WP1']
@@ -139,7 +139,7 @@ def test_attribute_caching(get_Project, tmp_path):
 def test_stier_path_finding(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
-    shared_project = SharedProject()
+    shared_project = ShareableProject()
     project.setup_files()
 
     tier = project['WP1.1']
@@ -234,7 +234,7 @@ def test_meta_wrapping(get_Project, tmp_path):
     tier.parent.setup_files()
     tier.setup_files()
 
-    shared_project = SharedProject()
+    shared_project = ShareableProject()
     stier = shared_project.env('WP1.1')
 
     assert stier.meta is tier.meta
@@ -258,7 +258,7 @@ def test_meta_wrapping(get_Project, tmp_path):
 def test_making_share(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
-    shared_project = SharedProject(location=tmp_path / 'shared')
+    shared_project = ShareableProject(location=tmp_path / 'shared')
     project.setup_files()
 
     tier = project['WP1.1']
@@ -275,7 +275,7 @@ def test_making_share(get_Project, tmp_path):
     shared_project.make_shared()
 
     env.shareable_project = None
-    shared_project = SharedProject(location=tmp_path / 'shared')
+    shared_project = ShareableProject(location=tmp_path / 'shared')
     shared_project.project = None
 
     shared_tier = shared_project.env('WP1.1')
@@ -295,7 +295,7 @@ def test_making_share(get_Project, tmp_path):
 def test_no_meta(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
-    shared_project = SharedProject(location=tmp_path / 'shared')
+    shared_project = ShareableProject(location=tmp_path / 'shared')
     project.setup_files()
 
     project['WP1'].setup_files()
@@ -332,3 +332,23 @@ def test_no_magics(mk_shared_project):
         out = hlt('hlt', 'print("cell")')
     
     assert out == 'print("cell")'
+
+
+def test_getting_tier_children(get_Project, tmp_path):
+    Project = get_Project
+    project = Project(DEFAULT_TIERS, tmp_path)
+    shared_project = ShareableProject(location=tmp_path / 'shared')
+    project.setup_files()
+    project['WP1'].setup_files()
+    project['WP1.1'].setup_files()
+
+    (project['WP1.1'] / 'file').write_text('data')
+
+    stier = shared_project['WP1']
+    stier_child = stier['1']
+
+    assert stier_child.exists()
+    assert (stier_child / 'file').read_text() == 'data'
+    
+
+
