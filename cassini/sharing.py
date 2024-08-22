@@ -288,7 +288,9 @@ class SharingTier:
 
         if isinstance(val, TierABC):
             assert self.shared_project
-            val = self._accessed[name] = SharingTier.with_project(val.name, self.shared_project)
+            val = self._accessed[name] = SharingTier.with_project(
+                val.name, self.shared_project
+            )
 
         return val
 
@@ -310,8 +312,10 @@ class SharingTier:
 
     def __getattr__(self, name: str) -> Any:
         if self.shared_project is None:
-            raise RuntimeError("SharingTier attributes can be accessed until `SharingTier.load` is called")
-        
+            raise RuntimeError(
+                "SharingTier attributes can be accessed until `SharingTier.load` is called"
+            )
+
         val = getattr(self._tier, name)
 
         if isinstance(val, MethodType):
@@ -476,8 +480,10 @@ class SharedTier:
 
     def __getattr__(self, name: str) -> Any:
         if self.shared_project is None:
-            raise RuntimeError("SharedTier attributes can be accessed until `SharedTier.load` is called")
-        
+            raise RuntimeError(
+                "SharedTier attributes can be accessed until `SharedTier.load` is called"
+            )
+
         if name in self._accessed:
             val = self._accessed[name]
 
