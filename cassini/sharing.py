@@ -232,7 +232,7 @@ class SharingTier:
     """
 
     def __init__(self, name: str):
-        self.shared_project: Union[None, SharedProject] = None
+        self.sharing_project: Union[None, ShareableProject] = None
 
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = defaultdict(dict)
@@ -243,26 +243,26 @@ class SharingTier:
         self.meta: Union[Meta, None] = None
 
     @classmethod
-    def with_project(cls, name: str, shared_project: SharedProject):
+    def with_project(cls, name: str, sharing_project: ShareableProject):
         """
         Create a `SharingTier` object, and load it from `shared_project`.
 
         Recommended way to create `SharingTier` objects in contexts where the `shared_project` is available.
         """
         tier = cls(name)
-        tier.load(shared_project=shared_project)
+        tier.load(sharing_project=sharing_project)
 
-        shared_project.shared_tiers.append(tier)
+        sharing_project.shared_tiers.append(tier)
 
         return tier
 
-    def load(self, shared_project: SharedProject):
+    def load(self, sharing_project: ShareableProject):
         """
         Sync this `SharingTier` to wrap around the tier with name `self.name` from the `shared_project`.
         """
-        self.shared_project = shared_project
+        self.sharing_project = sharing_project
 
-        self._tier = shared_project.project[self.name]
+        self._tier = sharing_project.project[self.name]
 
         self.meta = getattr(self._tier, "meta", None)
 
@@ -287,9 +287,9 @@ class SharingTier:
             self._paths_used.append(val)
 
         if isinstance(val, TierABC):
-            assert self.shared_project
+            assert self.sharing_project
             val = self._accessed[name] = SharingTier.with_project(
-                val.name, self.shared_project
+                val.name, self.sharing_project
             )
 
         return val
@@ -299,8 +299,8 @@ class SharingTier:
         Handle call to a method to allow caching of the result.
         """
         if isinstance(val, TierABC):
-            assert self.shared_project
-            val = SharingTier.with_project(val.name, self.shared_project)
+            assert self.sharing_project
+            val = SharingTier.with_project(val.name, self.sharing_project)
 
         self._called[method][args_kwargs] = val
 
@@ -311,7 +311,7 @@ class SharingTier:
         return val
 
     def __getattr__(self, name: str) -> Any:
-        if self.shared_project is None:
+        if self.sharing_project is None:
             raise RuntimeError(
                 "SharingTier attributes can be accessed until `SharingTier.load` is called"
             )
@@ -419,14 +419,14 @@ class SharedTier:
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.shared_project: Union[None, SharedProject] = None
+        self.shared_project: Union[None, ShareableProject] = None
         self.base_path: Union[Path, None] = None
         self.meta: Union[Meta, None] = None
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = {}
 
     @classmethod
-    def with_project(cls, name: str, shared_project: SharedProject):
+    def with_project(cls, name: str, shared_project: ShareableProject):
         """
         Create a `SharedTier` instance, and load it from `shared_project`.
         """
@@ -434,7 +434,7 @@ class SharedTier:
         tier.load(shared_project)
         return tier
 
-    def load(self, shared_project: SharedProject):
+    def load(self, shared_project: ShareableProject):
         """
         Load the contents of the shared tier into this object from the `shared_project`.
         """
@@ -521,7 +521,7 @@ class SharedTier:
         return hash(self.name)
 
 
-class SharedProject:
+class ShareableProject:
     """
     Shareable version of `Project`. Allows sharing of notebooks that use Cassini with users who don't have
     Cassini set up.
@@ -573,7 +573,7 @@ class SharedProject:
             Name of the tier to get.
         """
         if self.project:
-            tier = SharingTier.with_project(name=name, shared_project=self)
+            tier = SharingTier.with_project(name=name, sharing_project=self)
             env.update(tier)
             return tier
         else:
@@ -590,7 +590,7 @@ class SharedProject:
             Name of the tier to get.
         """
         if self.project:
-            return SharingTier.with_project(name=name, shared_project=self)
+            return SharingTier.with_project(name=name, sharing_project=self)
         else:
             return SharedTier.with_project(name=name, shared_project=self)
 
