@@ -332,3 +332,23 @@ def test_no_magics(mk_shared_project):
         out = hlt('hlt', 'print("cell")')
     
     assert out == 'print("cell")'
+
+
+def test_getting_tier_children(get_Project, tmp_path):
+    Project = get_Project
+    project = Project(DEFAULT_TIERS, tmp_path)
+    shared_project = SharedProject(location=tmp_path / 'shared')
+    project.setup_files()
+    project['WP1'].setup_files()
+    project['WP1.1'].setup_files()
+
+    (project['WP1.1'] / 'file').write_text('data')
+
+    stier = shared_project['WP1']
+    stier_child = stier['1']
+
+    assert stier_child.exists()
+    assert (stier_child / 'file').read_text() == 'data'
+    
+
+

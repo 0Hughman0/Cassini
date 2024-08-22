@@ -287,7 +287,8 @@ class SharingTier:
             self._paths_used.append(val)
 
         if isinstance(val, TierABC):
-            val = self._accessed[name] = SharingTier(val.name)
+            assert self.shared_project
+            val = self._accessed[name] = SharingTier.with_project(val.name, self.shared_project)
 
         return val
 
@@ -296,7 +297,8 @@ class SharingTier:
         Handle call to a method to allow caching of the result.
         """
         if isinstance(val, TierABC):
-            val = SharingTier(val.name)
+            assert self.shared_project
+            val = SharingTier.with_project(val.name, self.shared_project)
 
         self._called[method][args_kwargs] = val
 
@@ -307,6 +309,9 @@ class SharingTier:
         return val
 
     def __getattr__(self, name: str) -> Any:
+        if self.shared_project is None:
+            raise RuntimeError("SharingTier attributes can be accessed until `SharingTier.load` is called")
+        
         val = getattr(self._tier, name)
 
         if isinstance(val, MethodType):
@@ -470,6 +475,9 @@ class SharedTier:
         return self.shared_project.requires_path / path.relative_to(self.base_path)
 
     def __getattr__(self, name: str) -> Any:
+        if self.shared_project is None:
+            raise RuntimeError("SharedTier attributes can be accessed until `SharedTier.load` is called")
+        
         if name in self._accessed:
             val = self._accessed[name]
 
