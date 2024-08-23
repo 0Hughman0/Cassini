@@ -3,7 +3,19 @@ from pathlib import Path
 import datetime
 from typing import List, Any
 
-from cassini.sharing import ShareableProject, NoseyPath, SharedTierData, SharedTier, SharedTierCalls, GetChildCall, GetItemCall, TrueDivCall, SharedTierCall
+from cassini.sharing import (
+    ShareableProject, 
+    NoseyPath, 
+    SharedTierData, 
+    SharedTier, 
+    SharingTier,
+    SharedTierCalls, 
+    GetChildCall, 
+    GetItemCall, 
+    TrueDivCall, 
+    SharedTierCall,
+    ShareableTierType
+)
 from cassini.testing_utils import get_Project, patch_project
 from cassini.magics import hlt
 from cassini import DEFAULT_TIERS, env
@@ -167,15 +179,33 @@ def test_stier_path_finding(get_Project, tmp_path):
     assert base / 'c' / 'cc' in stier.find_paths()
 
 
+def test_shareble_tier_serialisation():
+    class M(pydantic.BaseModel):
+        a: ShareableTierType
+
+    m = M(a=SharedTier('name'))
+    assert isinstance(m.a, SharedTier)
+    assert isinstance(m.model_dump()['a'], SharedTier)
+    
+    m = M(a=SharingTier('name'))
+    assert isinstance(m.a, SharingTier)
+    assert isinstance(m.model_dump()['a'], SharingTier)
+
+    assert m.model_validate_json(m.model_dump_json()) == m
+
+    with pytest.raises(pydantic.ValidationError):
+        M(a='name')
+
+
 def test_serialisation(mk_shared_project):
-    getitem_call = GetItemCall(args=('3',), kwargs=tuple(), returns='WP1.1a')
-    get_child_call = GetChildCall(args=tuple(), kwargs=(('id', 'hello'),), returns='WP1.1a')
+    getitem_call = GetItemCall(args=('3',), kwargs=tuple(), returns=SharedTier('WP1.1a'))
+    get_child_call = GetChildCall(args=tuple(), kwargs=(('id', 'hello'),), returns=SharedTier('WP1.1a'))
     truediv_call = TrueDivCall(args=('args',), kwargs=tuple(), returns=Path('returned'))
     
     m = SharedTierData(
         file=Path('a file'),
         folder=Path('a folder'),
-        parent='WP1',
+        parent=SharedTier('WP1'),
         href='http://wut',
         id='1',
         identifiers=['1', '1'],
@@ -261,16 +291,19 @@ def test_making_share(get_Project, tmp_path):
     shared_project = ShareableProject(location=tmp_path / 'shared')
     project.setup_files()
 
-    tier = project['WP1.1']
-    tier.parent.setup_files()
+    tier = project['WP1']
     tier.setup_files()
+    tier['1'].setup_files()
 
     tier.description = 'description'
     (tier / 'data.txt').write_text('some data')
 
-    stier = shared_project.env('WP1.1')
+    stier = shared_project.env('WP1')
+
+    assert isinstance(stier, SharingTier)
 
     stier / 'data.txt'
+    child = stier['1']
 
     shared_project.make_shared()
 
@@ -278,10 +311,14 @@ def test_making_share(get_Project, tmp_path):
     shared_project = ShareableProject(location=tmp_path / 'shared')
     shared_project.project = None
 
-    shared_tier = shared_project.env('WP1.1')
+    shared_tier = shared_project.env('WP1')
 
-    assert shared_tier.name == 'WP1.1'
+    assert isinstance(shared_tier, SharedTier)
+
+    assert shared_tier.name == 'WP1'
     assert shared_tier.description == 'description' == tier.description
+    
+    assert shared_tier['1'].name == child.name
     
     shared_tier.description = 'new description'
 
@@ -349,6 +386,3 @@ def test_getting_tier_children(get_Project, tmp_path):
 
     assert stier_child.exists()
     assert (stier_child / 'file').read_text() == 'data'
-    
-
-
