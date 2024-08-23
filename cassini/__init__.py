@@ -6,8 +6,8 @@ from .defaults.tiers import (
     Sample,
     DataSet,
 )
-from .environment import env
-from .core import HomeTierBase, FolderTierBase, NotebookTierBase, Project
+from .environment import Project, env
+from .core import TierBase
 
 try:
     __IPYTHON__  # type: ignore[name-defined]
@@ -21,7 +21,7 @@ __all__ = [
     "Project",
     "DEFAULT_TIERS",
     "env",
-    "TierABC",
+    "TierBase",
     "Home",
     "WorkPackage",
     "Experiment",

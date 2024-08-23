@@ -1,5 +1,4 @@
-from cassini import DEFAULT_TIERS
-from cassini.core import Project
+from cassini import Project, DEFAULT_TIERS
 
 project = Project(DEFAULT_TIERS, __file__)
 

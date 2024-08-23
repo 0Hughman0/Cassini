@@ -1,22 +1,19 @@
-import time
-import datetime
 import pytest # type: ignore[import]
 
-from cassini import FolderTierBase, NotebookTierBase, Home
-from cassini.testing_utils import get_Project, patch_project
+from cassini import TierBase, Home, Project
 
 
 @pytest.fixture
-def mk_project(get_Project, tmp_path):
-    Project = get_Project
+def mk_project(tmp_path):
+    Project._instance = None
 
     class MyHome(Home):
         pass
 
-    class Second(NotebookTierBase):
+    class Second(TierBase):
         pass
 
-    class Third(NotebookTierBase):
+    class Third(TierBase):
         pass
 
     project = Project([MyHome, Second, Third], tmp_path)
@@ -45,31 +42,13 @@ def test_make_child(mk_project):
     assert not second.exists()
     assert list(home) == []
 
-    before = datetime.datetime.now()
     second.setup_files()
-    after = datetime.datetime.now()
 
-    assert before <= second.started <= after
     assert second.exists()
     assert second in home
     assert f"scnd = project.env('{second.name}')" in second.file.read_text()
 
     assert list(home) == [second]
-
-
-def test_created_times_unique(mk_project):
-    project = mk_project
-
-    home = project['MyHome']
-
-    first = home['3']
-    second = home['4']
-
-    first.setup_files()
-    time.sleep(0.001)
-    second.setup_files()
-
-    assert first.started < second.started
 
 
 def test_make_child_with_meta(mk_project):

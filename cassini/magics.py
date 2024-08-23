@@ -1,25 +1,13 @@
-from warnings import warn
+from typing_extensions import deprecated
 
 from IPython.core.magic import register_cell_magic
 from IPython.core.interactiveshell import InteractiveShell
 from IPython.display import Markdown, publish_display_data  # type: ignore[attr-defined]
 
 from .environment import env
-from .core import NotebookTierBase
 
 
 def hlt(line: str, cell: str):
-    if env.is_shared(env):
-        warn(
-            "This notebook is in a shared context and therefore highlights magics won't work"
-        )
-        return cell
-
-    if not isinstance(env.o, NotebookTierBase):
-        raise ValueError(
-            "Highlights can only be added to tiers that subclass NotebookTierBase"
-        )
-
     if not line:
         raise ValueError("Please provide a title for the highlight")
 
@@ -69,11 +57,54 @@ def hlt(line: str, cell: str):
     return None
 
 
-def conc(line, cell):
-    if not isinstance(env.o, NotebookTierBase):
-        raise ValueError(
-            "Highlights can only be added to tiers that subclass NotebookTierBase"
+@deprecated(
+    "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
+)
+def cache(line, cell):
+    assert env.o
+
+    key = str(hash(cell.strip()))
+    cached = env.o.get_cached() or {}
+    cache = cached.get(key)
+
+    if cache:
+        print(f"Using cached version ('{key}')")
+        for output in cache:
+            publish_display_data(**output)
+        return None
+
+    outputs = []
+
+    def capture_display(msg):
+        if msg["content"]["data"] in outputs:  # display only once
+            return None
+        outputs.append(msg["content"])
+        return msg
+
+    shell = InteractiveShell.instance()
+    # Capture any output that is displayed before output (like matplotlib plots)
+    shell.display_pub.register_hook(capture_display)
+
+    try:
+        output = shell.run_cell(cell)
+        result = output.result
+        if output.error_in_exec:
+            raise RuntimeError("Error in cell output, not caching")
+        outputs.append(
+            dict(zip(("data", "metadata"), shell.display_formatter.format(result)))
         )
+    finally:
+        shell.display_pub.unregister_hook(capture_display)
+
+    all_out = outputs
+
+    env.o.cache_result(key, all_out)
+
+    return None
+
+
+def conc(line, cell):
+    assert env.o
 
     if env.o.conclusion and line != "force":
         raise RuntimeError(
@@ -85,4 +116,5 @@ def conc(line, cell):
 
 def register():
     register_cell_magic(hlt)
+    register_cell_magic(cache)
     register_cell_magic(conc)
