@@ -693,10 +693,10 @@ class ShareableProject:
 
         for stier in self.shared_tiers:
             print(f"Creating shared version of {stier.name}")
-            
+
             tier_dir, meta_file, frozen_file = self.make_paths(stier)
             tier_dir.mkdir(exist_ok=True)
-            
+
             if stier.meta:
                 print("Copying Meta")
                 shutil.copy(stier.meta.file, meta_file)
