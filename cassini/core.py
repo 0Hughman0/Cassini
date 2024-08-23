@@ -4,14 +4,12 @@ import datetime
 import html
 import json
 import os
-import time
 from pathlib import Path
-from collections import defaultdict
-from abc import ABC
+from abc import ABC, abstractmethod
+import re
 
 from typing import (
     Any,
-    KeysView,
     List,
     Type,
     Tuple,
@@ -20,134 +18,60 @@ from typing import (
     Dict,
     ClassVar,
     Optional,
+    Callable,
     cast,
+    Protocol,
 )
-from typing_extensions import Self, deprecated
+from warnings import warn
+from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
+from typing_extensions import Self
 
-import pandas as pd
+import jinja2
+from pydantic import JsonValue
 
-from .ipygui import BaseTierGui
-from .accessors import MetaAttr, cached_prop, cached_class_prop, JSONType
-from .utils import FileMaker, open_file, str_to_date, date_to_str
+from .meta import Meta, MetaManager
+from .accessors import cached_prop, cached_class_prop, soft_prop
+from .utils import (
+    FileMaker,
+    open_file,
+    CassiniLabApp,
+    PathLibEnv,
+)
 from .environment import env
 from .config import config
+from .jlgui import JLGui
 
 
-MetaDict = Dict[str, JSONType]
-
-
-class Meta:
+class TierGuiProtocol(Protocol):
     """
-    Like a dictionary, except linked to a json file on disk. Caches the value of the json in itself.
+    Protocol for providing a gui for tiers.
 
-    Arguments
-    ---------
-    file: Path
-           File Meta object stores information about.
+    Must provide a header method and take the tier to provide a gui for as the first argument.
     """
 
-    timeout: ClassVar[int] = 1
-    my_attrs: ClassVar[List[str]] = ["_cache", "_cache_born", "file"]
+    def __init__(self, tier: TierABC):
+        pass
 
-    def __init__(self, file: Path):
-        self._cache: MetaDict = {}
-        self._cache_born: float = 0.0
-        self.file: Path = file
-
-    @property
-    def age(self) -> float:
+    def header(self):
         """
-        time in secs since last fetch
+        The header is the UI that is goes at the top of a notebook.
         """
-        return time.time() - self._cache_born
+        pass
 
-    def fetch(self) -> MetaDict:
-        """
-        Fetches values from the meta file and updates them into `self._cache`.
 
-        Notes
-        -----
-        This doesn't *overwrite* `self._cache` with meta contents, but updates it. Meaning new stuff to file won't be
-        overwritten, it'll just be loaded.
-        """
-        if self.file.exists():
-            self._cache.update(json.loads(self.file.read_text()))
-            self._cache_born = time.time()
-        return self._cache
-
-    def refresh(self) -> None:
-        """
-        Check age of cache, if stale then re-fetch
-        """
-        if self.age >= self.timeout:
-            self.fetch()
-
-    def write(self) -> None:
-        """
-        Overwrite contents of cache into file
-        """
-        # Danger moment - writing bad cache to file.
-        with self.file.open("w", encoding="utf-8") as f:
-            json.dump(self._cache, f)
-
-    def __getitem__(self, item: str) -> JSONType:
-        self.refresh()
-        return self._cache[item]
-
-    def __setitem__(self, key: str, value: JSONType) -> None:
-        self.__setattr__(key, value)
-
-    def __getattr__(self, item: str) -> JSONType:
-        self.refresh()
-        try:
-            return self[item]
-        except KeyError:
-            raise AttributeError(item)
-
-    def __setattr__(self, name: str, value: JSONType) -> None:
-        if name in self.my_attrs:
-            super().__setattr__(name, value)
-        else:
-            self.fetch()
-            self._cache[name] = value
-            self.write()
-
-    def __delitem__(self, key: str) -> None:
-        self.fetch()
-        del self._cache[key]
-        self.write()
-
-    def __repr__(self) -> str:
-        self.refresh()
-        return f"<Meta {self._cache} ({self.age * 1000:.1f}ms)>"
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """
-        Like `dict.get`
-        """
-        try:
-            return self.__getattr__(key)
-        except AttributeError:
-            return default
-
-    def keys(self) -> KeysView[str]:
-        """
-        like `dict.keys`
-        """
-        self.refresh()
-        return self._cache.keys()
+MetaDict = Dict[str, JsonValue]
 
 
 HighlightType = List[Dict[str, Dict[str, Any]]]
 HighlightsType = Dict[str, HighlightType]
 
-CacheItemType = HighlightType
-CachedType = HighlightsType
 
-
-class TierBase(ABC):
+class TierABC(ABC):
     """
-    Base class for creating Tiers
+    Abstract Base class for creating Tiers objects. Tiers should correspond to a folder on your disk.
+
+    Instances of this class or subclasses should not be created directly. Instead a Project instance
+    should create them.
 
     Parameters
     ----------
@@ -156,21 +80,11 @@ class TierBase(ABC):
 
     Attributes
     ----------
-    rank : int
-        Class attribute, specifying the rank of this `Tier`
     id_regex: str
         Class attribute, regex that defines a group that matches the id of a `Tier` object from a name... except the
         name isn't the full name, but with parent names stripped, see examples basically!
     hierarchy : list
         Class attribute, hierarchy of `Tier`s.
-    description : str
-        returns the description found in a `Tier` _instance's meta file
-    started : datetime
-        return a datetime parsed using `config.DATE_FORMAT` found in meta file
-    conclusion : str
-        return the conclusion found in a `Tier` _instance's meta file.
-    rank : int
-        (class attribute) rank of this `Tier` class (not to be set directly)
     id_regex : str
         (class attribute) regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id.
     gui_cls : Any
@@ -178,36 +92,27 @@ class TierBase(ABC):
          as first argument.
     """
 
-    cache: ClassVar[Dict[Tuple[str, ...], TierBase]]
+    _cache: ClassVar[Dict[Tuple[str, ...], TierABC]] = env.create_cache()
 
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init_subclass__(*args, **kwargs)
-        cls.cache = {}  # ensures each TierBase class has its own cache
+        cls._cache = env.create_cache()  # ensures each TierBase class has its own cache
 
-    rank: ClassVar[int] = -1
     id_regex: ClassVar[str] = r"(\d+)"
 
-    gui_cls: Type[BaseTierGui[Self]] = BaseTierGui
+    gui_cls: Type[TierGuiProtocol]
 
     @cached_class_prop
-    def hierarchy(cls) -> List[Type[TierBase]]:
-        """
-        Gets the hierarchy from `env.project`.
-        """
-        if env.project:
-            return env.project.hierarchy
-        else:
-            return []
-
-    @cached_class_prop
-    def pretty_type(cls) -> str:
+    def _pretty_type(cls) -> str:
         """
         Name used to display this Tier. Defaults to `cls.__name__`.
         """
-        return cast(str, cls.__name__)
+        return cls.__name__  # type: ignore[attr-defined]
+
+    pretty_type: str = _pretty_type  # to please type checker.
 
     @cached_class_prop
-    def short_type(cls) -> str:
+    def _short_type(cls) -> str:
         """
         Name used to programmatically refer to instances of this `Tier`.
 
@@ -215,49 +120,357 @@ class TierBase(ABC):
         """
         return cls.pretty_type.lower().translate(str.maketrans(dict.fromkeys("aeiou")))
 
+    short_type: str = _short_type
+
     @cached_class_prop
-    def name_part_template(cls) -> str:
+    def _name_part_template(cls) -> str:
         """
         Python template that's filled in with `self.id` to create segment of the `Tier` object's name.
         """
         return cls.pretty_type + "{}"
 
+    name_part_template = _name_part_template
+
     @cached_class_prop
-    def name_part_regex(cls) -> str:
+    def _name_part_regex(cls) -> str:
         """
         Regex where first group matches `id` part of string. Default is fill in `cls.name_part_template` with
         `cls.id_regex`.
         """
         return cls.name_part_template.format(cls.id_regex)
 
-    @cached_class_prop
-    def parent_cls(cls) -> Union[Type[TierBase], None]:
+    name_part_regex = _name_part_regex
+
+    @classmethod
+    @abstractmethod
+    def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
+        """
+        Provide an iterator for the siblings of this tier for a given parent i.e.
+        iterate over parent's children.
+        """
+        pass
+
+    def __new__(cls, *args: str, **kwargs: Dict[str, Any]) -> TierABC:
+        obj = cls._cache.get(args)
+        if obj:
+            return obj
+        obj = object.__new__(cls)
+        cls._cache[args] = obj
+        return obj
+
+    _identifiers: Tuple[str, ...]
+    gui: TierGuiProtocol
+
+    def __init__(self: Self, *args: str, project: Project):
+        self.project = project
+
+        self._identifiers = tuple(filter(None, args))
+        self.gui = self.gui_cls(self)
+
+        rank = self.project.rank_map[self.__class__]
+
+        if len(self._identifiers) != rank:
+            raise ValueError(
+                f"Invalid number of identifiers in {self._identifiers}, expecting {rank}."
+            )
+
+        if self.parse_name(self.name) != self.identifiers:
+            raise ValueError(
+                f"Invalid identifiers - {self._identifiers}, resulting name ('{self.name}') not in a parsable form "
+            )
+
+    @cached_prop
+    def _parent_cls(self) -> Union[Type[TierABC], None]:
         """
         `Tier` above this `Tier`, `None` if doesn't have one
         """
-        assert env.project
+        return self.project.get_parent_cls(self.__class__)
 
-        if cls.rank is None or cls.rank <= 0:
-            return None
-        return cls.hierarchy[cls.rank - 1]
+    parent_cls = _parent_cls
 
-    @cached_class_prop
-    def child_cls(cls) -> Union[Type[TierBase], None]:
+    @cached_prop
+    def _child_cls(self) -> Union[Type[TierABC], None]:
         """
         `Tier` below this `Tier`, `None` if doesn't have one
         """
-        assert env.project
+        return self.project.get_child_cls(self.__class__)
 
-        if cls.rank is None or cls.rank >= (len(cls.hierarchy) - 1):
-            return None
-        return cls.hierarchy[cls.rank + 1]
+    child_cls = _child_cls
+
+    def parse_name(self, name: str) -> Tuple[str, ...]:
+        """
+        Ask `env.project` to parse name.
+        """
+        return self.project.parse_name(name)
+
+    @abstractmethod
+    def setup_files(
+        self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
+    ) -> None:
+        """
+        Create all the files needed for a valid `Tier` object to exist.
+
+        This includes its `.ipynb` file, its parent folder, its own folder and its `Meta` file.
+
+        Will render `.ipynb` file as Jinja template engine, passing to the template `self` with names given by
+        `self.short_type` and `tier`.
+
+        Parameters
+        ----------
+        template : Path
+            path to template file to render to create `.ipynb` file.
+        meta : MetaDict
+            Initial meta values to create the tier with.
+        """
+        pass
+
+    @cached_prop
+    def identifiers(self) -> Tuple[str, ...]:
+        """
+        Read only copy of identifiers that make up this `Tier` object.
+        """
+        return self._identifiers
+
+    @cached_prop
+    def name(self) -> str:
+        """
+        Full name of `Tier` object. Made by concatenating each parent's `self.name_part_template` filled with each parent's
+        `self.id`.
+
+        Examples
+        --------
+
+            >>> wp = WorkPackage('2')
+            >>> exp = Experiment('2', '3')
+            >>> smpl = Sample('2', '3', 'c')
+            >>> wp.name_part_template.format(wp.id)
+            WP2
+            >>> exp.name_part_template.format(exp.id)
+            .3
+            >>> smpl.name_part_template.format(smpl.id)
+            c
+            >>> smpl.name  # all 3 joined together
+            WP2.3c
+        """
+        return "".join(
+            cls.name_part_template.format(id)
+            for cls, id in zip(self.project.hierarchy[1:], self.identifiers)
+        )
+
+    @property
+    @abstractmethod
+    def folder(self) -> Path:
+        """
+        The folder this tier corresponds to.
+        """
+        pass
+
+    def open_folder(self) -> None:
+        """
+        Open `self.folder` in explorer
+
+        Notes
+        -----
+        Only works on Windows machines.
+
+        Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
+        the window won't open for you!
+        """
+        open_file(self.folder)
+
+    @cached_prop
+    def id(self) -> str:
+        """
+        Shortcut for getting final identifier.
+
+        Examples
+        --------
+
+            >>> from my_project import project
+            >>> smpl = project.env('WP2.3c')
+            >>> smpl.identifiers
+            ['2', '3', 'c']
+            >>> smpl.id
+            'c'
+        """
+        return self._identifiers[-1]
+
+    @cached_prop
+    def parent(self) -> Union[TierABC, None]:
+        """
+        Parent of this `Tier` _instance, `None` if has no parent :'(
+        """
+        if self.parent_cls:
+            return self.parent_cls(*self._identifiers[:-1], project=self.project)
+        return None
+
+    @cached_prop
+    @abstractmethod
+    def href(self) -> Union[str, None]:
+        """
+        href usable in notebook HTML giving link to `self.file`.
+
+        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
+        changing working dir).
+
+        Does do escaping on the HTML, but is maybe pointless!
+
+        Returns
+        -------
+        href : str
+            href usable in notebook HTML.
+        """
+        pass
+
+    @abstractmethod
+    def exists(self) -> bool:
+        """
+        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
+        """
+        pass
+
+    def get_child(self, id: str) -> TierABC:
+        """
+        Get a child according to the given `id`.
+
+        Parameters
+        ----------
+        id : str
+            id to add `self.identifiers` to form new `Tier` object of tier below.
+
+        Returns
+        -------
+        child : Type[TierBase]
+            child `Tier` object.
+        """
+        assert self.child_cls
+        return self.child_cls(*self._identifiers, id, project=self.project)
+
+    def __truediv__(self, other: Any) -> Path:
+        return cast(Path, self.folder / other)
+
+    def __getitem__(self, item: str) -> TierABC:
+        """
+        Equivalent to `self.get_child(item)`.
+        """
+        return self.get_child(item)
+
+    def __iter__(self) -> Iterator[Any]:
+        """
+        Iterates over all children (in no particular order). Children are found by looking through the child meta
+        folder.
+
+        Empty iterator if no children.
+        """
+        if not self.child_cls:
+            raise NotImplementedError()
+
+        yield from self.child_cls.iter_siblings(self)
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} "{self.name}">'
+
+    def _repr_html_(self) -> str:
+        block = f'h{len(self.identifiers) + 1} style="display: inline;"'
+        return (
+            f'<a href="{self.href}"'
+            f' target="_blank"><{block}>{html.escape(self.name)}</{block}</a>'
+        )
+
+    @abstractmethod
+    def remove_files(self) -> None:
+        """
+        Deletes files associated with a `Tier`
+        """
+        pass
+
+
+class FolderTierBase(TierABC):
+    """
+    Base class for a tier which has a folder, but not notebook/ meta.
+    """
+
+    gui_cls = JLGui
+
+    @classmethod
+    def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
+        # TODO: shouldn't project also handle this?
+        if not parent.folder.exists():
+            return
+
+        for folder in os.scandir(parent.folder):
+            if not folder.is_dir():
+                continue
+            yield cls(*parent.parse_name(folder.name), project=parent.project)
+
+    @cached_prop
+    def folder(self) -> Path:
+        """
+        Path to folder where the contents of this `Tier` lives.
+
+        Defaults to `self.parent.folder / self.name`.
+        """
+        if self.parent:
+            return self.parent.folder / self.name
+        else:  # this is bad
+            return Path(self.name)
+
+    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
+        print(f"Creating Folder for {self} at {self.folder}")
+
+        with FileMaker() as maker:
+            maker.mkdir(self.folder.parent, exist_ok=True)
+            maker.mkdir(self.folder)
+
+        print("Success")
+
+    def remove_files(self) -> None:
+        pass
+
+    def exists(self) -> bool:
+        """
+        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
+        """
+        return self.folder.exists()
+
+    @cached_prop
+    def href(self) -> Union[str, None]:
+        """
+        href usable in notebook HTML giving link to `self.file`.
+
+        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
+        changing working dir).
+
+        Does do escaping on the HTML, but is maybe pointless!
+
+        Returns
+        -------
+        href : str
+            href usable in notebook HTML.
+        """
+        return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
+
+
+manager = MetaManager()
+
+
+@manager.connect_class
+class NotebookTierBase(FolderTierBase):
+    """
+    Base class for tiers which have a notebook and meta associated with them.
+    """
+
+    meta: Meta
+    __meta_manager__: ClassVar[MetaManager]
 
     @cached_class_prop
-    def default_template(cls) -> Union[Path, None]:
+    def _default_template(cls) -> Path:
         """
         Template used to render a tier file by default.
         """
         return Path(cls.pretty_type) / f"{cls.pretty_type}.tmplt.ipynb"
+
+    default_template = _default_template
 
     @cached_class_prop
     def _meta_folder_name(cls) -> str:
@@ -266,52 +479,25 @@ class TierBase(ABC):
         """
         return config.META_DIR_TEMPLATE.format(cls.short_type)
 
-    def __new__(cls, *args: str, **kwargs: Dict[str, Any]) -> TierBase:
-        obj = cls.cache.get(args)
-        if obj:
-            return obj
-        obj = object.__new__(cls)
-        cls.cache[args] = obj
-        return obj
+    meta_folder_name = _meta_folder_name
 
     @classmethod
-    def parse_name(cls, name: str) -> Tuple[str, ...]:
-        """
-        Ask `env.project` to parse name.
-        """
-        if not env.project:
-            raise RuntimeError(
-                "Attempting to parse a name before a project is initialised"
-            )
-        return env.project.parse_name(name)
+    def iter_siblings(cls, parent):
+        meta_folder = parent.folder / config.META_DIR_TEMPLATE.format(cls.short_type)
 
-    @classmethod
-    def _iter_meta_dir(cls, path: Path) -> Iterator[Tuple[str, ...]]:
-        for meta_file in os.scandir(path):
+        if not meta_folder.exists():
+            return
+
+        for meta_file in os.scandir(meta_folder):
             if not meta_file.is_file() or not meta_file.name.endswith(".json"):
                 continue
-            yield cls.parse_name(meta_file.name[:-5])
+            yield cls(
+                *parent.parse_name(meta_file.name[:-5]), project=parent.project
+            )  # I don't like this.
 
-    _identifiers: Tuple[str, ...]
-    gui: BaseTierGui[Self]
-    meta: Meta
-
-    def __init__(self: Self, *args: str):
-        self._identifiers = tuple(filter(None, args))
-        self.gui = self.gui_cls(self)
-
-        if len(self._identifiers) != self.rank:
-            raise ValueError(
-                f"Invalid number of identifiers in {self._identifiers}, expecting {self.rank}."
-            )
-
-        if self.parse_name(self.name) != self.identifiers:
-            raise ValueError(
-                f"Invalid identifiers - {self._identifiers}, resulting name ('{self.name}') not in a parsable form "
-            )
-
-        if self.meta_file:
-            self.meta: Meta = Meta(self.meta_file)
+    def __init__(self, *identifiers: str, project: Project):
+        super().__init__(*identifiers, project=project)
+        self.meta: Meta = self.__meta_manager__.create_meta(self.meta_file, owner=self)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -336,9 +522,6 @@ class TierBase(ABC):
 
         if meta is None:
             meta = {}
-
-        assert template
-        assert self.file
 
         if self.exists():
             raise FileExistsError(f"Meta for {self.name} exists already")
@@ -372,85 +555,28 @@ class TierBase(ABC):
 
         print("All Done")
 
-    description: MetaAttr[str, str] = MetaAttr()
-    conclusion: MetaAttr[str, str] = MetaAttr()
-    started: MetaAttr[str, datetime.datetime] = MetaAttr(str_to_date, date_to_str)
+    def exists(self) -> bool:
+        """
+        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
+        """
+        return bool(self.file and self.folder.exists() and self.meta_file.exists())
+
+    description = manager.meta_attr(str, str)
+    conclusion = manager.meta_attr(str, str)
+    started = manager.meta_attr(datetime.datetime, datetime.datetime)
 
     @cached_prop
-    def identifiers(self) -> Tuple[str, ...]:
-        """
-        Read only copy of identifiers that make up this `Tier` object.
-        """
-        return self._identifiers
-
-    @cached_prop
-    def name(self) -> str:
-        """
-        Full name of `Tier` object. Made by concatenating each parent's `self.name_part_template` filled with each parent's
-        `self.id`.
-
-        Examples
-        --------
-
-            >>> wp = WorkPackage('2')
-            >>> exp = Experiment('2', '3')
-            >>> smpl = Sample('2', '3', 'c')
-            >>> wp.name_part_template.format(wp.id)
-            WP2
-            >>> exp.name_part_template.format(exp.id)
-            .3
-            >>> smpl.name_part_template.format(smpl.id)
-            c
-            >>> smpl.name  # all 3 joined together
-            WP2.3c
-        """
-
-        return "".join(
-            cls.name_part_template.format(id)
-            for cls, id in zip(self.hierarchy[1:], self.identifiers)
-        )
-
-    @cached_prop
-    def id(self) -> str:
-        """
-        Shortcut for getting final identifier.
-
-        Examples
-        --------
-
-            >>> from my_project import project
-            >>> smpl = project.env('WP2.3c')
-            >>> smpl.identifiers
-            ['2', '3', 'c']
-            >>> smpl.id
-            'c'
-        """
-        return self._identifiers[-1]
-
-    @cached_prop
-    def folder(self) -> Path:
-        """
-        Path to folder where the contents of this `Tier` lives.
-
-        Defaults to `self.parent.folder / self.name`.
-        """
-        if self.parent:
-            return self.parent.folder / self.name
-        else:  # this is bad
-            return Path(self.name)
-
-    @cached_prop
-    def meta_file(self) -> Union[Path, None]:
+    def meta_file(self) -> Path:
         """
         Path to where meta file for this `Tier` object should be.
 
         Returns
         -------
         meta_file : Path
-            Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.json')`
+            Defaults to `self.parent.folder / self.meta_folder_name / (self.name + '.json')`
         """
         assert self.parent
-        return self.parent.folder / self._meta_folder_name / (self.name + ".json")
+        return self.parent.folder / self.meta_folder_name / (self.name + ".json")
 
     @cached_prop
     def highlights_file(self) -> Union[Path, None]:
@@ -466,23 +592,7 @@ class TierBase(ABC):
         return self.parent.folder / self._meta_folder_name / (self.name + ".hlts")
 
     @cached_prop
-    @deprecated(
-        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
-    )
-    def cache_file(self) -> Union[Path, None]:
-        """
-        Path to where cache file for this `Tier` object will be.
-
-        Returns
-        -------
-        cache_file : Path
-            Defaults to `self.parent.folder / self._meta_folder_name / (self.name + '.cache')`
-        """
-        assert self.parent
-        return self.parent.folder / self._meta_folder_name / (self.name + ".cache")
-
-    @cached_prop
-    def file(self) -> Union[Path, None]:
+    def file(self) -> Path:
         """
         Path to where `.ipynb` file for this `Tier` instance will be.
 
@@ -494,162 +604,14 @@ class TierBase(ABC):
         assert self.parent
         return self.parent.folder / (self.name + ".ipynb")
 
-    @cached_prop
-    def parent(self) -> Union[TierBase, None]:
-        """
-        Parent of this `Tier` _instance, `None` if has no parent :'(
-        """
-        if self.parent_cls:
-            return self.parent_cls(*self._identifiers[:-1])
-        return None
-
-    @cached_prop
-    def href(self) -> Union[str, None]:
-        """
-        href usable in notebook HTML giving link to `self.file`.
-
-        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
-        changing working dir).
-
-        Does do escaping on the HTML, but is maybe pointless!
-
-        Returns
-        -------
-        href : str
-            href usable in notebook HTML.
-        """
-        if self.file:
-            return html.escape(Path(os.path.relpath(self.file, os.getcwd())).as_posix())
-        else:
-            return None
-
-    def exists(self) -> bool:
-        """
-        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
-        """
-        assert self.meta_file
-        return self.meta_file.exists()
-
-    def get_child(self, id: str) -> TierBase:
-        """
-        Get a child according to the given `id`.
-
-        Parameters
-        ----------
-        id : str
-            id to add `self.identifiers` to form new `Tier` object of tier below.
-
-        Returns
-        -------
-        child : Type[TierBase]
-            child `Tier` object.
-        """
-        assert self.child_cls
-        return self.child_cls(*self._identifiers, id)
-
-    def serialize(self) -> MetaDict:
-        data = dict(self.meta)
-        data["identifiers"] = self.identifiers
-        data["name"] = self.name
-        data["file"] = str(self.file)
-
-        parents = []
-        parent = self.parent
-
-        while parent:
-            parents.append(parent)
-            parent = parent.parent
-
-        data["parents"] = [parent.name for parent in parents][::-1]
-        data["children"] = [child.name for child in self]
-
-        return data
-
-    def children_df(
-        self, *, include: Optional[List[str]] = None, exclude: Optional[List[str]]
-    ) -> Union[pd.DataFrame, None]:
-        """
-        Build an `UnescapedDataFrame` containing rows from each child of this `Tier`. Columns are inferred from contents
-        of meta files.
-
-        Parameters
-        ----------
-        include : Sequence[str]
-            names of columns to include in children DataFrame
-        exclude : Sequence[str]
-            names of columns to drop from children DataFrame
-
-        Notes
-        -----
-        Parameters include and exclude are mutually exclusive.
-
-        Returns
-        -------
-        df : UnescapedDataFrame, None
-            DataFrame containing `Tier`'s children. If no children then returns `None`.
-        """
-        if self.child_cls is None:
-            return None
-
-        if include and exclude:
-            raise ValueError("Only one of include or exclude can be provided")
-
-        children = list(self)
-
-        if not children:
-            return None
-
-        data: Dict[str, List[Any]] = defaultdict(list)
-        attributes_set: set[str] = set()
-
-        for child in children:
-            attributes_set.update(child.meta.keys())
-            data["Name"].append(child.name)
-
-        attributes = list(attributes_set)
-
-        for child in children:
-            for attr in attributes:
-                try:
-                    val = getattr(child, attr)
-                except AttributeError:
-                    val = child.meta.get(attr)
-                data[attr].append(val)
-
-        for tier in children:
-            data["Obj"].append(tier)
-
-        df = pd.DataFrame(data=data)
-        df = df.set_index("Name")
-        df = df.sort_values("started", axis=0)
-
-        priority_columns = ["started", "description"]
-        if "conclusion" in df.columns:
-            priority_columns.append("conclusion")
-
-        df = df[
-            priority_columns
-            + [col for col in df.columns if col not in priority_columns]
-        ]
-
-        if include:
-            df = df.loc[:, include]
-
-        if exclude:
-            df = df.drop(exclude, axis="columns")
-
-        return df
-
     @classmethod
-    def get_templates(cls) -> List[Path]:
+    def get_templates(cls, project: Project) -> List[Path]:
         """
         Get all the templates for this `Tier`.
         """
-        assert env.project
-
         return [
             Path(cls.pretty_type) / entry.name
-            for entry in os.scandir(env.project.template_folder / cls.pretty_type)
+            for entry in os.scandir(project.template_folder / cls.pretty_type)
             if entry.is_file()
         ]
 
@@ -667,23 +629,8 @@ class TierBase(ABC):
         rendered_text : str
             template rendered with `self`.
         """
-        assert env.project
-
-        template = env.project.template_env.get_template(template_path)
+        template = self.project.template_env.get_template(template_path)
         return template.render(**{self.short_type: self, "tier": self})
-
-    def open_folder(self) -> None:
-        """
-        Open `self.folder` in explorer
-
-        Notes
-        -----
-        Only works on Windows machines.
-
-        Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
-        the window won't open for you!
-        """
-        open_file(self.folder)
 
     def get_highlights(self) -> Union[HighlightsType, None]:
         """
@@ -760,120 +707,22 @@ class TierBase(ABC):
         del highlights[name]
         self.highlights_file.write_text(json.dumps(highlights), encoding="utf-8")
 
-    @deprecated(
-        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
-    )
-    def get_cached(self) -> Union[CachedType, None]:
+    @cached_prop
+    def href(self) -> Union[str, None]:
         """
-        Retrieve cached output from `self.cache_file`.
+        href usable in notebook HTML giving link to `self.file`.
 
-        Keys are a hash of text from cell that created this output.
+        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
+        changing working dir).
+
+        Does do escaping on the HTML, but is maybe pointless!
 
         Returns
         -------
-        cached : dict
-            dictionary with all the cached outputs. In the same form as `self.get_highlights()`. Returns an empty dict
-            if no `cache_file` exists.
+        href : str
+            href usable in notebook HTML.
         """
-        if self.cache_file and self.cache_file.exists():
-            cache = cast(CachedType, json.loads(self.cache_file.read_text()))
-            return cache
-        else:
-            return {}
-
-    @deprecated(
-        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
-    )
-    def cache_result(
-        self, name: str, data: CacheItemType, overwrite: bool = True
-    ) -> None:
-        """
-        Cache a result in `self.cache_file`.
-
-        This is usually done behind the scenes using the `%%cache` magic.
-
-        Parameters
-        ----------
-        name : str
-            name used as key in JSON for this cached result. When using `%%cache` this is a hash of the cell text
-        data : dict
-            list of data and metadata that can be passed to `IPython.display.publish_display_data` to render.
-        overwrite : bool
-            If `False` will raise an exception if a cached result of the same `name` exists. Default is `True`
-        """
-        if not self.cache_file:
-            return
-
-        cache = self.get_cached()
-
-        if cache:
-            cache = cache.copy()
-        else:
-            return
-
-        if not overwrite and name in cache:
-            raise KeyError("Attempting to overwrite existing meta value")
-
-        cache[name] = data
-        self.cache_file.write_text(json.dumps(cache), encoding="utf-8")
-
-    @deprecated(
-        "Cache will be removed in future releases. This feature may be written into a separate Cassini extension"
-    )
-    def remove_cached(self, name: str) -> None:
-        """
-        Remove cached output according to the `name` provided.
-        """
-        cached = self.get_cached()
-
-        if not cached or not self.cache_file:
-            return
-
-        del cached[name]
-        self.cache_file.write_text(json.dumps(cached), encoding="utf-8")
-
-    def __truediv__(self, other: Any) -> Path:
-        return cast(Path, self.folder / other)
-
-    def __getitem__(self, item: str) -> TierBase:
-        """
-        Equivalent to `self.get_child(item)`.
-        """
-        return self.get_child(item)
-
-    def __iter__(self) -> Iterator[Any]:
-        """
-        Iterates over all children (in no particular order). Children are found by looking through the child meta
-        folder.
-
-        Empty iterator if no children.
-        """
-        assert self.child_cls
-
-        child_cls = self.child_cls
-        child_meta_dir = self / child_cls._meta_folder_name
-        if child_meta_dir.exists():
-            return (
-                child_cls(*identifiers)
-                for identifiers in self._iter_meta_dir(child_meta_dir)
-            )
-        return iter(())
-
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} "{self.name}">'
-
-    def _repr_html_(self) -> str:
-        block = f'h{len(self.identifiers) + 1} style="display: inline;"'
-        return (
-            f'<a href="{self.href}"'
-            f' target="_blank"><{block}>{html.escape(self.name)}</{block}</a>'
-        )
-
-    def __getattr__(self, item: str) -> TierBase:
-        if env.project and item in env.project.rank_map:
-            rank = env.project.rank_map[item]
-            return env.project.hierarchy[rank](*self.identifiers[:rank])
-        raise AttributeError(item)
+        return html.escape(Path(os.path.relpath(self.file, os.getcwd())).as_posix())
 
     def remove_files(self) -> None:
         """
@@ -884,3 +733,385 @@ class TierBase(ABC):
 
         if self.meta_file:
             self.meta_file.unlink()
+
+
+class HomeTierBase(FolderTierBase):
+    """
+    Home `Tier`.
+
+    This, or a subclass of this should generally be the first entry in your hierarchy, essentially represents the top
+    level folder in your hierarchy.
+
+    Creates the `Home.ipynb` notebook that allows easy navigation of your project.
+    """
+
+    @cached_prop
+    def name(self) -> str:
+        return self.pretty_type
+
+    @classmethod
+    def iter_siblings(cls, parent: TierABC) -> Iterator[TierABC]:
+        raise NotImplementedError("Home tier cannot be iterated over.")
+
+    @cached_prop
+    def folder(self) -> Path:
+        assert self.child_cls
+        return self.project.project_folder / (self.child_cls.pretty_type + "s")
+
+    @cached_prop
+    def file(self) -> Path:
+        return self.project.project_folder / f"{self.name}.ipynb"
+
+    def exists(self) -> bool:
+        return bool(self.folder and self.file.exists())
+
+    def setup_files(self, template: Union[Path, None] = None, meta=None) -> None:
+        assert self.child_cls
+
+        with FileMaker() as maker:
+            print(f"Creating {self.child_cls.pretty_type} folder")
+            maker.mkdir(self.folder, exist_ok=True)
+            print("Success")
+
+        with FileMaker() as maker:
+            print(f"Creating Tier File ({self.file})")
+            # TODO: look at this, is this ok?
+            maker.write_file(
+                self.file, (config.DEFAULT_TEMPLATE_DIR / "Home.ipynb").read_text()
+            )
+            print("Success")
+
+    def remove_files(self) -> None:
+        self.file.unlink()
+
+
+class Project:
+    """
+    Represents your project. Understands your naming convention, and your project hierarchy.
+
+    Parameters
+    ----------
+    hierarchy : List[Type[BaseTier]]
+        Sequence of `TierBase` subclasses representing the hierarchy for this project. i.e. earlier entries are stored
+        in higher level directories.
+    project_folder : Union[str, Path]
+        path to home directory. Note this also accepts a path to a file, but will take `project_folder.parent` in that
+        case. This enables `__file__` to be used if you want `project_folder` to be based in the same dir.
+
+
+    Notes
+    -----
+    This class is a singleton i.e. only 1 instance per interpreter can be created.
+
+    Project provides the following hooks, to allow customization of setting up and launching projects. These are
+    lists of functions, which are called in order at the specified time:
+
+        `__before_setup_files__` and `__after_setup_files__` - These are called when `project.setup_files()` is
+        called. These can be used, for example, to create additional directories or files. These callables
+        should take the project instance as an argument.
+
+        `__before_launch__` and `__after_launch__` - These are called during and after `project.launch()` is
+        called. These take the project and LabApp instance as an argument.
+    """
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> Project:
+        if env.project:
+            raise RuntimeError(
+                "Attempted to create new Project instance, only 1 instance permitted per interpreter"
+            )
+        instance = object.__new__(cls)
+        env.project = instance
+        return instance
+
+    def __init__(
+        self, hierarchy: List[Type[TierABC]], project_folder: Union[str, Path]
+    ):
+        self._rank_map: Dict[Type[TierABC], int] = {}
+        self._hierarchy: List[Type[TierABC]] = []
+
+        self.__before_setup_files__: List[Callable[[Project], None]] = []
+        self.__after_setup_files__: List[Callable[[Project], None]] = []
+
+        self.__before_launch__: List[
+            Callable[[Project, Union[LabApp, None]], None]
+        ] = []
+        self.__after_launch__: List[Callable[[Project, Union[LabApp, None]], None]] = []
+
+        self.hierarchy: List[Type[TierABC]] = hierarchy
+
+        project_folder_path = Path(project_folder).resolve()
+        self.project_folder: Path = (
+            project_folder_path
+            if project_folder_path.is_dir()
+            else project_folder_path.parent
+        )
+
+        self.template_env: PathLibEnv = PathLibEnv(
+            autoescape=jinja2.select_autoescape(["html", "xml"]),
+            loader=jinja2.FileSystemLoader(self.template_folder),
+        )
+
+    @property
+    def hierarchy(self) -> List[Type[TierABC]]:
+        return self._hierarchy
+
+    @hierarchy.setter
+    def hierarchy(self, hierarchy: List[Type[TierABC]]):
+        self._hierarchy = hierarchy
+
+        for rank, tier_cls in enumerate(hierarchy):
+            self._rank_map[tier_cls] = rank
+
+    @property
+    def rank_map(self):
+        return self._rank_map
+
+    @property
+    def home(self) -> TierABC:
+        """
+        Get the home `Tier`.
+        """
+        return self.hierarchy[0](project=self)
+
+    def env(self, name: str) -> TierABC:
+        """
+        Initialise the global environment to a particular `Tier` that is retrieved by parsing `name`.
+
+        This will set the value of `env.o`.
+
+        Warnings
+        --------
+        This should only really be called once (or only with 1 name). Otherwise this could create some unexpected
+        behaviour.
+        """
+        obj = self.__getitem__(name)
+
+        if env.o and name != env.o.name:
+            warn(
+                (
+                    f"Overwriting the global Tier {env.o} for this interpreter. This may cause unexpected behaviour. "
+                    f"If you wish to create Tier objects that aren't the current Tier I recommend initialising them "
+                    f"directly e.g. obj = MyTier('id1', 'id2')"
+                )
+            )
+
+        env.update(obj)
+        return obj
+
+    def get_tier(self, identifiers: Tuple[str, ...]) -> TierABC:
+        """
+        Get a tier for a given set of identifiers.
+        """
+        cls = self.hierarchy[len(identifiers)]
+        return cls(*identifiers, project=self)
+
+    def get_child_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:
+        """
+        Get the child class of a given tier class. Returns None if there is no child class
+        """
+        rank = self.rank_map[tier_cls]
+        if rank + 1 > (len(self.hierarchy) - 1):
+            return None
+        else:
+            cls = self.hierarchy[rank + 1]  # I don't understand why annotation needed?
+            return cls
+
+    def get_parent_cls(self, tier_cls: Type[TierABC]) -> Union[None, Type[TierABC]]:
+        """
+        Get the parent class of a given tier class. Returns None if there is no parent class
+        """
+        rank = self.rank_map[tier_cls]
+        if rank - 1 < 0:
+            return None
+        else:
+            cls: Type[TierABC] = self.hierarchy[rank - 1]
+            return cls
+
+    def __getitem__(self, name: str) -> TierABC:
+        """
+        Retrieve a tier object from the project by name.
+
+        Parameters
+        ----------
+        name : str
+            Parsable name to get the tier object by. To get your `Home` just provide `Home.name`.
+
+        Returns
+        -------
+        tier : TierBase
+            Tier retrieved from project.
+        """
+        if name == self.home.name:
+            obj = self.home
+        else:
+            identifiers = self.parse_name(name)
+            if not identifiers:
+                raise ValueError(f"Name {name} not recognised as identifying any Tier")
+            obj = self.get_tier(identifiers)
+        return obj
+
+    @soft_prop
+    def template_folder(self) -> Path:
+        """
+        Overwritable property providing where templates will be stored for this project.
+        """
+        return self.project_folder / "templates"
+
+    def setup_files(self) -> TierABC:
+        """
+        Setup files needed for this project.
+
+        Will put everything you need in `project_folder` to get going.
+        """
+        for func in self.__before_setup_files__:
+            func(self)
+
+        home = self.home
+
+        if home.exists():
+            return home
+
+        print("Setting up project.")
+
+        with FileMaker() as maker:
+            print("Creating templates folder")
+            maker.mkdir(self.template_folder)
+            print("Success")
+
+            for tier_cls in self.hierarchy:
+                if not issubclass(tier_cls, NotebookTierBase):
+                    continue
+
+                maker.mkdir(self.template_folder / tier_cls.pretty_type)
+                print("Copying over default template")
+                maker.copy_file(
+                    config.BASE_TEMPLATE,
+                    self.template_folder / tier_cls.default_template,
+                )
+                print("Done")
+
+        print("Setting up Home Tier")
+        home.setup_files()
+        print("Success")
+
+        for func in self.__after_setup_files__:
+            func(self)
+
+        return home
+
+    def launch(
+        self, app: Union[LabApp, None] = None, patch_pythonpath: bool = True
+    ) -> LabApp:
+        """
+        Jump off point for a cassini project.
+
+        Sets up required files for your project, monkeypatches `PYTHONPATH` to make your project available throughout
+        and launches a jupyterlab server.
+
+        This explicitly associates an instance of the Jupyter server with a particular project.
+
+        Parameters
+        ----------
+        app : LabApp
+            A ready made Jupyter Lab app (By defuault will just create a new one).
+        patch_pythonpath : bool
+            Add `self.project_folder` to the `PYTHONPATH`? (defaults to `True`)
+        """
+        for func in self.__before_launch__:
+            func(self, app)
+
+        self.setup_files()
+
+        if patch_pythonpath:
+            py_path = os.environ.get("PYTHONPATH", "")
+            project_path = str(self.project_folder.resolve())
+            os.environ["PYTHONPATH"] = (
+                py_path + os.pathsep + project_path if py_path else project_path
+            )
+
+        if app is None:
+            app = CassiniLabApp()
+
+        app.launch_instance()
+
+        for func in self.__after_launch__:
+            func(self, app)
+
+        return app
+
+    def parse_name(self, name: str) -> Tuple[str, ...]:
+        """
+        Parses a string that corresponds to a `Tier` and returns a list of its identifiers.
+
+        returns an empty tuple if not a valid name.
+
+        Parameters
+        ----------
+        name : str
+            name to parse
+
+        Returns
+        -------
+        identifiers : tuple
+            identifiers extracted from name, empty tuple if `None` found
+
+        Notes
+        -----
+        This works in a slightly strange - but robust way!
+
+        e.g.
+
+            >>> name = 'WP2.3c'
+
+        it will loop through each entry in `cls.hierarchy` (skipping home!), and then perform a search on `name` with
+        that regex:
+
+            >>> WorkPackage.name_part_regex
+            WP(\\d+)
+            >>> match = re.search(WorkPackage.name_part_regex, name)
+
+        If there's no match, it will return `()`, if there is, it stores the `id` part:
+
+            >>> wp_id = match.group(1)  # in python group 0 is the whole match
+            >>> wp_id
+            2
+
+        Then it removes the whole match from the name:
+
+            >>> name = name[match.end(0):]
+            >>> name
+            .3c
+
+        Then it moves on to the next tier
+
+            >>> Experiment.name_part_regex
+            '\\.(\\d+)'
+            >>> match = re.search(WorkPackage.name_part_regex, name)
+
+        If there's a match it extracts the id, and substracts the whole string from name and moves on, continuing this
+        loop until it's gone through the whole hierarchy.
+
+        The whole name has to be a valid id, or it will return `()` e.g.
+
+            >>> TierBase.parse_name('WP2.3')
+            ('2', '3')
+            >>> TierBase.parse_name('WP2.u3')
+            ()
+        """
+        parts = self.hierarchy[1:]
+        ids: List[str] = []
+        for tier_cls in parts:
+            pattern = tier_cls.name_part_regex
+            match = re.search(pattern, name)
+            if match and match.start(0) == 0:
+                ids.append(match.group(1))
+                name = name[match.end(0) :]
+            else:
+                break
+        if name:  # if there's any residual text then it's not a valid name!
+            return tuple()
+        else:
+            return tuple(ids)
+
+    def __repr__(self) -> str:
+        return f"<Project at: '{self.project_folder}' hierarchy: '{self.hierarchy}' ({env})>"

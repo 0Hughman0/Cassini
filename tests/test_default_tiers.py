@@ -2,18 +2,14 @@ import os
 
 import pytest # type: ignore[import]
 
-from cassini import Project, DEFAULT_TIERS, Home
+from cassini import DEFAULT_TIERS, Home, FolderTierBase, NotebookTierBase
+from cassini.core import Project
 from cassini.defaults import WorkPackage, Experiment, Sample, DataSet
-
+from cassini.testing_utils import get_Project, patch_project
 
 @pytest.fixture
-def mk_project(tmp_path):
-    Home.cache = {}
-    WorkPackage.cache = {}
-    Experiment.cache = {}
-    Sample.cache = {}
-    DataSet.cache = {}
-    Project._instance = None
+def mk_project(get_Project, tmp_path):
+    Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
     project.setup_files()
     return project
@@ -144,7 +140,9 @@ def test_datasets(mk_project):
     dataset = smpl1['Stuff']
     dataset.setup_files()
 
-    assert dataset.file is None
+    with pytest.raises(AttributeError):
+        assert dataset.file is None
+    
     assert dataset.child_cls is None
 
     mock_file = dataset / 'nothing.txt'

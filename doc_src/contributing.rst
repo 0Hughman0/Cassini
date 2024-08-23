@@ -173,6 +173,29 @@ Python Docstrings should use the `numpy standard <https://numpydoc.readthedocs.i
 
 TypeScript docstrings should follow the `TypeDoc standard <https://typedoc.org/guides/tags/>`_
 
+GitHub Repos/ Release Cycle
+---------------------------
 
+**It's not worth worrying about getting these bits right, if you have a new feature or fix, just submit the PR and we can work around any versioning issues**
+
+We have a branch for each minor version e.g. 0.1.x and 0.2.x, the head of which should always be the latest patch of that minor release.
+
+For development, we specify the whole planned version number, but add -pre for pre-release e.g. 0.2.4-pre.
+
+We then create branches for implementing specific features, and submit PRs into those pre-release branches as progress is made.
+
+If necessary, we publish a pre-release version, but within pyproject.toml will have to use the poetry spec:
+
+https://python-poetry.org/docs/cli/#version
+
+e.g. the version would be something like 0.2.4a0 for the first pre-release.
+
+Once we are happy with the pre-release, it can be merged (via PR) into the appropriate minor version branch and the pre-release branch can be deleted.
+
+Then we can publish the new minor version using the create-release feature.
+
+To publish a release or pre-release we use the publish feature in GitHub. 
+
+We create a new tag for that version, prepending with "v" e.g. `v1.2.3`, the tag should be on the branch, not on main.
 
 
