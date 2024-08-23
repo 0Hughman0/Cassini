@@ -32,7 +32,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         curl -sSL https://install.python-poetry.org | python3 -
-        poetry install
+        poetry install --all-extras
     - name: check tag and release version match
       shell: bash
       run: |
