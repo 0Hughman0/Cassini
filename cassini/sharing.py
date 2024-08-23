@@ -16,7 +16,7 @@ from pydantic import (
     ConfigDict,
     PlainSerializer,
     AfterValidator,
-    GetCoreSchemaHandler
+    GetCoreSchemaHandler,
 )
 from pydantic_core import CoreSchema, core_schema
 
@@ -463,7 +463,9 @@ class ShareableTierType:
     """
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
         def validate_from_str(name: str) -> SharedTier:
             return SharedTier(name)  # always load as Shared
 
@@ -474,20 +476,22 @@ class ShareableTierType:
             ]
         )
 
-        shared_or_sharing_schema = core_schema.union_schema(  # either Shared or Sharing are valid python-side
-            [
-                core_schema.is_instance_schema(SharedTier),
-                core_schema.is_instance_schema(SharingTier)
-            ]
+        shared_or_sharing_schema = (
+            core_schema.union_schema(  # either Shared or Sharing are valid python-side
+                [
+                    core_schema.is_instance_schema(SharedTier),
+                    core_schema.is_instance_schema(SharingTier),
+                ]
+            )
         )
 
         return core_schema.json_or_python_schema(
-            json_schema=from_str_schema,  
+            json_schema=from_str_schema,
             python_schema=shared_or_sharing_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda o: o.name, 
-                when_used='json'  # dumping to Python should maintain type.
-            )
+                lambda o: o.name,
+                when_used="json",  # dumping to Python should maintain type.
+            ),
         )
 
 
@@ -553,6 +557,7 @@ class SharedTierData(BaseModel):
     base_path: Path
 
     called: SharedTierCalls
+
 
 class ShareableProject:
     """
