@@ -19,7 +19,9 @@ def extend_project(project: Project, cas_lib_dir: Union[str, Path] = "cas_lib"):
             cas_lib_dir.mkdir()
             (cas_lib_dir / "0.1.0").mkdir()
 
-    project.__before_setup_files__.append(make_cas_lib_folder)  # ensures will run even if project already setup.
+    project.__before_setup_files__.append(
+        make_cas_lib_folder
+    )  # ensures will run even if project already setup.
 
     for Tier in project.hierarchy:
         if issubclass(Tier, NotebookTierBase):
