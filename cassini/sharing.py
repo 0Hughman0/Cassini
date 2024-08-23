@@ -409,7 +409,7 @@ class SharedTier:
         assert self.base_path
 
         return self.shared_project.requires_path / path.relative_to(self.base_path)
-    
+
     def process_tier_val(self, val: Any) -> Any:
         if isinstance(val, Path):
             return self.adjust_path(val)
@@ -417,7 +417,7 @@ class SharedTier:
         if isinstance(val, SharedTier):
             assert self.shared_project
             return SharedTier.with_project(val.name, self.shared_project)
-            
+
         return val
 
     def __getattr__(self, name: str) -> Any:
