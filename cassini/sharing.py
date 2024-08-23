@@ -409,6 +409,16 @@ class SharedTier:
         assert self.base_path
 
         return self.shared_project.requires_path / path.relative_to(self.base_path)
+    
+    def process_tier_val(self, val: Any) -> Any:
+        if isinstance(val, Path):
+            return self.adjust_path(val)
+
+        if isinstance(val, SharedTier):
+            assert self.shared_project
+            return SharedTier.with_project(val.name, self.shared_project)
+            
+        return val
 
     def __getattr__(self, name: str) -> Any:
         if self.shared_project is None:
@@ -419,10 +429,7 @@ class SharedTier:
         if name in self._accessed:
             val = self._accessed[name]
 
-            if isinstance(val, Path):
-                val = self.adjust_path(val)
-
-            return val
+            return self.process_tier_val(val)
         else:
 
             def meth(*args, **kwargs):
@@ -430,10 +437,7 @@ class SharedTier:
 
                 val = self._called[name][args_kwargs]
 
-                if isinstance(val, Path):
-                    val = self.adjust_path(val)
-
-                return val
+                return self.process_tier_val(val)
 
             return meth
 
