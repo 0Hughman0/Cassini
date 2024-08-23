@@ -16,82 +16,14 @@ from pydantic import (
     ConfigDict,
     PlainSerializer,
     AfterValidator,
+    GetCoreSchemaHandler
 )
+from pydantic_core import CoreSchema, core_schema
 
 from . import env
 from .core import TierABC, NotebookTierBase
 from .meta import Meta, MetaManager
 from .utils import find_project
-
-
-ShareableTierType = Annotated[
-    str,
-    AfterValidator(lambda n: SharedTier(n)),
-    PlainSerializer(lambda t: t.name, return_type=str),
-]
-
-ReturnType = TypeVar("ReturnType")
-
-
-class _SharedTierCall(BaseModel, Generic[ReturnType]):
-    args: Tuple[JsonValue, ...]
-    kwargs: Tuple[Tuple[str, JsonValue], ...]
-    returns: ReturnType
-
-
-TrueDivCall = _SharedTierCall[Path]
-GetItemCall = _SharedTierCall[ShareableTierType]
-GetChildCall = _SharedTierCall[ShareableTierType]
-SharedTierCall = _SharedTierCall[JsonValue]
-
-
-class SharedTierCalls(BaseModel):
-    __pydantic_extra__: Dict[str, List[SharedTierCall]] = Field(init=False)
-    model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
-
-    truediv: List[TrueDivCall] = Field(default=[])
-    getitem: List[GetItemCall] = Field(default=[])
-    get_child: List[GetChildCall] = Field(default=[])
-
-
-class SharedTierData(BaseModel):
-    """
-    Serialised form of a shared tier.
-
-    Attributes
-    ----------
-    file: Optional[Path]
-        Absolute path to the file for the notebook.
-    folder: Optional[Path]
-        Absolute path for folder for the tier.
-    parent: Optional[str]
-        name of the tier's parent
-    href: Optional[str]
-        tier's href url
-    id: Optional[str]
-        the tier's id
-    identifiers: List[str]
-        the tier's identifiers
-    meta_file: Optional[Path]
-        Absolute path to the meta file.
-    base_path: Path
-        Base path used when generating URLs.
-    called: SharedTierCalls
-        Serialised version of calls made to this tier prior to sharing.
-    """
-
-    model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
-
-    file: Optional[Path] = Field(default=None)
-    folder: Optional[Path] = Field(default=None)
-    parent: Optional[ShareableTierType] = Field(default=None)
-    href: Optional[str] = Field(default=None)
-    id: Optional[str] = Field(default=None)
-    identifiers: Optional[List[str]] = Field(default=None)
-    meta_file: Optional[Path] = Field(default=None)
-    base_path: Path
-
-    called: SharedTierCalls
 
 
 class NoseyPath:
@@ -520,6 +452,107 @@ class SharedTier:
     def __hash__(self) -> int:
         return hash(self.name)
 
+
+class ShareableTierType:
+    """
+    Pydantic style type for allowing serialisation of Shared and Sharing Tiers.
+
+    See:
+
+    https://docs.pydantic.dev/latest/concepts/types/#handling-third-party-types
+    """
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        def validate_from_str(name: str) -> SharedTier:
+            return SharedTier(name)  # always load as Shared
+
+        from_str_schema = core_schema.chain_schema(
+            [
+                core_schema.str_schema(),  # first 'validate' as string
+                core_schema.no_info_plain_validator_function(validate_from_str),
+            ]
+        )
+
+        shared_or_sharing_schema = core_schema.union_schema(  # either Shared or Sharing are valid python-side
+            [
+                core_schema.is_instance_schema(SharedTier),
+                core_schema.is_instance_schema(SharingTier)
+            ]
+        )
+
+        return core_schema.json_or_python_schema(
+            json_schema=from_str_schema,  
+            python_schema=shared_or_sharing_schema,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda o: o.name, 
+                when_used='json'  # dumping to Python should maintain type.
+            )
+        )
+
+
+ReturnType = TypeVar("ReturnType")
+
+
+class _SharedTierCall(BaseModel, Generic[ReturnType]):
+    args: Tuple[JsonValue, ...]
+    kwargs: Tuple[Tuple[str, JsonValue], ...]
+    returns: ReturnType
+
+
+TrueDivCall = _SharedTierCall[Path]
+GetItemCall = _SharedTierCall[ShareableTierType]
+GetChildCall = _SharedTierCall[ShareableTierType]
+SharedTierCall = _SharedTierCall[JsonValue]
+
+
+class SharedTierCalls(BaseModel):
+    __pydantic_extra__: Dict[str, List[SharedTierCall]] = Field(init=False)
+    model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
+
+    truediv: List[TrueDivCall] = Field(default=[])
+    getitem: List[GetItemCall] = Field(default=[])
+    get_child: List[GetChildCall] = Field(default=[])
+
+
+class SharedTierData(BaseModel):
+    """
+    Serialised form of a shared tier.
+
+    Attributes
+    ----------
+    file: Optional[Path]
+        Absolute path to the file for the notebook.
+    folder: Optional[Path]
+        Absolute path for folder for the tier.
+    parent: Optional[str]
+        name of the tier's parent
+    href: Optional[str]
+        tier's href url
+    id: Optional[str]
+        the tier's id
+    identifiers: List[str]
+        the tier's identifiers
+    meta_file: Optional[Path]
+        Absolute path to the meta file.
+    base_path: Path
+        Base path used when generating URLs.
+    called: SharedTierCalls
+        Serialised version of calls made to this tier prior to sharing.
+    """
+
+    model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
+
+    file: Optional[Path] = Field(default=None)
+    folder: Optional[Path] = Field(default=None)
+    parent: Optional[ShareableTierType] = Field(default=None)
+    href: Optional[str] = Field(default=None)
+    id: Optional[str] = Field(default=None)
+    identifiers: Optional[List[str]] = Field(default=None)
+    meta_file: Optional[Path] = Field(default=None)
+    base_path: Path
+
+    called: SharedTierCalls
 
 class ShareableProject:
     """
