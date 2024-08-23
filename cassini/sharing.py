@@ -3,19 +3,18 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Dict, List, Union, Optional, Tuple, Generic, TypeVar
 from types import MethodType
-from typing_extensions import Self, Annotated
+from typing_extensions import Self
 import datetime
 from pathlib import Path
 import shutil
 from io import TextIOWrapper
+import warnings
 
 from pydantic import (
     JsonValue,
     BaseModel,
     Field,
     ConfigDict,
-    PlainSerializer,
-    AfterValidator,
     GetCoreSchemaHandler,
 )
 from pydantic_core import CoreSchema, core_schema
@@ -585,8 +584,8 @@ class ShareableProject:
 
     def __new__(cls, *args, **kwargs) -> Self:
         if env.shareable_project:
-            raise RuntimeError(
-                "Only one shareable project instance should be created per interpretter"
+            warnings.warn(
+                "Creating a new instance of SharingProject, when one has already been created. This can create unexpected behaviour."
             )
 
         obj = super().__new__(cls)
@@ -681,19 +680,34 @@ class ShareableProject:
 
         path = self.location
 
+        print("Creating shared directory:", path)
+
         path.mkdir(exist_ok=True)
+
+        print("Success")
+        print("Making Requires directory")
+
         self.requires_path.mkdir(exist_ok=True)
 
+        print("Success")
+
         for stier in self.shared_tiers:
+            print(f"Creating shared version of {stier.name}")
+            
             tier_dir, meta_file, frozen_file = self.make_paths(stier)
             tier_dir.mkdir(exist_ok=True)
-
+            
             if stier.meta:
+                print("Copying Meta")
                 shutil.copy(stier.meta.file, meta_file)
+                print("Success")
 
             with open(frozen_file, "w") as fs:
+                print("Freezing attributes/ calls")
                 stier.dump(fs)
+                print("Success")
 
+            print("Making a copy of required files")
             for required in stier.find_paths():
                 if required.exists():
                     destination = self.requires_path / required.relative_to(
@@ -702,4 +716,6 @@ class ShareableProject:
                     directory = destination if required.is_dir() else destination.parent
                     directory.mkdir(exist_ok=True, parents=True)
 
+                    print("Copying", required)
                     shutil.copy(required, destination)
+                    print("Success")
