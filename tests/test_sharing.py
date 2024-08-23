@@ -304,6 +304,7 @@ def test_making_share(get_Project, tmp_path):
 
     stier / 'data.txt'
     child = stier['1']
+    child_href = child.href
 
     shared_project.make_shared()
 
@@ -319,6 +320,7 @@ def test_making_share(get_Project, tmp_path):
     assert shared_tier.description == 'description' == tier.description
     
     assert shared_tier['1'].name == child.name
+    assert shared_tier['1'].href == child_href
     
     shared_tier.description = 'new description'
 

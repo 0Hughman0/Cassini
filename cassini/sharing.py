@@ -3,19 +3,18 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Dict, List, Union, Optional, Tuple, Generic, TypeVar
 from types import MethodType
-from typing_extensions import Self, Annotated
+from typing_extensions import Self
 import datetime
 from pathlib import Path
 import shutil
 from io import TextIOWrapper
+import warnings
 
 from pydantic import (
     JsonValue,
     BaseModel,
     Field,
     ConfigDict,
-    PlainSerializer,
-    AfterValidator,
     GetCoreSchemaHandler,
 )
 from pydantic_core import CoreSchema, core_schema
@@ -410,6 +409,16 @@ class SharedTier:
 
         return self.shared_project.requires_path / path.relative_to(self.base_path)
 
+    def process_tier_val(self, val: Any) -> Any:
+        if isinstance(val, Path):
+            return self.adjust_path(val)
+
+        if isinstance(val, SharedTier):
+            assert self.shared_project
+            return SharedTier.with_project(val.name, self.shared_project)
+
+        return val
+
     def __getattr__(self, name: str) -> Any:
         if self.shared_project is None:
             raise RuntimeError(
@@ -419,10 +428,7 @@ class SharedTier:
         if name in self._accessed:
             val = self._accessed[name]
 
-            if isinstance(val, Path):
-                val = self.adjust_path(val)
-
-            return val
+            return self.process_tier_val(val)
         else:
 
             def meth(*args, **kwargs):
@@ -430,10 +436,7 @@ class SharedTier:
 
                 val = self._called[name][args_kwargs]
 
-                if isinstance(val, Path):
-                    val = self.adjust_path(val)
-
-                return val
+                return self.process_tier_val(val)
 
             return meth
 
@@ -581,8 +584,8 @@ class ShareableProject:
 
     def __new__(cls, *args, **kwargs) -> Self:
         if env.shareable_project:
-            raise RuntimeError(
-                "Only one shareable project instance should be created per interpretter"
+            warnings.warn(
+                "Creating a new instance of SharingProject, when one has already been created. This can create unexpected behaviour."
             )
 
         obj = super().__new__(cls)
@@ -677,19 +680,34 @@ class ShareableProject:
 
         path = self.location
 
+        print("Creating shared directory:", path)
+
         path.mkdir(exist_ok=True)
+
+        print("Success")
+        print("Making Requires directory")
+
         self.requires_path.mkdir(exist_ok=True)
 
+        print("Success")
+
         for stier in self.shared_tiers:
+            print(f"Creating shared version of {stier.name}")
+
             tier_dir, meta_file, frozen_file = self.make_paths(stier)
             tier_dir.mkdir(exist_ok=True)
 
             if stier.meta:
+                print("Copying Meta")
                 shutil.copy(stier.meta.file, meta_file)
+                print("Success")
 
             with open(frozen_file, "w") as fs:
+                print("Freezing attributes/ calls")
                 stier.dump(fs)
+                print("Success")
 
+            print("Making a copy of required files")
             for required in stier.find_paths():
                 if required.exists():
                     destination = self.requires_path / required.relative_to(
@@ -698,4 +716,6 @@ class ShareableProject:
                     directory = destination if required.is_dir() else destination.parent
                     directory.mkdir(exist_ok=True, parents=True)
 
+                    print("Copying", required)
                     shutil.copy(required, destination)
+                    print("Success")
