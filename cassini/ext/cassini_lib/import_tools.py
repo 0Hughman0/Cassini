@@ -46,10 +46,10 @@ class PatchImporter:
 
         if max_compatible is None:
             raise ImportError(
-                "No compatible version of tools exists to match {}".format(spec)
+                "No compatible version of cas_lib exists to match {}".format(spec)
             )
 
-        print("Using tools version {}".format(max_compatible))
+        print("Using cas_lib version {}".format(max_compatible))
 
         self.path = str(cas_lib_dir / str(max_compatible))
 
