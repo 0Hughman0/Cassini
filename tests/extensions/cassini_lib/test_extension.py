@@ -19,6 +19,7 @@ def create_project(get_Project, tmp_path):
 
     return project
 
+
 @pytest.fixture
 def setup_project(create_project):
     project = create_project
@@ -31,7 +32,29 @@ def setup_project(create_project):
     return project
 
 
-def test_extend(create_project):
+def test_extend_creates_dir(create_project):
+    project = create_project
+    project = extend_project(create_project)
+
+    project.setup_files()
+
+    assert (project.project_folder / 'cas_lib').exists()
+
+
+def test_extend_existing_project(create_project):
+    project = create_project
+    
+    project.setup_files()
+
+    assert not (project.project_folder / 'cas_lib').exists()
+
+    project = extend_project(project)
+    project.setup_files()
+
+    assert (project.project_folder / 'cas_lib').exists()
+
+
+def test_extend_adds_attributes(create_project):
     project = create_project
     project = extend_project(project)
 
@@ -64,7 +87,6 @@ def test_import_init(setup_project):
         assert my_package.__version__ == "0.2.0"
 
     
-
 def test_import_force_version(setup_project):
     project = setup_project
 
