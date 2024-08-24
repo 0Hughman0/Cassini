@@ -8,6 +8,7 @@ from cassini.sharing import (
     NoseyPath, 
     SharedTierData, 
     SharedTier, 
+    SharedTierGui,
     SharingTier,
     SharedTierCalls, 
     GetChildCall, 
@@ -388,3 +389,16 @@ def test_getting_tier_children(get_Project, tmp_path):
 
     assert stier_child.exists()
     assert (stier_child / 'file').read_text() == 'data'
+
+
+def test_shared_gui_header():
+    stier = SharedTier('name')
+    assert isinstance(stier.gui, SharedTierGui)
+    assert stier.gui.header() is None
+
+
+def test_shared_gui_meta_editor():
+    stier = SharedTier('name')
+    assert isinstance(stier.gui, SharedTierGui)
+    assert stier.gui.meta_editor() is None
+    assert stier.gui.meta_editor(['name']) is None

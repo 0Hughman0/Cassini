@@ -331,6 +331,25 @@ class SharingTier:
         return paths
 
 
+class SharedTierGui:
+    """
+    Essentially a mock version of TierGui, for use during a shared context.
+    """
+
+    def __init__(self, stier: SharedTier):
+        self.stier = stier
+
+    def header(self):
+        print(
+            "Cassini header cannot gui cannot be used in a shared context - check out cassini to set it up for yourself!"
+        )
+
+    def meta_editor(self, name=None):
+        print(
+            "Cassini meta editor cannot be used in a shared context - check out cassini to set it up for yourself!"
+        )
+
+
 class SharedTier:
     """
     A class that emulates a `TierABC` object without needing a full cassini `Project` configured.
@@ -353,6 +372,8 @@ class SharedTier:
         self.shared_project: Union[None, ShareableProject] = None
         self.base_path: Union[Path, None] = None
         self.meta: Union[Meta, None] = None
+        self.gui = SharedTierGui(self)
+
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = {}
 
