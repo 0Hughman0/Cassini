@@ -329,7 +329,7 @@ class SharingTier:
             paths.extend(nosey_path.compress())
 
         return paths
-    
+
 
 class SharedTierGui:
     """
@@ -338,12 +338,16 @@ class SharedTierGui:
 
     def __init__(self, stier: SharedTier):
         self.stier = stier
-    
+
     def header(self):
-        print("Cassini header cannot gui cannot be used in a shared context - check out cassini to set it up for yourself!")
-    
+        print(
+            "Cassini header cannot gui cannot be used in a shared context - check out cassini to set it up for yourself!"
+        )
+
     def meta_editor(self, name=None):
-        print("Cassini meta editor cannot be used in a shared context - check out cassini to set it up for yourself!")
+        print(
+            "Cassini meta editor cannot be used in a shared context - check out cassini to set it up for yourself!"
+        )
 
 
 class SharedTier:
