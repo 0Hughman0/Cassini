@@ -36,8 +36,8 @@ class PathLibEnv(jinja2.Environment):
     ) -> jinja2.Template:
         return super().get_template(
             name.as_posix() if isinstance(name, Path) else name,
-            parent=None,
-            globals=None,
+            parent=parent,
+            globals=globals,
         )
 
 
