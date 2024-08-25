@@ -52,9 +52,7 @@ class Meta:
     timeout: ClassVar[int] = 1
     my_attrs: ClassVar[List[str]] = ["model", "_cache", "_cache_born", "file"]
 
-    def __init__(
-        self, file: Path, model: Union[Type[MetaCache], None] = None
-    ):
+    def __init__(self, file: Path, model: Union[Type[MetaCache], None] = None):
         if model is None:
             model = MetaCache
 
@@ -271,7 +269,7 @@ class MetaManager:
                 fields.update(meta_attr.as_field() for meta_attr in manager.meta_attrs)
 
         return {name: field for name, field in fields}
-    
+
     def build_model(self) -> Type[MetaCache]:
         """
         Build a pydantic model for the metadata of `self.cls`, incorporating additional fields
@@ -280,10 +278,8 @@ class MetaManager:
         fields = self.build_fields()
 
         cls_name = self.cls.__name__ if self.cls else "Custom"
-        
-        return create_model(
-            f"{cls_name}MetaCache", __base__=MetaCache, **fields
-        )
+
+        return create_model(f"{cls_name}MetaCache", __base__=MetaCache, **fields)
 
     def meta_attr(
         self,
