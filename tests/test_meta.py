@@ -3,7 +3,7 @@ import pathlib
 
 import pytest # type: ignore[import]
 from cassini import HomeTierBase, NotebookTierBase
-from cassini.meta import MetaAttr, MetaManager, Meta
+from cassini.meta import MetaAttr, MetaManager, Meta, MetaCache
 from cassini.testing_utils import get_Project, patch_project
 
 import pydantic
@@ -149,8 +149,11 @@ def test_jsonable(mk_meta):
 
 
 def test_strict_attrs(tmp_path):
+    class Model(MetaCache):
+        strict_str: str = 'default'
+
     meta = Meta(tmp_path / 'test.json',
-                {'strict_str': (str, 'default')})
+                Model)
     
     assert meta['strict_str'] == 'default'
     

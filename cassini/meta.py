@@ -53,17 +53,15 @@ class Meta:
     my_attrs: ClassVar[List[str]] = ["model", "_cache", "_cache_born", "file"]
 
     def __init__(
-        self, file: Path, fields: Optional[Dict[str, Tuple[Type, FieldInfo]]] = None
+        self, file: Path, model: Union[Type[MetaCache], None] = None
     ):
-        if fields is None:
-            fields = {}
+        if model is None:
+            model = MetaCache
 
         self._cache_born: float = 0.0
         self.file: Path = file
+        self.model: Type[MetaCache] = model
 
-        self.model: Type[MetaCache] = create_model(
-            "CustomMetaCache", __base__=MetaCache, **fields
-        )  # type: ignore[call-overload]
         self._cache: MetaCache = self.model()
 
     @property
@@ -273,6 +271,19 @@ class MetaManager:
                 fields.update(meta_attr.as_field() for meta_attr in manager.meta_attrs)
 
         return {name: field for name, field in fields}
+    
+    def build_model(self) -> Type[MetaCache]:
+        """
+        Build a pydantic model for the metadata of `self.cls`, incorporating additional fields
+        defined using `MetaAttr`.
+        """
+        fields = self.build_fields()
+
+        cls_name = self.cls.__name__ if self.cls else "Custom"
+        
+        return create_model(
+            f"{cls_name}MetaCache", __base__=MetaCache, **fields
+        )
 
     def meta_attr(
         self,
@@ -320,5 +331,5 @@ class MetaManager:
 
         The appropraite additional fields for each meta attribute are passed on.
         """
-        self.__class__.metas[owner] = Meta(path, self.build_fields())
+        self.__class__.metas[owner] = Meta(path, self.build_model())
         return self.metas[owner]
