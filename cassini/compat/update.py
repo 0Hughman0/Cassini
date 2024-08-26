@@ -40,28 +40,26 @@ class BaseUpdater:
 
                 for smpl in exp:
                     yield smpl
-                    
+
 
 def cell_processor(f):
     return BaseUpdater._cell_processor(f)
 
 
 class V0_1to0_2(BaseUpdater):
-    
     def get_project(self):
         from .. import env
+
         assert env.project
         return env.project
-    
+
     def __init__(self):
         super().__init__()
 
     @cell_processor
     def fix_imports(cell):
         text = cell["source"]
-        text = text.replace(
-            "from htools.exp import g", "from htools.scify import *"
-        )
+        text = text.replace("from htools.exp import g", "from htools.scify import *")
         cell["source"] = text
 
     @cell_processor
@@ -145,9 +143,9 @@ class V0_1to0_2(BaseUpdater):
 
 
 class V0_2to0_3(BaseUpdater):
-
     def get_project(self):
         from .. import env
+
         assert env.project
         return env.project
 
@@ -164,14 +162,14 @@ class V0_2to0_3(BaseUpdater):
                 self.update_meta(tier)
 
     def update_meta(self, tier):
-        with open(tier.meta_file, 'r') as fs:
+        with open(tier.meta_file, "r") as fs:
             meta = json.load(fs)
 
-        started = meta.get('started')
+        started = meta.get("started")
 
         if started:
             started_dt = datetime.datetime.strptime(started, "%d/%m/%Y")
-            meta['started'] = str(started_dt)
-        
-        with open(tier.meta_file, 'w') as fs:
+            meta["started"] = str(started_dt)
+
+        with open(tier.meta_file, "w") as fs:
             json.dump(meta, fs)
