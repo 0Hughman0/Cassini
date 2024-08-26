@@ -1,8 +1,9 @@
 import json
 import re
-from typing import List, Callable, TypeVar
+from typing import List, Callable
 import datetime
 from abc import abstractmethod
+import shutil
 
 import nbformat
 from nbformat import NotebookNode
@@ -159,7 +160,11 @@ class V0_2to0_3(BaseUpdater):
             if not isinstance(tier, NotebookTierBase):
                 continue
             else:
-                self.update_meta(tier)
+                backup_path = shutil.copy(tier.meta_file, tier.meta_file.with_suffix('.backup'))
+                try:
+                    self.update_meta(tier)
+                except Exception:
+                    raise RuntimeError("Error occured, please restore from backup", backup_path)
 
     def update_meta(self, tier):
         with open(tier.meta_file, "r") as fs:

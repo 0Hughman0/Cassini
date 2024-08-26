@@ -14,7 +14,7 @@ from cassini.core import NotebookTierBase
 @pytest.fixture
 def get_migrator(tmp_path, monkeypatch):
     shutil.copytree('tests/compat/0.2.0', tmp_path, dirs_exist_ok=True)
-    monkeypatch.setenv('CASSINI_PROJECT', tmp_path / 'project.py')
+    monkeypatch.setenv('CASSINI_PROJECT', str(tmp_path / 'project.py'))
 
     find_project()
     yield V0_2to0_3()
@@ -65,3 +65,18 @@ def test_full_migrate(get_migrator):
     for tier in migrator.walk_tiers():
         if isinstance(tier, NotebookTierBase):
             assert isinstance(tier.started, datetime.datetime)
+
+
+def test_safe_on_exception(get_migrator):
+    migrator = get_migrator
+    WP1 = migrator.project['WP1']
+    meta_contents = WP1.meta_file.read_text()
+    broken_content = meta_contents.replace('/', '~')
+    WP1.meta_file.write_text(broken_content)
+
+    with pytest.raises(RuntimeError):
+        migrator.update()
+    
+    backup_file = WP1.meta_file.with_suffix('.backup')
+    assert backup_file.exists()
+    assert broken_content == backup_file.read_text()
