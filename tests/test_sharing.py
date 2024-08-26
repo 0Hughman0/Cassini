@@ -3,7 +3,20 @@ from pathlib import Path
 import datetime
 from typing import List, Any
 
-from cassini.sharing import SharedProject, NoseyPath, SharedTierData, SharedTier, SharedTierCalls, GetChildCall, GetItemCall, TrueDivCall, SharedTierCall
+from cassini.sharing import (
+    ShareableProject, 
+    NoseyPath, 
+    SharedTierData, 
+    SharedTier, 
+    SharedTierGui,
+    SharingTier,
+    SharedTierCalls, 
+    GetChildCall, 
+    GetItemCall, 
+    TrueDivCall, 
+    SharedTierCall,
+    ShareableTierType
+)
 from cassini.testing_utils import get_Project, patch_project
 from cassini.magics import hlt
 from cassini import DEFAULT_TIERS, env
@@ -35,7 +48,7 @@ def mk_shared_project(tmp_path):
     env.project = None
     env.shareable_project = None
 
-    shared_project = SharedProject(location=shared)
+    shared_project = ShareableProject(location=shared)
     stier = shared_project['WP1.1']
     return stier, shared_project
 
@@ -99,7 +112,7 @@ def test_nosey_path_compressing():
 def test_attribute_caching(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
-    shared_project = SharedProject()
+    shared_project = ShareableProject()
     project.setup_files()
 
     tier = project['WP1']
@@ -139,7 +152,7 @@ def test_attribute_caching(get_Project, tmp_path):
 def test_stier_path_finding(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
-    shared_project = SharedProject()
+    shared_project = ShareableProject()
     project.setup_files()
 
     tier = project['WP1.1']
@@ -167,15 +180,33 @@ def test_stier_path_finding(get_Project, tmp_path):
     assert base / 'c' / 'cc' in stier.find_paths()
 
 
+def test_shareble_tier_serialisation():
+    class M(pydantic.BaseModel):
+        a: ShareableTierType
+
+    m = M(a=SharedTier('name'))
+    assert isinstance(m.a, SharedTier)
+    assert isinstance(m.model_dump()['a'], SharedTier)
+    
+    m = M(a=SharingTier('name'))
+    assert isinstance(m.a, SharingTier)
+    assert isinstance(m.model_dump()['a'], SharingTier)
+
+    assert m.model_validate_json(m.model_dump_json()) == m
+
+    with pytest.raises(pydantic.ValidationError):
+        M(a='name')
+
+
 def test_serialisation(mk_shared_project):
-    getitem_call = GetItemCall(args=('3',), kwargs=tuple(), returns='WP1.1a')
-    get_child_call = GetChildCall(args=tuple(), kwargs=(('id', 'hello'),), returns='WP1.1a')
+    getitem_call = GetItemCall(args=('3',), kwargs=tuple(), returns=SharedTier('WP1.1a'))
+    get_child_call = GetChildCall(args=tuple(), kwargs=(('id', 'hello'),), returns=SharedTier('WP1.1a'))
     truediv_call = TrueDivCall(args=('args',), kwargs=tuple(), returns=Path('returned'))
     
     m = SharedTierData(
         file=Path('a file'),
         folder=Path('a folder'),
-        parent='WP1',
+        parent=SharedTier('WP1'),
         href='http://wut',
         id='1',
         identifiers=['1', '1'],
@@ -234,7 +265,7 @@ def test_meta_wrapping(get_Project, tmp_path):
     tier.parent.setup_files()
     tier.setup_files()
 
-    shared_project = SharedProject()
+    shared_project = ShareableProject()
     stier = shared_project.env('WP1.1')
 
     assert stier.meta is tier.meta
@@ -258,30 +289,39 @@ def test_meta_wrapping(get_Project, tmp_path):
 def test_making_share(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
-    shared_project = SharedProject(location=tmp_path / 'shared')
+    shared_project = ShareableProject(location=tmp_path / 'shared')
     project.setup_files()
 
-    tier = project['WP1.1']
-    tier.parent.setup_files()
+    tier = project['WP1']
     tier.setup_files()
+    tier['1'].setup_files()
 
     tier.description = 'description'
     (tier / 'data.txt').write_text('some data')
 
-    stier = shared_project.env('WP1.1')
+    stier = shared_project.env('WP1')
+
+    assert isinstance(stier, SharingTier)
 
     stier / 'data.txt'
+    child = stier['1']
+    child_href = child.href
 
     shared_project.make_shared()
 
     env.shareable_project = None
-    shared_project = SharedProject(location=tmp_path / 'shared')
+    shared_project = ShareableProject(location=tmp_path / 'shared')
     shared_project.project = None
 
-    shared_tier = shared_project.env('WP1.1')
+    shared_tier = shared_project.env('WP1')
 
-    assert shared_tier.name == 'WP1.1'
+    assert isinstance(shared_tier, SharedTier)
+
+    assert shared_tier.name == 'WP1'
     assert shared_tier.description == 'description' == tier.description
+    
+    assert shared_tier['1'].name == child.name
+    assert shared_tier['1'].href == child_href
     
     shared_tier.description = 'new description'
 
@@ -295,7 +335,7 @@ def test_making_share(get_Project, tmp_path):
 def test_no_meta(get_Project, tmp_path):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
-    shared_project = SharedProject(location=tmp_path / 'shared')
+    shared_project = ShareableProject(location=tmp_path / 'shared')
     project.setup_files()
 
     project['WP1'].setup_files()
@@ -332,3 +372,33 @@ def test_no_magics(mk_shared_project):
         out = hlt('hlt', 'print("cell")')
     
     assert out == 'print("cell")'
+
+
+def test_getting_tier_children(get_Project, tmp_path):
+    Project = get_Project
+    project = Project(DEFAULT_TIERS, tmp_path)
+    shared_project = ShareableProject(location=tmp_path / 'shared')
+    project.setup_files()
+    project['WP1'].setup_files()
+    project['WP1.1'].setup_files()
+
+    (project['WP1.1'] / 'file').write_text('data')
+
+    stier = shared_project['WP1']
+    stier_child = stier['1']
+
+    assert stier_child.exists()
+    assert (stier_child / 'file').read_text() == 'data'
+
+
+def test_shared_gui_header():
+    stier = SharedTier('name')
+    assert isinstance(stier.gui, SharedTierGui)
+    assert stier.gui.header() is None
+
+
+def test_shared_gui_meta_editor():
+    stier = SharedTier('name')
+    assert isinstance(stier.gui, SharedTierGui)
+    assert stier.gui.meta_editor() is None
+    assert stier.gui.meta_editor(['name']) is None

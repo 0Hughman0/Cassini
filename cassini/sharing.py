@@ -3,95 +3,26 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Dict, List, Union, Optional, Tuple, Generic, TypeVar
 from types import MethodType
-from typing_extensions import Self, Annotated
+from typing_extensions import Self
 import datetime
 from pathlib import Path
 import shutil
 from io import TextIOWrapper
+import warnings
 
 from pydantic import (
     JsonValue,
     BaseModel,
     Field,
     ConfigDict,
-    PlainSerializer,
-    AfterValidator,
+    GetCoreSchemaHandler,
 )
+from pydantic_core import CoreSchema, core_schema
 
 from . import env
 from .core import TierABC, NotebookTierBase
 from .meta import Meta, MetaManager
 from .utils import find_project
-
-
-ShareableTierType = Annotated[
-    str,
-    AfterValidator(lambda n: SharedTier(n)),
-    PlainSerializer(lambda t: t.name, return_type=str),
-]
-
-ReturnType = TypeVar("ReturnType")
-
-
-class _SharedTierCall(BaseModel, Generic[ReturnType]):
-    args: Tuple[JsonValue, ...]
-    kwargs: Tuple[Tuple[str, JsonValue], ...]
-    returns: ReturnType
-
-
-TrueDivCall = _SharedTierCall[Path]
-GetItemCall = _SharedTierCall[ShareableTierType]
-GetChildCall = _SharedTierCall[ShareableTierType]
-SharedTierCall = _SharedTierCall[JsonValue]
-
-
-class SharedTierCalls(BaseModel):
-    __pydantic_extra__: Dict[str, List[SharedTierCall]] = Field(init=False)
-    model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
-
-    truediv: List[TrueDivCall] = Field(default=[])
-    getitem: List[GetItemCall] = Field(default=[])
-    get_child: List[GetChildCall] = Field(default=[])
-
-
-class SharedTierData(BaseModel):
-    """
-    Serialised form of a shared tier.
-
-    Attributes
-    ----------
-    file: Optional[Path]
-        Absolute path to the file for the notebook.
-    folder: Optional[Path]
-        Absolute path for folder for the tier.
-    parent: Optional[str]
-        name of the tier's parent
-    href: Optional[str]
-        tier's href url
-    id: Optional[str]
-        the tier's id
-    identifiers: List[str]
-        the tier's identifiers
-    meta_file: Optional[Path]
-        Absolute path to the meta file.
-    base_path: Path
-        Base path used when generating URLs.
-    called: SharedTierCalls
-        Serialised version of calls made to this tier prior to sharing.
-    """
-
-    model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
-
-    file: Optional[Path] = Field(default=None)
-    folder: Optional[Path] = Field(default=None)
-    parent: Optional[ShareableTierType] = Field(default=None)
-    href: Optional[str] = Field(default=None)
-    id: Optional[str] = Field(default=None)
-    identifiers: Optional[List[str]] = Field(default=None)
-    meta_file: Optional[Path] = Field(default=None)
-    base_path: Path
-
-    called: SharedTierCalls
 
 
 class NoseyPath:
@@ -232,7 +163,7 @@ class SharingTier:
     """
 
     def __init__(self, name: str):
-        self.shared_project: Union[None, SharedProject] = None
+        self.sharing_project: Union[None, ShareableProject] = None
 
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = defaultdict(dict)
@@ -243,26 +174,26 @@ class SharingTier:
         self.meta: Union[Meta, None] = None
 
     @classmethod
-    def with_project(cls, name: str, shared_project: SharedProject):
+    def with_project(cls, name: str, sharing_project: ShareableProject):
         """
         Create a `SharingTier` object, and load it from `shared_project`.
 
         Recommended way to create `SharingTier` objects in contexts where the `shared_project` is available.
         """
         tier = cls(name)
-        tier.load(shared_project=shared_project)
+        tier.load(sharing_project=sharing_project)
 
-        shared_project.shared_tiers.append(tier)
+        sharing_project.shared_tiers.append(tier)
 
         return tier
 
-    def load(self, shared_project: SharedProject):
+    def load(self, sharing_project: ShareableProject):
         """
         Sync this `SharingTier` to wrap around the tier with name `self.name` from the `shared_project`.
         """
-        self.shared_project = shared_project
+        self.sharing_project = sharing_project
 
-        self._tier = shared_project.project[self.name]
+        self._tier = sharing_project.project[self.name]
 
         self.meta = getattr(self._tier, "meta", None)
 
@@ -287,7 +218,10 @@ class SharingTier:
             self._paths_used.append(val)
 
         if isinstance(val, TierABC):
-            val = self._accessed[name] = SharingTier(val.name)
+            assert self.sharing_project
+            val = self._accessed[name] = SharingTier.with_project(
+                val.name, self.sharing_project
+            )
 
         return val
 
@@ -296,7 +230,8 @@ class SharingTier:
         Handle call to a method to allow caching of the result.
         """
         if isinstance(val, TierABC):
-            val = SharingTier(val.name)
+            assert self.sharing_project
+            val = SharingTier.with_project(val.name, self.sharing_project)
 
         self._called[method][args_kwargs] = val
 
@@ -307,6 +242,11 @@ class SharingTier:
         return val
 
     def __getattr__(self, name: str) -> Any:
+        if self.sharing_project is None:
+            raise RuntimeError(
+                "SharingTier attributes can be accessed until `SharingTier.load` is called"
+            )
+
         val = getattr(self._tier, name)
 
         if isinstance(val, MethodType):
@@ -391,6 +331,25 @@ class SharingTier:
         return paths
 
 
+class SharedTierGui:
+    """
+    Essentially a mock version of TierGui, for use during a shared context.
+    """
+
+    def __init__(self, stier: SharedTier):
+        self.stier = stier
+
+    def header(self):
+        print(
+            "Cassini header cannot gui cannot be used in a shared context - check out cassini to set it up for yourself!"
+        )
+
+    def meta_editor(self, name=None):
+        print(
+            "Cassini meta editor cannot be used in a shared context - check out cassini to set it up for yourself!"
+        )
+
+
 class SharedTier:
     """
     A class that emulates a `TierABC` object without needing a full cassini `Project` configured.
@@ -410,14 +369,16 @@ class SharedTier:
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.shared_project: Union[None, SharedProject] = None
+        self.shared_project: Union[None, ShareableProject] = None
         self.base_path: Union[Path, None] = None
         self.meta: Union[Meta, None] = None
+        self.gui = SharedTierGui(self)
+
         self._accessed: Dict[str, Any] = {}
         self._called: Dict[str, Dict[ArgsKwargsType, Any]] = {}
 
     @classmethod
-    def with_project(cls, name: str, shared_project: SharedProject):
+    def with_project(cls, name: str, shared_project: ShareableProject):
         """
         Create a `SharedTier` instance, and load it from `shared_project`.
         """
@@ -425,7 +386,7 @@ class SharedTier:
         tier.load(shared_project)
         return tier
 
-    def load(self, shared_project: SharedProject):
+    def load(self, shared_project: ShareableProject):
         """
         Load the contents of the shared tier into this object from the `shared_project`.
         """
@@ -469,14 +430,26 @@ class SharedTier:
 
         return self.shared_project.requires_path / path.relative_to(self.base_path)
 
+    def process_tier_val(self, val: Any) -> Any:
+        if isinstance(val, Path):
+            return self.adjust_path(val)
+
+        if isinstance(val, SharedTier):
+            assert self.shared_project
+            return SharedTier.with_project(val.name, self.shared_project)
+
+        return val
+
     def __getattr__(self, name: str) -> Any:
+        if self.shared_project is None:
+            raise RuntimeError(
+                "SharedTier attributes can be accessed until `SharedTier.load` is called"
+            )
+
         if name in self._accessed:
             val = self._accessed[name]
 
-            if isinstance(val, Path):
-                val = self.adjust_path(val)
-
-            return val
+            return self.process_tier_val(val)
         else:
 
             def meth(*args, **kwargs):
@@ -484,10 +457,7 @@ class SharedTier:
 
                 val = self._called[name][args_kwargs]
 
-                if isinstance(val, Path):
-                    val = self.adjust_path(val)
-
-                return val
+                return self.process_tier_val(val)
 
             return meth
 
@@ -507,7 +477,113 @@ class SharedTier:
         return hash(self.name)
 
 
-class SharedProject:
+class ShareableTierType:
+    """
+    Pydantic style type for allowing serialisation of Shared and Sharing Tiers.
+
+    See:
+
+    https://docs.pydantic.dev/latest/concepts/types/#handling-third-party-types
+    """
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        def validate_from_str(name: str) -> SharedTier:
+            return SharedTier(name)  # always load as Shared
+
+        from_str_schema = core_schema.chain_schema(
+            [
+                core_schema.str_schema(),  # first 'validate' as string
+                core_schema.no_info_plain_validator_function(validate_from_str),
+            ]
+        )
+
+        shared_or_sharing_schema = (
+            core_schema.union_schema(  # either Shared or Sharing are valid python-side
+                [
+                    core_schema.is_instance_schema(SharedTier),
+                    core_schema.is_instance_schema(SharingTier),
+                ]
+            )
+        )
+
+        return core_schema.json_or_python_schema(
+            json_schema=from_str_schema,
+            python_schema=shared_or_sharing_schema,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda o: o.name,
+                when_used="json",  # dumping to Python should maintain type.
+            ),
+        )
+
+
+ReturnType = TypeVar("ReturnType")
+
+
+class _SharedTierCall(BaseModel, Generic[ReturnType]):
+    args: Tuple[JsonValue, ...]
+    kwargs: Tuple[Tuple[str, JsonValue], ...]
+    returns: ReturnType
+
+
+TrueDivCall = _SharedTierCall[Path]
+GetItemCall = _SharedTierCall[ShareableTierType]
+GetChildCall = _SharedTierCall[ShareableTierType]
+SharedTierCall = _SharedTierCall[JsonValue]
+
+
+class SharedTierCalls(BaseModel):
+    __pydantic_extra__: Dict[str, List[SharedTierCall]] = Field(init=False)
+    model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
+
+    truediv: List[TrueDivCall] = Field(default=[])
+    getitem: List[GetItemCall] = Field(default=[])
+    get_child: List[GetChildCall] = Field(default=[])
+
+
+class SharedTierData(BaseModel):
+    """
+    Serialised form of a shared tier.
+
+    Attributes
+    ----------
+    file: Optional[Path]
+        Absolute path to the file for the notebook.
+    folder: Optional[Path]
+        Absolute path for folder for the tier.
+    parent: Optional[str]
+        name of the tier's parent
+    href: Optional[str]
+        tier's href url
+    id: Optional[str]
+        the tier's id
+    identifiers: List[str]
+        the tier's identifiers
+    meta_file: Optional[Path]
+        Absolute path to the meta file.
+    base_path: Path
+        Base path used when generating URLs.
+    called: SharedTierCalls
+        Serialised version of calls made to this tier prior to sharing.
+    """
+
+    model_config = ConfigDict(extra="allow", validate_assignment=True, strict=True)
+
+    file: Optional[Path] = Field(default=None)
+    folder: Optional[Path] = Field(default=None)
+    parent: Optional[ShareableTierType] = Field(default=None)
+    href: Optional[str] = Field(default=None)
+    id: Optional[str] = Field(default=None)
+    identifiers: Optional[List[str]] = Field(default=None)
+    meta_file: Optional[Path] = Field(default=None)
+    base_path: Path
+
+    called: SharedTierCalls
+
+
+class ShareableProject:
     """
     Shareable version of `Project`. Allows sharing of notebooks that use Cassini with users who don't have
     Cassini set up.
@@ -529,8 +605,8 @@ class SharedProject:
 
     def __new__(cls, *args, **kwargs) -> Self:
         if env.shareable_project:
-            raise RuntimeError(
-                "Only one shareable project instance should be created per interpretter"
+            warnings.warn(
+                "Creating a new instance of SharingProject, when one has already been created. This can create unexpected behaviour."
             )
 
         obj = super().__new__(cls)
@@ -559,7 +635,7 @@ class SharedProject:
             Name of the tier to get.
         """
         if self.project:
-            tier = SharingTier.with_project(name=name, shared_project=self)
+            tier = SharingTier.with_project(name=name, sharing_project=self)
             env.update(tier)
             return tier
         else:
@@ -576,7 +652,7 @@ class SharedProject:
             Name of the tier to get.
         """
         if self.project:
-            return SharingTier.with_project(name=name, shared_project=self)
+            return SharingTier.with_project(name=name, sharing_project=self)
         else:
             return SharedTier.with_project(name=name, shared_project=self)
 
@@ -625,19 +701,34 @@ class SharedProject:
 
         path = self.location
 
+        print("Creating shared directory:", path)
+
         path.mkdir(exist_ok=True)
+
+        print("Success")
+        print("Making Requires directory")
+
         self.requires_path.mkdir(exist_ok=True)
 
+        print("Success")
+
         for stier in self.shared_tiers:
+            print(f"Creating shared version of {stier.name}")
+
             tier_dir, meta_file, frozen_file = self.make_paths(stier)
             tier_dir.mkdir(exist_ok=True)
 
             if stier.meta:
+                print("Copying Meta")
                 shutil.copy(stier.meta.file, meta_file)
+                print("Success")
 
             with open(frozen_file, "w") as fs:
+                print("Freezing attributes/ calls")
                 stier.dump(fs)
+                print("Success")
 
+            print("Making a copy of required files")
             for required in stier.find_paths():
                 if required.exists():
                     destination = self.requires_path / required.relative_to(
@@ -646,4 +737,6 @@ class SharedProject:
                     directory = destination if required.is_dir() else destination.parent
                     directory.mkdir(exist_ok=True, parents=True)
 
+                    print("Copying", required)
                     shutil.copy(required, destination)
+                    print("Success")

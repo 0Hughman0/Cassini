@@ -5,7 +5,7 @@ from typing_extensions import TypeGuard
 
 if TYPE_CHECKING:
     from .core import TierABC, Project
-    from .sharing import SharedProject
+    from .sharing import ShareableProject
 
 
 class _Env:
@@ -41,7 +41,7 @@ class _Env:
     def __init__(self) -> None:
         self.project: Union[Project, None] = None
         self._o: Union[TierABC, None] = None
-        self.shareable_project: Union[SharedProject, None] = None
+        self.shareable_project: Union[ShareableProject, None] = None
         self._caches: List[Dict[Any, Any]] = []
 
     @staticmethod
@@ -89,12 +89,12 @@ class _Env:
 
 
 class _SharingInstance(_Env):
-    shareable_project: SharedProject
+    shareable_project: ShareableProject
     project: Project
 
 
 class _SharedInstance(_Env):
-    shareable_project: SharedProject
+    shareable_project: ShareableProject
     project: None
 
 
