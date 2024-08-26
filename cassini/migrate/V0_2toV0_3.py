@@ -6,7 +6,6 @@ from .base import BaseUpdater
 
 
 class V0_2toV0_3(BaseUpdater):
-
     def __init__(self, project) -> None:
         self.project = project
         self.home = project.home
@@ -18,11 +17,15 @@ class V0_2toV0_3(BaseUpdater):
             if not isinstance(tier, NotebookTierBase):
                 continue
             else:
-                backup_path = shutil.copy(tier.meta_file, tier.meta_file.with_suffix('.backup'))
+                backup_path = shutil.copy(
+                    tier.meta_file, tier.meta_file.with_suffix(".backup")
+                )
                 try:
                     self.migrate_meta(tier)
                 except Exception:
-                    raise RuntimeError("Error occured, please restore from backup", backup_path)
+                    raise RuntimeError(
+                        "Error occured, please restore from backup", backup_path
+                    )
 
     def migrate_meta(self, tier):
         with open(tier.meta_file, "r") as fs:

@@ -5,7 +5,6 @@ from .base import BaseUpdater, cell_processor
 
 
 class V0_1toV0_2(BaseUpdater):
-    
     def __init__(self, project):
         self.project = project
         self.home = project.home
