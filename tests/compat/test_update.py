@@ -1,6 +1,7 @@
 import shutil
 import json
 import datetime
+import sys
 
 import pytest
 
@@ -14,12 +15,13 @@ from cassini.core import NotebookTierBase
 def get_migrator(tmp_path, monkeypatch):
     shutil.copytree('tests/compat/0.2.0', tmp_path, dirs_exist_ok=True)
     monkeypatch.setenv('CASSINI_PROJECT', tmp_path / 'project.py')
-    
+
     find_project()
     yield V0_2to0_3()
     
     env._reset()
-
+    sys.modules.pop('project')
+    
 
 def test_get_project(get_migrator):
     migrator = get_migrator
