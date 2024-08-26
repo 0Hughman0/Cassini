@@ -12,14 +12,15 @@ from cassini.core import NotebookTierBase
 
 
 @pytest.fixture
-def get_migrator(tmp_path, monkeypatch):
+def get_migrator(tmp_path):
     shutil.copytree('tests/migrate/0.2.0', tmp_path, dirs_exist_ok=True)
-    monkeypatch.setenv('CASSINI_PROJECT', str(tmp_path / 'project.py'))
 
-    yield V0_2toV0_3(find_project())
-    
+    yield V0_2toV0_3(find_project(str(tmp_path / 'project.py')))
+
     env._reset()
-    sys.modules.pop('project')
+    
+    if 'project' in sys.modules:
+        sys.modules.pop('project')
     
 
 def test_get_project(get_migrator):
@@ -64,6 +65,18 @@ def test_full_migrate(get_migrator):
     for tier in migrator.walk_tiers():
         if isinstance(tier, NotebookTierBase):
             assert isinstance(tier.started, datetime.datetime)
+            
+
+def test_cleanup(get_migrator):
+    migrator = get_migrator
+
+    backup_path = migrator.project['WP1'].meta_file.with_suffix('.backup')
+
+    assert not backup_path.exists()
+    
+    migrator.migrate()
+
+    assert not backup_path.exists()
 
 
 def test_safe_on_exception(get_migrator):

@@ -26,6 +26,9 @@ class V0_2toV0_3(BaseMigrator):
                     raise RuntimeError(
                         "Error occured, please restore from backup", backup_path
                     )
+                else:
+                    print("Successfully migrated, removing backup")
+                    backup_path.unlink()
 
     def migrate_meta(self, tier):
         with open(tier.meta_file, "r") as fs:
