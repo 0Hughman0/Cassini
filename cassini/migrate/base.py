@@ -6,7 +6,7 @@ from nbformat import NotebookNode
 CellProcessor = Callable[[NotebookNode], None]
 
 
-class BaseUpdater:
+class BaseMigrator:
     cell_processors: List[CellProcessor] = []
 
     def __init_subclass__(cls) -> None:
@@ -37,4 +37,4 @@ class BaseUpdater:
 
 
 def cell_processor(f):
-    return BaseUpdater._cell_processor(f)
+    return BaseMigrator._cell_processor(f)

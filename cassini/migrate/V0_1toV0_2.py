@@ -1,10 +1,10 @@
 import nbformat
 import re
 
-from .base import BaseUpdater, cell_processor
+from .base import BaseMigrator, cell_processor
 
 
-class V0_1toV0_2(BaseUpdater):
+class V0_1toV0_2(BaseMigrator):
     def __init__(self, project):
         self.project = project
         self.home = project.home

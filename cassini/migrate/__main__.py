@@ -1,9 +1,11 @@
 import sys
 import argparse
+from typing import List
 
 from cassini.utils import find_project
 from cassini import env
 
+from .base import BaseMigrator
 from .V0_1toV0_2 import V0_1toV0_2
 from .V0_2toV0_3 import V0_2toV0_3
 
@@ -11,7 +13,7 @@ from .V0_2toV0_3 import V0_2toV0_3
 migrators = {("0.1", "0.2"): V0_1toV0_2, ("0.2", "0.3"): V0_2toV0_3}
 
 
-def main(args):
+def main(args: List[str]) -> BaseMigrator:
     parser = argparse.ArgumentParser(
         description=(
             "Migration tool for cassini projects. "
@@ -30,18 +32,18 @@ def main(args):
         help="cassini project to migrate, see cassini.utils.find_project for possible forms",
     )
 
-    args = parser.parse_args(args)
+    out = parser.parse_args(args)
 
-    project = find_project(args.cassini_project)
+    project = find_project(out.cassini_project)
 
     print("Found project", project)
 
-    old, new = args.old, args.new
+    old, new = out.old, out.new
 
     print("Looking for migrator for", old, "to", new)
 
     try:
-        migrator = migrators[(old, new)]()
+        migrator = migrators[(old, new)](project)
     except KeyError:
         raise ValueError(
             "No migator available for this combination, options are", list(migrators)
@@ -54,6 +56,8 @@ def main(args):
     migrator.migrate()
 
     print("Success")
+
+    return migrator
 
 
 if __name__ == "__main__":

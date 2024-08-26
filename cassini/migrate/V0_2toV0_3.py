@@ -2,10 +2,10 @@ import json
 import datetime
 import shutil
 
-from .base import BaseUpdater
+from .base import BaseMigrator
 
 
-class V0_2toV0_3(BaseUpdater):
+class V0_2toV0_3(BaseMigrator):
     def __init__(self, project) -> None:
         self.project = project
         self.home = project.home
