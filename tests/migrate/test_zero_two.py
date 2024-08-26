@@ -13,7 +13,7 @@ from cassini.core import NotebookTierBase
 
 @pytest.fixture
 def get_migrator(tmp_path, monkeypatch):
-    shutil.copytree('tests/compat/0.2.0', tmp_path, dirs_exist_ok=True)
+    shutil.copytree('tests/migrate/0.2.0', tmp_path, dirs_exist_ok=True)
     monkeypatch.setenv('CASSINI_PROJECT', str(tmp_path / 'project.py'))
 
     yield V0_2toV0_3(find_project())

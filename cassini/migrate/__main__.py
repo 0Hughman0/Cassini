@@ -3,7 +3,6 @@ import argparse
 from typing import List
 
 from cassini.utils import find_project
-from cassini import env
 
 from .base import BaseMigrator
 from .V0_1toV0_2 import V0_1toV0_2
