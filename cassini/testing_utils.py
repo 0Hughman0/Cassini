@@ -56,7 +56,7 @@ def patched_default_project(get_Project, tmp_path):
         These tiers will be created in order and all their files will be setup.
         """
         tiers = []
-        
+
         for name in names:
             tier = project[name]
 
@@ -67,11 +67,11 @@ def patched_default_project(get_Project, tmp_path):
                     parent.setup_files()
                 except FileExistsError:
                     pass
-                
+
                 parent = parent.parent
-            
+
             tiers.append(tier)
-        
+
         return tiers
 
     return project, create_tiers

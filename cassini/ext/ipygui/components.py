@@ -484,13 +484,14 @@ class BaseTierGui(Generic[T]):
 
         if not child_cls:
             return
-        
+
         if not issubclass(child_cls, NotebookTierBase):
 
             def create(form: InputSequence, name: str) -> None:
-                
                 with form.status:
-                    obj = child_cls(*self.tier.identifiers, name, project=self.tier.project)
+                    obj = child_cls(
+                        *self.tier.identifiers, name, project=self.tier.project
+                    )
                     obj.setup_files()
                     display(widgetify_html(obj._repr_html_()))
 
@@ -504,10 +505,13 @@ class BaseTierGui(Generic[T]):
             mapping = {path.name: path for path in options}
             selection = Select(options=mapping.keys(), description="Template")
 
-            def create_notebook_child(form: InputSequence, name: str, template: str, description: str) -> None:
-                
+            def create_notebook_child(
+                form: InputSequence, name: str, template: str, description: str
+            ) -> None:
                 with form.status:
-                    obj: NotebookTierBase = child_cls(*self.tier.identifiers, name, project=self.tier.project)
+                    obj: NotebookTierBase = child_cls(
+                        *self.tier.identifiers, name, project=self.tier.project
+                    )
                     obj.setup_files(mapping[template])
                     obj.description = description
                     display(widgetify_html(obj._repr_html_()))
