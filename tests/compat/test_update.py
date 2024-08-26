@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from cassini.compat.update import V0_2to0_3
+from cassini.migrate.V0_2toV0_3 import V0_2toV0_3
 from cassini.utils import find_project
 from cassini import env
 from cassini.core import NotebookTierBase
@@ -16,8 +16,7 @@ def get_migrator(tmp_path, monkeypatch):
     shutil.copytree('tests/compat/0.2.0', tmp_path, dirs_exist_ok=True)
     monkeypatch.setenv('CASSINI_PROJECT', str(tmp_path / 'project.py'))
 
-    find_project()
-    yield V0_2to0_3()
+    yield V0_2toV0_3(find_project())
     
     env._reset()
     sys.modules.pop('project')
@@ -53,14 +52,14 @@ def test_update_meta(get_migrator):
     migrator = get_migrator
     WP1 = migrator.project['WP1.1']
     assert '/' in json.loads(WP1.meta_file.read_text())['started']
-    migrator.update_meta(WP1)
+    migrator.migrate_meta(WP1)
     assert '/' not in json.loads(WP1.meta_file.read_text())['started']
     assert isinstance(WP1.started, datetime.datetime)
 
 
 def test_full_migrate(get_migrator):
     migrator = get_migrator
-    migrator.update()
+    migrator.migrate()
 
     for tier in migrator.walk_tiers():
         if isinstance(tier, NotebookTierBase):
@@ -75,7 +74,7 @@ def test_safe_on_exception(get_migrator):
     WP1.meta_file.write_text(broken_content)
 
     with pytest.raises(RuntimeError):
-        migrator.update()
+        migrator.migrate()
     
     backup_file = WP1.meta_file.with_suffix('.backup')
     assert backup_file.exists()
