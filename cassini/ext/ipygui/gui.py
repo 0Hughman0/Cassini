@@ -32,7 +32,7 @@ class ExperimentGui(BaseTierGui[Experiment]):
 
         selection = SelectMultiple(options=option_map.keys(), description="Auto Add")
 
-        def create(name, auto_add):
+        def create(form, name, auto_add):
             with form.status:
                 self.tier.setup_technique(name)
                 if auto_add:
@@ -55,7 +55,7 @@ class ExperimentGui(BaseTierGui[Experiment]):
 
 class SampleGui(BaseTierGui[Sample]):
     def new_child(self) -> DOMWidget:
-        def create(name):
+        def create(form, name):
             with form.status:
                 o = self.tier[name]
                 o.setup_files()

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import html
 from collections import defaultdict
 
@@ -173,7 +175,7 @@ class InputSequence:
     Parameters
     ----------
     done_action : callable
-        function to call when confirm is clicked. Each child (see next parameter!) is passed to done_action
+        function to call when confirm is clicked. `self` is passed as first argument, then subsequently each child (see next parameter!) is passed to done_action.
     *children : ipywidget
         widgets to display in order. When confirm clicked, these widget objects are passed to done_action.
     """
@@ -258,7 +260,7 @@ class InputSequence:
             values.append(child.value)
 
         with self.output:
-            self.done_action(*values)
+            self.done_action(self, *values)
 
 
 class SearchWidget:
@@ -482,14 +484,13 @@ class BaseTierGui(Generic[T]):
 
         if not child_cls:
             return
-
+        
         if not issubclass(child_cls, NotebookTierBase):
 
-            def create(name: str, child_cls=child_cls) -> None:
-                form: InputSequence
-
+            def create(form: InputSequence, name: str) -> None:
+                
                 with form.status:
-                    obj = child_cls(*self.tier.identifiers, name)
+                    obj = child_cls(*self.tier.identifiers, name, project=self.tier.project)
                     obj.setup_files()
                     display(widgetify_html(obj._repr_html_()))
 
@@ -503,13 +504,10 @@ class BaseTierGui(Generic[T]):
             mapping = {path.name: path for path in options}
             selection = Select(options=mapping.keys(), description="Template")
 
-            def create_notebook_child(
-                name: str, template: str, description: str, child=child_cls
-            ) -> None:
-                form: InputSequence
-
+            def create_notebook_child(form: InputSequence, name: str, template: str, description: str) -> None:
+                
                 with form.status:
-                    obj: NotebookTierBase = child(*self.tier.identifiers, name)
+                    obj: NotebookTierBase = child_cls(*self.tier.identifiers, name, project=self.tier.project)
                     obj.setup_files(mapping[template])
                     obj.description = description
                     display(widgetify_html(obj._repr_html_()))

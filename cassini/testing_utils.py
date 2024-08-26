@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from cassini import (
     Home,
     HomeTierBase,
@@ -38,3 +40,38 @@ def patch_project(get_Project, tmp_path):
 
     project = Project([Home, Tier], tmp_path)
     return Tier, project
+
+
+@pytest.fixture
+def patched_default_project(get_Project, tmp_path):
+    Project = get_Project
+
+    project = Project(DEFAULT_TIERS, tmp_path)
+    project.setup_files()
+
+    def create_tiers(names: Sequence[str]) -> Sequence[TierABC]:
+        """
+        Provide a list of tiers.
+
+        These tiers will be created in order and all their files will be setup.
+        """
+        tiers = []
+        
+        for name in names:
+            tier = project[name]
+
+            parent = tier
+
+            while parent:
+                try:
+                    parent.setup_files()
+                except FileExistsError:
+                    pass
+                
+                parent = parent.parent
+            
+            tiers.append(tier)
+        
+        return tiers
+
+    return project, create_tiers
