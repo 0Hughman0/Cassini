@@ -54,16 +54,7 @@ class ExperimentGui(BaseTierGui[Experiment]):
 
 
 class SampleGui(BaseTierGui[Sample]):
-    def new_child(self) -> DOMWidget:
-        def create(form, name):
-            with form.status:
-                o = self.tier[name]
-                o.setup_files()
-
-        form = InputSequence(create, Text(description="Name:", placeholder="e.g. XRD"))
-
-        return form.as_widget()
-
+    
     def _build_children(self) -> DOMWidget:
         buttons = []
         for dataset in self.tier.datasets:

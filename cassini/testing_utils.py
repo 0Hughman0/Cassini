@@ -62,13 +62,17 @@ def patched_default_project(get_Project, tmp_path):
 
             parent = tier
 
+            parents = []
+
             while parent:
+                parents.append(parent)                
+                parent = parent.parent
+
+            for child in reversed(parents):  # work from top down
                 try:
-                    parent.setup_files()
+                    child.setup_files()
                 except FileExistsError:
                     pass
-
-                parent = parent.parent
 
             tiers.append(tier)
 
