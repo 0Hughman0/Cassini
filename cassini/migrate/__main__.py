@@ -18,12 +18,8 @@ def main(args: List[str]) -> BaseMigrator:
             "It's not that fancy, so sequential updates may be needed."
         )
     )
-    parser.add_argument(
-        "old", choices=["0.2"], help="which version to migrate from"
-    )
-    parser.add_argument(
-        "new", choices=["0.3"], help="which version to migrate to"
-    )
+    parser.add_argument("old", choices=["0.2"], help="which version to migrate from")
+    parser.add_argument("new", choices=["0.3"], help="which version to migrate to")
     parser.add_argument(
         "--cassini-project",
         default="project.py:project",
