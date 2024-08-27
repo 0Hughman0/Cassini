@@ -5,11 +5,10 @@ from typing import List
 from cassini.utils import find_project
 
 from .base import BaseMigrator
-from .V0_1toV0_2 import V0_1toV0_2
 from .V0_2toV0_3 import V0_2toV0_3
 
 
-migrators = {("0.1", "0.2"): V0_1toV0_2, ("0.2", "0.3"): V0_2toV0_3}
+migrators = {("0.2", "0.3"): V0_2toV0_3}
 
 
 def main(args: List[str]) -> BaseMigrator:
@@ -19,12 +18,8 @@ def main(args: List[str]) -> BaseMigrator:
             "It's not that fancy, so sequential updates may be needed."
         )
     )
-    parser.add_argument(
-        "old", choices=["0.1", "0.2"], help="which version to migrate from"
-    )
-    parser.add_argument(
-        "new", choices=["0.2", "0.3"], help="which version to migrate to"
-    )
+    parser.add_argument("old", choices=["0.2"], help="which version to migrate from")
+    parser.add_argument("new", choices=["0.3"], help="which version to migrate to")
     parser.add_argument(
         "--cassini-project",
         default="project.py:project",
