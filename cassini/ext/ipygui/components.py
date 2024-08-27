@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import html
+from collections import defaultdict
 
 from typing import (
     Any,
@@ -13,6 +16,8 @@ from typing import (
     Type,
     Generic,
     TypeVar,
+    Optional,
+    Set,
 )
 
 import pandas as pd
@@ -21,10 +26,67 @@ import pandas.api.types as pd_types
 from ipywidgets import Select, VBox, Button, Output, Text, Textarea, HBox, Layout, Accordion, DOMWidget  # type: ignore[import]
 from IPython.display import display, Markdown, publish_display_data  # type: ignore[attr-defined]
 
-from .environment import env
+from ...environment import env
 
-if TYPE_CHECKING:
-    from .core import TierBase
+from ...core import TierABC, NotebookTierBase
+
+
+def create_children_df(
+    tier: "TierABC",
+    *,
+    include: Optional[List[str]] = None,
+    exclude: Optional[List[str]] = None,
+):
+    if tier.child_cls is None:
+        return None
+
+    if include and exclude:
+        raise ValueError("Only one of include or exclude can be provided")
+
+    children = list(tier)
+
+    if not children:
+        return None
+
+    data: Dict[str, List[Any]] = defaultdict(list)
+    attributes_set: Set[str] = set()
+
+    for child in children:
+        attributes_set.update(child.meta.keys())
+        data["Name"].append(child.name)
+
+    attributes = list(attributes_set)
+
+    for child in children:
+        for attr in attributes:
+            try:
+                val = getattr(child, attr)
+            except AttributeError:
+                val = child.meta.get(attr)
+            data[attr].append(val)
+
+    for tier in children:
+        data["Obj"].append(tier)
+
+    df = pd.DataFrame(data=data)
+    df = df.set_index("Name")
+    df = df.sort_values("started", axis=0)
+
+    priority_columns = ["started", "description"]
+    if "conclusion" in df.columns:
+        priority_columns.append("conclusion")
+
+    df = df[
+        priority_columns + [col for col in df.columns if col not in priority_columns]
+    ]
+
+    if include:
+        df = df.loc[:, include]
+
+    if exclude:
+        df = df.drop(exclude, axis="columns")
+
+    return df
 
 
 class WHTML:
@@ -113,7 +175,7 @@ class InputSequence:
     Parameters
     ----------
     done_action : callable
-        function to call when confirm is clicked. Each child (see next parameter!) is passed to done_action
+        function to call when confirm is clicked. `self` is passed as first argument, then subsequently each child (see next parameter!) is passed to done_action.
     *children : ipywidget
         widgets to display in order. When confirm clicked, these widget objects are passed to done_action.
     """
@@ -198,7 +260,7 @@ class InputSequence:
             values.append(child.value)
 
         with self.output:
-            self.done_action(*values)
+            self.done_action(self, *values)
 
 
 class SearchWidget:
@@ -234,7 +296,7 @@ class SearchWidget:
         return VBox([HBox([self.search, self.go_btn, self.clear_btn]), self.out])
 
 
-T = TypeVar("T", bound="TierBase")
+T = TypeVar("T", bound="TierABC")
 
 
 class BaseTierGui(Generic[T]):
@@ -299,15 +361,19 @@ class BaseTierGui(Generic[T]):
         """
         Creates a widget that displays the motivation for a `Tier`.
         """
-        description = self.tier.description
-        if not description:
+        if isinstance(self.tier, NotebookTierBase):
+            description = self.tier.description
+            return widgetify(Markdown(description))
+        else:
             return None
-        return widgetify(Markdown(description))
 
     def _build_highlights_accordion(self) -> Union[DOMWidget, None]:
         """
         Creates a widget that displays highlights for this `Tier` in an `ipywidgets.Accordion` - which is nice!
         """
+        if not isinstance(self.tier, NotebookTierBase):
+            return None
+
         highlights = self.tier.get_highlights()
 
         if not highlights:
@@ -329,16 +395,17 @@ class BaseTierGui(Generic[T]):
         """
         Build widget to display conclusion of this `Tier` object.
         """
-        conclusion = self.tier.conclusion
-        if not conclusion:
+        if isinstance(self.tier, NotebookTierBase):
+            conclusion = self.tier.conclusion
+            return widgetify(Markdown(conclusion))
+        else:
             return None
-        return widgetify(Markdown(self.tier.conclusion))
 
     def _build_children(self) -> DOMWidget:
         """
         Build a widget to display an `UnescapedDataFrame` containing this `Tier`'s children.
         """
-        children_df = self.children_df()
+        children_df = create_children_df(self.tier)
         return widgetify(children_df)
 
     def header(
@@ -406,41 +473,54 @@ class BaseTierGui(Generic[T]):
         """
         Calls `tier.children_df` but returns an `UnescapedDataFrame` instead.
         """
-        return UnescapedDataFrame(
-            self.tier.children_df(include=include, exclude=exclude)
-        )
+        children_df = create_children_df(self.tier, include=include, exclude=exclude)
+        return UnescapedDataFrame(children_df)
 
     def new_child(self) -> DOMWidget:
         """
         Widget for creating new child for this `Tier`.
         """
-        child = self.tier.child_cls
+        child_cls = self.tier.child_cls
 
-        if not child:
+        if not child_cls:
             return
 
-        options = child.get_templates()
+        if not issubclass(child_cls, NotebookTierBase):
 
-        mapping = {path.name: path for path in options}
+            def create(form: InputSequence, name: str) -> None:
+                with form.status:
+                    obj = child_cls(
+                        *self.tier.identifiers, name, project=self.tier.project
+                    )
+                    obj.setup_files()
+                    display(widgetify_html(obj._repr_html_()))
 
-        selection = Select(options=mapping.keys(), description="Template")
+            form = InputSequence(
+                create, Text(description="Identifier", placeholder="{child.id_regex}")
+            )
 
-        def create(name: str, template: str, description: str) -> None:
-            assert child
+            return form.as_widget()
+        else:
+            options = child_cls.get_templates(self.tier.project)
+            mapping = {path.name: path for path in options}
+            selection = Select(options=mapping.keys(), description="Template")
 
-            form: InputSequence
+            def create_notebook_child(
+                form: InputSequence, name: str, template: str, description: str
+            ) -> None:
+                with form.status:
+                    obj: NotebookTierBase = child_cls(
+                        *self.tier.identifiers, name, project=self.tier.project
+                    )
+                    obj.setup_files(mapping[template])
+                    obj.description = description
+                    display(widgetify_html(obj._repr_html_()))
 
-            with form.status:
-                obj = child(*self.tier.identifiers, name)
-                obj.setup_files(mapping[template])
-                obj.description = description
-                display(widgetify_html(obj._repr_html_()))
+            form = InputSequence(
+                create_notebook_child,
+                Text(description="Identifier", placeholder="{child.id_regex}"),
+                selection,
+                Textarea(description="Motivation"),
+            )
 
-        form = InputSequence(
-            create,
-            Text(description="Identifier", placeholder="{child.id_regex}"),
-            selection,
-            Textarea(description="Motivation"),
-        )
-
-        return form.as_widget()
+            return form.as_widget()
