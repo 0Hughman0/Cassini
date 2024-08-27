@@ -65,7 +65,7 @@ def patched_default_project(get_Project, tmp_path):
             parents = []
 
             while parent:
-                parents.append(parent)                
+                parents.append(parent)
                 parent = parent.parent
 
             for child in reversed(parents):  # work from top down

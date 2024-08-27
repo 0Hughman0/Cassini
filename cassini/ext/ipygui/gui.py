@@ -54,7 +54,6 @@ class ExperimentGui(BaseTierGui[Experiment]):
 
 
 class SampleGui(BaseTierGui[Sample]):
-    
     def _build_children(self) -> DOMWidget:
         buttons = []
         for dataset in self.tier.datasets:
