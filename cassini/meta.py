@@ -236,6 +236,9 @@ class MetaAttr(Generic[AttrType, JSONType]):
         return self.name, (self.json_type, Field(default=self.default))
 
 
+T = TypeVar("T")
+
+
 class MetaManager:
     """
     Class for the creation of meta objects.
@@ -250,7 +253,7 @@ class MetaManager:
         self.cls: Union[Type, None] = None
         self.meta_attrs: List[MetaAttr] = []
 
-    def connect_class(self, cls: Type) -> Type:
+    def connect_class(self, cls: Type[T]) -> Type[T]:
         cls.__meta_manager__ = self  # type: ignore[attr-defined]
         self.cls = cls
         return cls
