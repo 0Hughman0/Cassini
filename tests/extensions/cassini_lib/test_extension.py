@@ -64,6 +64,13 @@ def test_extend_adds_attributes(create_project):
             assert hasattr(Tier, 'cas_lib')
 
 
+def test_cas_lib_version_private(create_project):
+    project = create_project
+    project = extend_project(project)
+
+    assert project.hierarchy[1].cas_lib_version.cas_field == 'private'
+
+
 def test_import_init(setup_project):
     project = setup_project
     wp = project['WP1']

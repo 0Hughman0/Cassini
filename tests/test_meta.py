@@ -249,3 +249,19 @@ def test_meta_attr_discovery(get_Project, tmp_path):
     assert 'description' in obj.meta.model.model_fields
     assert 'conclusion' in obj.meta.model.model_fields
     assert 'started' in obj.meta.model.model_fields
+
+
+def test_cas_field_meta():
+    m = MetaAttr(None, str, str, cas_field='core')
+    assert m.cas_field == 'core'
+
+    _, (_, field) = m.as_field()
+    assert field.json_schema_extra == {'x-cas-field': 'core'}
+
+
+def test_meta_manager_cas_field():
+    manager = MetaManager()
+    attr = manager.meta_attr(str, str, cas_field='private')
+    
+    _, (_, field) = attr.as_field()
+    assert field.json_schema_extra == {'x-cas-field': 'private'}

@@ -561,9 +561,9 @@ class NotebookTierBase(FolderTierBase):
         """
         return bool(self.file and self.folder.exists() and self.meta_file.exists())
 
-    description = manager.meta_attr(str, str)
-    conclusion = manager.meta_attr(str, str)
-    started = manager.meta_attr(datetime.datetime, datetime.datetime)
+    description = manager.meta_attr(str, str, cas_field="core")
+    conclusion = manager.meta_attr(str, str, cas_field="core")
+    started = manager.meta_attr(datetime.datetime, datetime.datetime, cas_field="core")
 
     @cached_prop
     def meta_file(self) -> Path:

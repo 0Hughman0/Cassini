@@ -3,7 +3,7 @@ import pytest # type: ignore[import]
 from cassini import FolderTierBase, NotebookTierBase, Home
 from cassini.core import TierABC
 from cassini.accessors import _CachedProp
-from cassini.testing_utils import get_Project, patch_project
+from cassini.testing_utils import get_Project, patch_project, patched_default_project
 
 
 def test_project(get_Project, tmp_path):
@@ -113,3 +113,12 @@ def test_tier_accessors(patch_project):
 
     with pytest.raises(AttributeError):
         obj.doesnt_have
+
+
+def test_meta_attr(patched_default_project):
+    project, make_tiers = patched_default_project
+    WP1, = make_tiers(['WP1'])
+
+    assert WP1.__class__.started.cas_field == 'core'
+    assert WP1.__class__.description.cas_field == 'core'
+    assert WP1.__class__.conclusion.cas_field == 'core'
