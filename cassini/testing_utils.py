@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Tuple, Callable
 
 from cassini import (
     Home,
@@ -43,7 +43,15 @@ def patch_project(get_Project, tmp_path):
 
 
 @pytest.fixture
-def patched_default_project(get_Project, tmp_path):
+def patched_default_project(get_Project, tmp_path) -> Tuple[Project, Callable[[Sequence[str]], Sequence[TierABC]]]:
+    """
+    Returns
+    -------
+    project: Project
+        The fresh
+    create_tiers: Callable[[Sequence[str]], Sequence[TierABC]]
+        function for creating tiers by a list of names. Returns each pre-setup tier in order.
+    """
     Project = get_Project
 
     project = Project(DEFAULT_TIERS, tmp_path)

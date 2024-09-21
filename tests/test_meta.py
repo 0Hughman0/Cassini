@@ -1,10 +1,11 @@
 import json
 import pathlib
+import datetime
 
 import pytest # type: ignore[import]
 from cassini import HomeTierBase, NotebookTierBase
 from cassini.meta import MetaAttr, MetaManager, Meta, MetaCache
-from cassini.testing_utils import get_Project, patch_project
+from cassini.testing_utils import get_Project, patch_project, patched_default_project
 
 import pydantic
 
@@ -189,6 +190,40 @@ def test_meta_creation(get_Project, tmp_path):
 
     assert obj1.meta is obj1.__meta_manager__.metas[obj1]
     assert obj2.meta is obj2.__meta_manager__.metas[obj2]
+
+
+def test_started_is_utc(patched_default_project):
+    project, create_tiers = patched_default_project
+
+    WP1, = create_tiers(['WP1'])
+    
+    assert WP1.started.tzinfo == datetime.timezone.utc
+
+
+def test_started_requires_timezone(patched_default_project):
+    project, create_tiers = patched_default_project
+
+    WP1, = create_tiers(['WP1'])
+    
+    with pytest.raises(pydantic.ValidationError):
+        WP1.started = datetime.datetime.now()
+
+
+def test_dumped_started_includes_timezone(patched_default_project):
+    project, create_tiers = patched_default_project
+    WP1, = create_tiers(['WP1'])
+
+    assert 'Z' in json.loads(WP1.meta._cache.model_dump_json())['started']
+
+
+def test_non_utc_timezones(patched_default_project):
+    project, create_tiers = patched_default_project
+    WP1, = create_tiers(['WP1'])
+
+    WP1.started = datetime.datetime.fromisoformat('2011-11-04T00:05:23+04:00')
+    WP1.started.utcoffset() == datetime.timedelta(hours=4)
+
+    assert '+04:00' in json.loads(WP1.meta._cache.model_dump_json())['started']
 
 
 def test_meta_attr_discovery(get_Project, tmp_path):
