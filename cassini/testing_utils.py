@@ -43,7 +43,9 @@ def patch_project(get_Project, tmp_path):
 
 
 @pytest.fixture
-def patched_default_project(get_Project, tmp_path) -> Tuple[Project, Callable[[Sequence[str]], Sequence[TierABC]]]:
+def patched_default_project(
+    get_Project, tmp_path
+) -> Tuple[Project, Callable[[Sequence[str]], Sequence[TierABC]]]:
     """
     Returns
     -------
