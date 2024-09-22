@@ -32,6 +32,7 @@ def extend_project(project: Project, cas_lib_dir: Union[str, Path] = "cas_lib"):
                 post_get=lambda v: Version(v) if v else v,
                 pre_set=str,
                 name="cas_lib_version",
+                cas_field="private",
             )
             Tier.cas_lib = create_cas_lib(cas_lib_dir)  # type: ignore[attr-defined]
     return project

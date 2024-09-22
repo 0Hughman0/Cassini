@@ -11,6 +11,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    Literal,
 )
 from typing_extensions import Tuple, cast, Self, Type
 
@@ -201,6 +202,7 @@ class MetaAttr(Generic[AttrType, JSONType]):
         pre_set: Callable[[AttrType], JSONType] = _null_func,
         name: Union[str, None] = None,
         default: Union[AttrType, None] = None,
+        cas_field: Union[None, Literal["core"], Literal["private"]] = None,
     ):
         self.json_type = json_type
         self.attr_type = attr_type
@@ -211,6 +213,8 @@ class MetaAttr(Generic[AttrType, JSONType]):
         self.owner = owner_
         self.name: str = cast(str, name)
         self.default = default
+
+        self.cas_field = cas_field
 
     def __set_name__(self, owner: object, name: str) -> None:
         if self.name is None:
@@ -233,7 +237,16 @@ class MetaAttr(Generic[AttrType, JSONType]):
         setattr(self.owner.metas[instance], self.name, self.pre_set(value))
 
     def as_field(self) -> Tuple[str, Tuple[Type[JSONType], FieldInfo]]:
-        return self.name, (self.json_type, Field(default=self.default))
+        if self.cas_field:
+            return self.name, (
+                self.json_type,
+                Field(
+                    default=self.default,
+                    json_schema_extra={"x-cas-field": self.cas_field},
+                ),
+            )
+        else:
+            return self.name, (self.json_type, Field(default=self.default))
 
 
 T = TypeVar("T")
@@ -292,6 +305,7 @@ class MetaManager:
         pre_set: Callable[[AttrType], JSONType] = _null_func,
         name: Union[str, None] = None,
         default: Union[AttrType, None] = None,
+        cas_field: Union[None, Literal["core"], Literal["private"]] = None,
     ):
         """
         Add a meta attribute to this class.
@@ -318,6 +332,7 @@ class MetaManager:
             pre_set=pre_set,
             name=name,
             default=default,
+            cas_field=cas_field,
         )
 
         self.meta_attrs.append(obj)
