@@ -27,7 +27,7 @@ from jupyterlab.labapp import LabApp  # type: ignore[import-untyped]
 from typing_extensions import Self
 
 import jinja2
-from pydantic import JsonValue
+from pydantic import JsonValue, AwareDatetime
 
 from .meta import Meta, MetaManager
 from .accessors import cached_prop, cached_class_prop, soft_prop
@@ -539,7 +539,7 @@ class NotebookTierBase(FolderTierBase):
 
             print("Writing Meta Data")
 
-            self.started = datetime.datetime.now()
+            self.started = datetime.datetime.now(datetime.timezone.utc)
 
             print("Success")
 
@@ -563,7 +563,7 @@ class NotebookTierBase(FolderTierBase):
 
     description = manager.meta_attr(str, str, cas_field="core")
     conclusion = manager.meta_attr(str, str, cas_field="core")
-    started = manager.meta_attr(datetime.datetime, datetime.datetime, cas_field="core")
+    started = manager.meta_attr(AwareDatetime, datetime.datetime, cas_field="core")
 
     @cached_prop
     def meta_file(self) -> Path:

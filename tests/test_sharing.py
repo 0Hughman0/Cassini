@@ -279,7 +279,7 @@ def test_meta_wrapping(get_Project, tmp_path):
 
     assert stier.conclusion == 'c'
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     stier.started = now
 

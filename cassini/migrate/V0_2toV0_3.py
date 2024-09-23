@@ -37,7 +37,9 @@ class V0_2toV0_3(BaseMigrator):
         started = meta.get("started")
 
         if started:
-            started_dt = datetime.datetime.strptime(started, "%d/%m/%Y")
+            started_dt = datetime.datetime.strptime(
+                started, "%d/%m/%Y"
+            ).astimezone()  # assume local timezone.
             meta["started"] = str(started_dt)
 
         with open(tier.meta_file, "w") as fs:

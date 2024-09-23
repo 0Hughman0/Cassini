@@ -45,9 +45,9 @@ def test_make_child(mk_project):
     assert not second.exists()
     assert list(home) == []
 
-    before = datetime.datetime.now()
+    before = datetime.datetime.now(datetime.timezone.utc)
     second.setup_files()
-    after = datetime.datetime.now()
+    after = datetime.datetime.now(datetime.timezone.utc)
 
     assert before <= second.started <= after
     assert second.exists()

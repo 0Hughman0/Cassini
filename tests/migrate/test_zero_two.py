@@ -56,6 +56,7 @@ def test_update_meta(get_migrator):
     migrator.migrate_meta(WP1)
     assert '/' not in json.loads(WP1.meta_file.read_text())['started']
     assert isinstance(WP1.started, datetime.datetime)
+    assert WP1.started.tzinfo == datetime.datetime.now().astimezone().tzinfo
 
 
 def test_full_migrate(get_migrator):
