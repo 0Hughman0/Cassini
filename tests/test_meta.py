@@ -328,3 +328,19 @@ def test_bad_fetch_raises_meta_error(tmp_path):
 
     with pytest.raises(MetaValidationError, match=str('test.json')):
         meta.fetch()
+
+
+def test_cas_field_meta():
+    m = MetaAttr(None, str, str, cas_field='core')
+    assert m.cas_field == 'core'
+
+    _, (_, field) = m.as_field()
+    assert field.json_schema_extra == {'x-cas-field': 'core'}
+
+
+def test_meta_manager_cas_field():
+    manager = MetaManager()
+    attr = manager.meta_attr(str, str, cas_field='private')
+    
+    _, (_, field) = attr.as_field()
+    assert field.json_schema_extra == {'x-cas-field': 'private'}
