@@ -15,7 +15,14 @@ from typing import (
 )
 from typing_extensions import Tuple, cast, Self, Type
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, JsonValue, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    create_model,
+    JsonValue,
+    ValidationError,
+)
 from pydantic.fields import FieldInfo
 
 
@@ -34,10 +41,9 @@ class MetaCache(BaseModel):
 
 
 class MetaValidationError(ValueError):
-
     def __init__(self, *, validation_error: ValidationError, file: Path):
         message = f"Invalid data in file: {file}, due to the following validation error:\n\n{validation_error}"
-        
+
         super().__init__(message)
         self.file = file
         self.validation_error = validation_error
@@ -96,9 +102,9 @@ class Meta:
                 )
             except ValidationError as e:
                 raise MetaValidationError(validation_error=e, file=self.file)
-            
+
             self._cache_born = time.time()
-        
+
         return self._cache
 
     def refresh(self) -> None:
@@ -113,7 +119,7 @@ class Meta:
         Overwrite contents of cache into file
         """
         jsons = self._cache.model_dump_json(
-                exclude_defaults=True, exclude={"__pydantic_extra__"}
+            exclude_defaults=True, exclude={"__pydantic_extra__"}
         )
         with self.file.open("w", encoding="utf-8") as f:
             f.write(jsons)
@@ -140,12 +146,12 @@ class Meta:
             super().__setattr__(name, value)
         else:
             self.fetch()
-            
+
             try:
                 setattr(self._cache, name, value)
             except ValidationError as e:
                 raise MetaValidationError(validation_error=e, file=self.file)
-            
+
             self.write()
 
     def __delitem__(self, key: str) -> None:
@@ -158,7 +164,7 @@ class Meta:
             self._cache = self.model.model_validate(excluded)
         except ValidationError as e:
             raise MetaValidationError(validation_error=e, file=self.file)
-        
+
         self.write()
 
     def __repr__(self) -> str:
