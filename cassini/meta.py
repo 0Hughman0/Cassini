@@ -159,7 +159,7 @@ class Meta:
         excluded = self._cache.model_dump(
             exclude={"__pydantic_extra__", key}, exclude_defaults=True
         )
-
+        # it might not be possible for this to happen, because all fields have to have defaults.
         try:
             self._cache = self.model.model_validate(excluded)
         except ValidationError as e:

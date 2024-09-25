@@ -330,6 +330,21 @@ def test_bad_fetch_raises_meta_error(tmp_path):
         meta.fetch()
 
 
+def test_bad_del_raises_meta_error(tmp_path):
+    class Model(MetaCache):
+        strict_str: str
+
+    file = tmp_path / 'test.json'
+
+    file.write_text('{"strict_str": "value"}')
+
+    meta = Meta(tmp_path / 'test.json')
+    meta.model = Model  # currently, we cannot set model=Model, because all fields must have defaults. 
+
+    with pytest.raises(MetaValidationError, match=str('test.json')):
+        del meta["strict_str"]
+
+
 def test_cas_field_meta():
     m = MetaAttr(None, str, str, cas_field='core')
     assert m.cas_field == 'core'
