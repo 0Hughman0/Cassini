@@ -15,7 +15,14 @@ from typing import (
 )
 from typing_extensions import Tuple, cast, Self, Type
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, JsonValue
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    create_model,
+    JsonValue,
+    ValidationError,
+)
 from pydantic.fields import FieldInfo
 
 
@@ -31,6 +38,15 @@ class MetaCache(BaseModel):
         revalidate_instances="subclass-instances",
         strict=True,
     )
+
+
+class MetaValidationError(ValueError):
+    def __init__(self, *, validation_error: ValidationError, file: Path):
+        message = f"Invalid data in file: {file}, due to the following validation error:\n\n{validation_error}"
+
+        super().__init__(message)
+        self.file = file
+        self.validation_error = validation_error
 
 
 class Meta:
@@ -80,10 +96,15 @@ class Meta:
         overwritten, it'll just be loaded.
         """
         if self.file.exists():
-            self._cache = self.model.model_validate_json(
-                self.file.read_text(), strict=False
-            )
+            try:
+                self._cache = self.model.model_validate_json(
+                    self.file.read_text(), strict=False
+                )
+            except ValidationError as e:
+                raise MetaValidationError(validation_error=e, file=self.file)
+
             self._cache_born = time.time()
+
         return self._cache
 
     def refresh(self) -> None:
@@ -100,7 +121,6 @@ class Meta:
         jsons = self._cache.model_dump_json(
             exclude_defaults=True, exclude={"__pydantic_extra__"}
         )
-        # Danger moment - writing bad cache to file.
         with self.file.open("w", encoding="utf-8") as f:
             f.write(jsons)
 
@@ -126,7 +146,12 @@ class Meta:
             super().__setattr__(name, value)
         else:
             self.fetch()
-            setattr(self._cache, name, value)
+
+            try:
+                setattr(self._cache, name, value)
+            except ValidationError as e:
+                raise MetaValidationError(validation_error=e, file=self.file)
+
             self.write()
 
     def __delitem__(self, key: str) -> None:
@@ -134,7 +159,12 @@ class Meta:
         excluded = self._cache.model_dump(
             exclude={"__pydantic_extra__", key}, exclude_defaults=True
         )
-        self._cache = self.model.model_validate(excluded)
+        # it might not be possible for this to happen, because all fields have to have defaults.
+        try:
+            self._cache = self.model.model_validate(excluded)
+        except ValidationError as e:
+            raise MetaValidationError(validation_error=e, file=self.file)
+
         self.write()
 
     def __repr__(self) -> str:
