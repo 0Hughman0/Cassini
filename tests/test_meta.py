@@ -4,7 +4,7 @@ import datetime
 
 import pytest # type: ignore[import]
 from cassini import HomeTierBase, NotebookTierBase
-from cassini.meta import MetaAttr, MetaManager, Meta, MetaCache
+from cassini.meta import MetaAttr, MetaManager, Meta, MetaCache, MetaValidationError
 from cassini.testing_utils import get_Project, patch_project, patched_default_project
 
 import pydantic
@@ -132,11 +132,11 @@ def test_jsonable(mk_meta):
     meta = mk_meta
 
     # attributes have to be serialisable in some way!
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(MetaValidationError):
         meta['object'] = object
 
     # values must be json values. If you want type coersion, define a meta attr!
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(MetaValidationError):
         meta['pathlike'] = pathlib.Path().absolute()
 
     # type changes are allowed without meta definition.
@@ -158,7 +158,7 @@ def test_strict_attrs(tmp_path):
     
     assert meta['strict_str'] == 'default'
     
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(MetaValidationError):
         meta['strict_str'] = 5
     
     meta['strict_str'] = 'new val'
@@ -205,7 +205,7 @@ def test_started_requires_timezone(patched_default_project):
 
     WP1, = create_tiers(['WP1'])
     
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(MetaValidationError):
         WP1.started = datetime.datetime.now()
 
 
@@ -269,7 +269,7 @@ def test_meta_attr_discovery(get_Project, tmp_path):
 
     assert obj.description == 'new description'
 
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(MetaValidationError):
         obj.description = 124
 
     obj = project['Second1Third1']
@@ -284,3 +284,47 @@ def test_meta_attr_discovery(get_Project, tmp_path):
     assert 'description' in obj.meta.model.model_fields
     assert 'conclusion' in obj.meta.model.model_fields
     assert 'started' in obj.meta.model.model_fields
+
+
+def test_meta_validation_error_has_path(tmp_path):
+    class Model(MetaCache):
+        strict_str: str = 'default'
+
+    meta = Meta(tmp_path / 'test.json', Model)
+
+    with pytest.raises(MetaValidationError, match=str('test.json')):
+        meta.strict_str = 10
+
+
+def test_bad_setattr_raises_meta_error(tmp_path):
+    class Model(MetaCache):
+        strict_str: str = 'default'
+
+    meta = Meta(tmp_path / 'test.json', Model)
+
+    with pytest.raises(MetaValidationError, match=str('test.json')):
+        meta.strict_str = 10
+
+
+def test_bad_setitem_raises_meta_error(tmp_path):
+    class Model(MetaCache):
+        strict_str: str = 'default'
+
+    meta = Meta(tmp_path / 'test.json', Model)
+
+    with pytest.raises(MetaValidationError, match=str('test.json')):
+        meta['strict_str'] = 10
+
+
+def test_bad_fetch_raises_meta_error(tmp_path):
+    class Model(MetaCache):
+        strict_str: str = 'default'
+
+    file = tmp_path / 'test.json'
+
+    file.write_text('{"strict_str": 10}')
+
+    meta = Meta(tmp_path / 'test.json', Model)
+
+    with pytest.raises(MetaValidationError, match=str('test.json')):
+        meta.fetch()
