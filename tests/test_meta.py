@@ -87,6 +87,15 @@ def test_del(mk_meta):
         assert meta['a_str'] == 'val'
 
 
+def test_unicode_attr(mk_meta):
+    meta = mk_meta
+
+    meta['a_str'] = '🐟'
+
+    meta.fetch()
+    assert meta['a_str'] == '🐟'
+
+
 def test_meta_attr(mk_meta):
     manager = MetaManager()
 
@@ -164,6 +173,7 @@ def test_strict_attrs(tmp_path):
     meta['strict_str'] = 'new val'
 
     assert meta['strict_str'] == 'new val'
+
 
 
 def test_meta_creation(get_Project, tmp_path):

@@ -98,7 +98,7 @@ class Meta:
         if self.file.exists():
             try:
                 self._cache = self.model.model_validate_json(
-                    self.file.read_text(), strict=False
+                    self.file.read_text(encoding="utf-8"), strict=False
                 )
             except ValidationError as e:
                 raise MetaValidationError(validation_error=e, file=self.file)
