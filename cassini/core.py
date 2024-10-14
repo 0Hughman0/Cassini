@@ -30,7 +30,7 @@ from typing_extensions import Self
 import jinja2
 from pydantic import JsonValue, AwareDatetime
 
-from .meta import Meta, MetaManager, MetaAttr, use_meta
+from .meta import Meta, MetaAttr
 from .accessors import cached_prop, cached_class_prop, soft_prop
 from .utils import (
     FileMaker,
