@@ -4,7 +4,7 @@ import datetime
 
 import pytest # type: ignore[import]
 from cassini import HomeTierBase, NotebookTierBase
-from cassini.meta import MetaAttr, MetaManager, Meta, MetaCache, MetaValidationError
+from cassini.meta import MetaAttr, MetaManager, Meta, MetaCache, MetaValidationError, use_meta
 from cassini.testing_utils import get_Project, patch_project, patched_default_project
 
 import pydantic
@@ -97,23 +97,20 @@ def test_unicode_attr(mk_meta):
 
 
 def test_meta_attr(mk_meta):
-    manager = MetaManager()
-
-    @manager.connect_class
     class MyClass:
 
-        a_str = manager.meta_attr(str, str)
-        an_int = manager.meta_attr(int, int)
-        a_float = manager.meta_attr(float, float)
+        a_str = MetaAttr(str, str)
+        an_int = MetaAttr(int, int)
+        a_float = MetaAttr(float, float)
         
-        processed_str = manager.meta_attr(str, str, post_get=lambda val: f't{val}', name='a_str')
-        always_5 = manager.meta_attr(int, int, pre_set=lambda val: 5, name='an_int')
+        processed_str = MetaAttr(str, str, post_get=lambda val: f't{val}', name='a_str')
+        always_5 = MetaAttr(int, int, pre_set=lambda val: 5, name='an_int')
 
-        doesnt_have = manager.meta_attr(str, str)
-        with_default = manager.meta_attr(str, str, default='squid')
+        doesnt_have = MetaAttr(str, str)
+        with_default = MetaAttr(str, str, default='squid')
 
         def __init__(self):
-            self.meta = manager.create_meta(mk_meta.file, owner=self)
+            self.meta = Meta.create_meta(mk_meta.file, owner=self)
 
     obj = MyClass()
 
@@ -198,9 +195,6 @@ def test_meta_creation(get_Project, tmp_path):
     obj1.description = '1'
     assert obj2.description != '1'
 
-    assert obj1.meta is obj1.__meta_manager__.metas[obj1]
-    assert obj2.meta is obj2.__meta_manager__.metas[obj2]
-
 
 def test_started_is_utc(patched_default_project):
     project, create_tiers = patched_default_project
@@ -238,6 +232,7 @@ def test_non_utc_timezones(patched_default_project):
 
 def test_meta_attr_discovery(get_Project, tmp_path):
     Project = get_Project
+
     class First(HomeTierBase):
         pass
 
@@ -247,19 +242,16 @@ def test_meta_attr_discovery(get_Project, tmp_path):
     class Third(NotebookTierBase):
         pass
 
-    manager = MetaManager()
-
-    @manager.connect_class
     class Fourth(NotebookTierBase):
-        test_attr = manager.meta_attr(str, str)
+        test_attr = MetaAttr(str, str)
 
-    assert Second.__meta_manager__ is Third.__meta_manager__
-    assert Fourth.__meta_manager__ is not Third.__meta_manager__
+    for cls in [Second, Third, Fourth]:
+        assert 'description' in cls.meta_model.model_fields
+        assert 'conclusion' in cls.meta_model.model_fields
+        assert 'started' in cls.meta_model.model_fields
 
-    assert 'description' not in (attr.name for attr in Fourth.__meta_manager__.meta_attrs)
-    assert 'description' in Fourth.__meta_manager__.build_fields()
-    assert 'conclusion' in Fourth.__meta_manager__.build_fields()
-    assert 'started' in Fourth.__meta_manager__.build_fields()
+    assert 'test_attr' not in Second.meta_model.model_fields
+    assert 'test_attr' in Fourth.meta_model.model_fields    
 
     project = Project([First, Second, Third, Fourth], tmp_path)
     project.setup_files()
@@ -364,8 +356,7 @@ def test_cas_field_meta():
 
 
 def test_meta_manager_cas_field():
-    manager = MetaManager()
-    attr = manager.meta_attr(str, str, cas_field='private')
+    attr = MetaAttr(str, str, cas_field='private')
     
     _, (_, field) = attr.as_field()
     assert field.json_schema_extra == {'x-cas-field': 'private'}

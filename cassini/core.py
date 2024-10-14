@@ -30,7 +30,7 @@ from typing_extensions import Self
 import jinja2
 from pydantic import JsonValue, AwareDatetime
 
-from .meta import Meta, MetaManager
+from .meta import Meta, MetaManager, MetaAttr, use_meta
 from .accessors import cached_prop, cached_class_prop, soft_prop
 from .utils import (
     FileMaker,
@@ -452,17 +452,16 @@ class FolderTierBase(TierABC):
         return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
 
 
-manager = MetaManager()
-
-
-@manager.connect_class
 class NotebookTierBase(FolderTierBase):
     """
     Base class for tiers which have a notebook and meta associated with them.
     """
 
     meta: Meta
-    __meta_manager__: ClassVar[MetaManager]
+
+    @cached_class_prop
+    def meta_model(cls):
+        return Meta.build_meta_model(cls)
 
     @cached_class_prop
     def _default_template(cls) -> Path:
@@ -498,7 +497,7 @@ class NotebookTierBase(FolderTierBase):
 
     def __init__(self, *identifiers: str, project: Project):
         super().__init__(*identifiers, project=project)
-        self.meta: Meta = self.__meta_manager__.create_meta(self.meta_file, owner=self)
+        self.meta: Meta = Meta.create_meta(self.meta_file, owner=self)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -562,9 +561,9 @@ class NotebookTierBase(FolderTierBase):
         """
         return bool(self.file and self.folder.exists() and self.meta_file.exists())
 
-    description = manager.meta_attr(str, str, cas_field="core")
-    conclusion = manager.meta_attr(str, str, cas_field="core")
-    started = manager.meta_attr(AwareDatetime, datetime.datetime, cas_field="core")
+    description = MetaAttr(str, str, cas_field="core")
+    conclusion = MetaAttr(str, str, cas_field="core")
+    started = MetaAttr(AwareDatetime, datetime.datetime, cas_field="core")
 
     @cached_prop
     def meta_file(self) -> Path:

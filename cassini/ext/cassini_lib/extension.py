@@ -6,6 +6,7 @@ from semantic_version import Version
 
 from .import_tools import PatchImporter, latest_version
 from ... import Project, NotebookTierBase
+from ...meta import MetaAttr
 
 
 def extend_project(project: Project, cas_lib_dir: Union[str, Path] = "cas_lib"):
@@ -26,14 +27,14 @@ def extend_project(project: Project, cas_lib_dir: Union[str, Path] = "cas_lib"):
     for Tier in project.hierarchy:
         if issubclass(Tier, NotebookTierBase):
             # patch in the requried attributes to classes with notebooks!
-            Tier.cas_lib_version = Tier.__meta_manager__.meta_attr(  # type: ignore[attr-defined]
-                json_type=str,
+            Tier.cas_lib_version = MetaAttr(json_type=str,
                 attr_type=Version,
                 post_get=lambda v: Version(v) if v else v,
                 pre_set=str,
                 name="cas_lib_version",
                 cas_field="private",
             )
+
             Tier.cas_lib = create_cas_lib(cas_lib_dir)  # type: ignore[attr-defined]
     return project
 
