@@ -44,6 +44,7 @@ jobs:
     - name: Typecheck with mypy
       run: |
         poetry run mypy cassini
+        poetry run mypy tests --exclude=tests/extensions/cassini_lib/mock_libraries/ --exclude=tests/project_cases
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       env:

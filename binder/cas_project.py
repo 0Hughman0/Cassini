@@ -1,4 +1,4 @@
-from cassini import Project, DEFAULT_TIERS
+from cassini import Project, DEFAULT_TIERS, WorkPackage
 
 project = Project(DEFAULT_TIERS, __file__)
 

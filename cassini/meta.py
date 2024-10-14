@@ -8,8 +8,7 @@ from typing import (
     Generic,
     KeysView,
     List,
-    Optional,
-    Mapping,
+    overload,
     TypeVar,
     Union,
     Literal,
@@ -287,6 +286,14 @@ class MetaAttr(Generic[AttrType, JSONType]):
     def __set_name__(self, owner: object, name: str) -> None:
         if self.name is None:
             self.name = name
+
+    @overload
+    def __get__(self, instance: None, owner: object) -> Self:
+        pass
+
+    @overload
+    def __get__(self, instance: object, owner: object) -> AttrType:
+        pass
 
     def __get__(
         self, instance: Union[Any, None], owner: object

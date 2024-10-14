@@ -2,6 +2,8 @@ import json
 import pathlib
 import datetime
 
+from typing_extensions import assert_type
+
 import pytest # type: ignore[import]
 from cassini import HomeTierBase, NotebookTierBase
 from cassini.meta import MetaAttr, Meta, MetaCache, MetaValidationError
@@ -132,6 +134,20 @@ def test_meta_attr(mk_meta):
 
     assert obj.doesnt_have is None
     assert obj.with_default == 'squid'
+
+
+# this test has to be run with mypy... which is confusing.
+def test_meta_attr_inferred_types(tmp_path) -> None:
+    class MyClass:
+        a_str = MetaAttr(str, str)
+
+        def __init__(self):
+            self.meta = Meta.create_meta(tmp_path / 'meta.json', owner=self)
+    
+    m = MyClass()
+    
+    assert_type(m.a_str, str)
+    assert_type(MyClass.a_str, MetaAttr[str, str])
 
 
 def test_jsonable(mk_meta):
