@@ -1,6 +1,6 @@
 import pytest # type: ignore[import]
 
-from cassini import DEFAULT_TIERS
+from cassini import DEFAULT_TIERS, Project
 from cassini.testing_utils import get_Project, patch_project
 
 @pytest.fixture
@@ -26,8 +26,8 @@ def mk_project(get_Project, tmp_path):
     return project
 
 
-def test_add_highlight(mk_project) -> None:
-    project: Project = mk_project
+def test_add_highlight(mk_project):
+    project = mk_project
 
     wp = project['WP1']
 
