@@ -11,6 +11,7 @@ import re
 from typing import (
     Any,
     List,
+    Sequence,
     Type,
     Tuple,
     Iterator,
@@ -791,7 +792,7 @@ class Project:
 
     Parameters
     ----------
-    hierarchy : List[Type[BaseTier]]
+    hierarchy : Sequence[Type[BaseTier]]
         Sequence of `TierBase` subclasses representing the hierarchy for this project. i.e. earlier entries are stored
         in higher level directories.
     project_folder : Union[str, Path]
@@ -824,10 +825,10 @@ class Project:
         return instance
 
     def __init__(
-        self, hierarchy: List[Type[TierABC]], project_folder: Union[str, Path]
+        self, hierarchy: Sequence[Type[TierABC]], project_folder: Union[str, Path]
     ):
         self._rank_map: Dict[Type[TierABC], int] = {}
-        self._hierarchy: List[Type[TierABC]] = []
+        self._hierarchy: Sequence[Type[TierABC]] = []
 
         self.__before_setup_files__: List[Callable[[Project], None]] = []
         self.__after_setup_files__: List[Callable[[Project], None]] = []
@@ -837,7 +838,7 @@ class Project:
         ] = []
         self.__after_launch__: List[Callable[[Project, Union[LabApp, None]], None]] = []
 
-        self.hierarchy: List[Type[TierABC]] = hierarchy
+        self.hierarchy: Sequence[Type[TierABC]] = hierarchy
 
         project_folder_path = Path(project_folder).resolve()
         self.project_folder: Path = (
@@ -852,11 +853,11 @@ class Project:
         )
 
     @property
-    def hierarchy(self) -> List[Type[TierABC]]:
+    def hierarchy(self) -> Sequence[Type[TierABC]]:
         return self._hierarchy
 
     @hierarchy.setter
-    def hierarchy(self, hierarchy: List[Type[TierABC]]):
+    def hierarchy(self, hierarchy: Sequence[Type[TierABC]]):
         self._hierarchy = hierarchy
 
         for rank, tier_cls in enumerate(hierarchy):
@@ -924,7 +925,7 @@ class Project:
         if rank - 1 < 0:
             return None
         else:
-            cls: Type[TierABC] = self.hierarchy[rank - 1]
+            cls = self.hierarchy[rank - 1]
             return cls
 
     def __getitem__(self, name: str) -> TierABC:
