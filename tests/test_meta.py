@@ -4,7 +4,7 @@ import datetime
 
 import pytest # type: ignore[import]
 from cassini import HomeTierBase, NotebookTierBase
-from cassini.meta import MetaAttr, MetaManager, Meta, MetaCache, MetaValidationError, use_meta
+from cassini.meta import MetaAttr, Meta, MetaCache, MetaValidationError
 from cassini.testing_utils import get_Project, patch_project, patched_default_project
 
 import pydantic

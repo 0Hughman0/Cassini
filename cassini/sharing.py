@@ -21,8 +21,8 @@ from pydantic_core import CoreSchema, core_schema
 
 from . import env
 from .core import TierABC, NotebookTierBase
-from .meta import Meta, MetaManager
 from .utils import find_project
+from .meta import Meta
 
 
 class NoseyPath:
