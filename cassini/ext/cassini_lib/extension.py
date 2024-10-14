@@ -27,7 +27,7 @@ def extend_project(project: Project, cas_lib_dir: Union[str, Path] = "cas_lib"):
     for Tier in project.hierarchy:
         if issubclass(Tier, NotebookTierBase):
             # patch in the requried attributes to classes with notebooks!
-            Tier.cas_lib_version = MetaAttr(
+            Tier.cas_lib_version = MetaAttr(  # type: ignore[attr-defined]
                 json_type=str,
                 attr_type=Version,
                 post_get=lambda v: Version(v) if v else v,
