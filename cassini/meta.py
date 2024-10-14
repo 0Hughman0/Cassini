@@ -9,6 +9,7 @@ from typing import (
     KeysView,
     List,
     Optional,
+    Mapping,
     TypeVar,
     Union,
     Literal,
@@ -189,6 +190,45 @@ class Meta:
             exclude={"__pydantic_extra__"}, exclude_defaults=True
         ).keys()
 
+    @classmethod
+    def build_meta_model(thisCls, wrappedCls):
+        meta_attrs = {}
+
+        fields = set()
+
+        for cls in wrappedCls.__mro__:
+            for name in cls.__dict__:
+                if name == "meta_model":
+                    continue
+
+                attr = getattr(cls, name)
+
+                if isinstance(attr, MetaAttr):
+                    meta_attrs[name] = attr
+                    fields.add(attr.as_field())
+
+        cls_name = wrappedCls.__name__
+
+        return create_model(
+            f"{cls_name}MetaCache",
+            __base__=MetaCache,
+            **{name: field for name, field in fields},
+        )
+
+    @classmethod
+    def create_meta(cls, path: Path, owner: object):
+        """
+        Create meta object at `path`.
+
+        The appropraite additional fields for each meta attribute are passed on.
+        """
+        if hasattr(owner, "meta_model") and owner.meta_model:
+            model = owner.meta_model
+        else:
+            model = cls.build_meta_model(owner.__class__)
+
+        return Meta(path, model)
+
 
 def _null_func(val: Any) -> Any:
     return cast(JsonValue, val)
@@ -225,7 +265,6 @@ class MetaAttr(Generic[AttrType, JSONType]):
 
     def __init__(
         self,
-        owner_: "MetaManager",
         json_type: Type[JSONType],
         attr_type: Type[AttrType],
         post_get: Callable[[JSONType], AttrType] = _null_func,
@@ -240,7 +279,6 @@ class MetaAttr(Generic[AttrType, JSONType]):
         self.post_get = post_get
         self.pre_set = pre_set
 
-        self.owner = owner_
         self.name: str = cast(str, name)
         self.default = default
 
@@ -256,15 +294,10 @@ class MetaAttr(Generic[AttrType, JSONType]):
         if owner is None or instance is None:
             return self
 
-        if not self.owner.metas[instance]:
-            raise RuntimeError(
-                "Trying to access Meta Attribute before Meta instance created!"
-            )
-
-        return self.post_get(self.owner.metas[instance].get(self.name, self.default))
+        return self.post_get(instance.meta.get(self.name, self.default))
 
     def __set__(self, instance: Any, value: AttrType) -> None:
-        setattr(self.owner.metas[instance], self.name, self.pre_set(value))
+        setattr(instance.meta, self.name, self.pre_set(value))
 
     def as_field(self) -> Tuple[str, Tuple[Type[JSONType], FieldInfo]]:
         if self.cas_field:
@@ -280,100 +313,3 @@ class MetaAttr(Generic[AttrType, JSONType]):
 
 
 T = TypeVar("T")
-
-
-class MetaManager:
-    """
-    Class for the creation of meta objects.
-
-    This needs to exist in order for the model of meta objects to work and allows
-    meta objects to serialise attributes into types beyond `JsonValue`s.
-    """
-
-    metas: ClassVar[Dict[Any, Meta]] = {}
-
-    def __init__(self) -> None:
-        self.cls: Union[Type, None] = None
-        self.meta_attrs: List[MetaAttr] = []
-
-    def connect_class(self, cls: Type[T]) -> Type[T]:
-        cls.__meta_manager__ = self  # type: ignore[attr-defined]
-        self.cls = cls
-        return cls
-
-    def build_fields(self):
-        """
-        Look through the meta attributes of this class and its base classes and find all the
-        meta attributes it should have. Then generate pydantic compatible Field definitions
-        for those fields.
-        """
-        fields = set()
-
-        for cls in self.cls.__mro__:
-            manager = getattr(cls, "__meta_manager__", None)
-            if manager:
-                fields.update(meta_attr.as_field() for meta_attr in manager.meta_attrs)
-
-        return {name: field for name, field in fields}
-
-    def build_model(self) -> Type[MetaCache]:
-        """
-        Build a pydantic model for the metadata of `self.cls`, incorporating additional fields
-        defined using `MetaAttr`.
-        """
-        fields = self.build_fields()
-
-        cls_name = self.cls.__name__ if self.cls else "Custom"
-
-        return create_model(f"{cls_name}MetaCache", __base__=MetaCache, **fields)
-
-    def meta_attr(
-        self,
-        json_type: Type[JSONType],
-        attr_type: Type[AttrType],
-        post_get: Callable[[JSONType], AttrType] = _null_func,
-        pre_set: Callable[[AttrType], JSONType] = _null_func,
-        name: Union[str, None] = None,
-        default: Union[AttrType, None] = None,
-        cas_field: Union[None, Literal["core"], Literal["private"]] = None,
-    ):
-        """
-        Add a meta attribute to this class.
-
-        json_type: Any
-            Type to pass to pydantic when creating the `Meta.model`. This can be any type supported by pydantic,
-            `see here <https://docs.pydantic.dev/latest/concepts/conversion_table/>`_, i.e. not just `JsonValue`s.
-        attr_type: Any
-            Type actually returned by meta attribute i.e. accounting for `post_get`.
-        post_get: func
-        function to apply to data after being loaded from json file
-        pre_set: func
-            function to apply to data before stored in json file.
-        name: str
-            key to lookup in meta
-        default:
-            value to return if key not found in meta (note post_get isn't called on this).
-        """
-        obj = MetaAttr(
-            self,
-            json_type=json_type,
-            attr_type=attr_type,
-            post_get=post_get,
-            pre_set=pre_set,
-            name=name,
-            default=default,
-            cas_field=cas_field,
-        )
-
-        self.meta_attrs.append(obj)
-
-        return obj
-
-    def create_meta(self, path: Path, owner: Any):
-        """
-        Create meta object at `path`.
-
-        The appropraite additional fields for each meta attribute are passed on.
-        """
-        self.__class__.metas[owner] = Meta(path, self.build_model())
-        return self.metas[owner]

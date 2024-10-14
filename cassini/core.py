@@ -11,6 +11,7 @@ import re
 from typing import (
     Any,
     List,
+    Sequence,
     Type,
     Tuple,
     Iterator,
@@ -29,7 +30,7 @@ from typing_extensions import Self
 import jinja2
 from pydantic import JsonValue, AwareDatetime
 
-from .meta import Meta, MetaManager
+from .meta import Meta, MetaAttr
 from .accessors import cached_prop, cached_class_prop, soft_prop
 from .utils import (
     FileMaker,
@@ -451,17 +452,16 @@ class FolderTierBase(TierABC):
         return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
 
 
-manager = MetaManager()
-
-
-@manager.connect_class
 class NotebookTierBase(FolderTierBase):
     """
     Base class for tiers which have a notebook and meta associated with them.
     """
 
     meta: Meta
-    __meta_manager__: ClassVar[MetaManager]
+
+    @cached_class_prop
+    def meta_model(cls):
+        return Meta.build_meta_model(cls)
 
     @cached_class_prop
     def _default_template(cls) -> Path:
@@ -497,7 +497,7 @@ class NotebookTierBase(FolderTierBase):
 
     def __init__(self, *identifiers: str, project: Project):
         super().__init__(*identifiers, project=project)
-        self.meta: Meta = self.__meta_manager__.create_meta(self.meta_file, owner=self)
+        self.meta: Meta = Meta.create_meta(self.meta_file, owner=self)
 
     def setup_files(
         self, template: Union[Path, None] = None, meta: Optional[MetaDict] = None
@@ -561,9 +561,9 @@ class NotebookTierBase(FolderTierBase):
         """
         return bool(self.file and self.folder.exists() and self.meta_file.exists())
 
-    description = manager.meta_attr(str, str, cas_field="core")
-    conclusion = manager.meta_attr(str, str, cas_field="core")
-    started = manager.meta_attr(AwareDatetime, datetime.datetime, cas_field="core")
+    description = MetaAttr(str, str, cas_field="core")
+    conclusion = MetaAttr(str, str, cas_field="core")
+    started = MetaAttr(AwareDatetime, datetime.datetime, cas_field="core")
 
     @cached_prop
     def meta_file(self) -> Path:
@@ -791,7 +791,7 @@ class Project:
 
     Parameters
     ----------
-    hierarchy : List[Type[BaseTier]]
+    hierarchy : Sequence[Type[BaseTier]]
         Sequence of `TierBase` subclasses representing the hierarchy for this project. i.e. earlier entries are stored
         in higher level directories.
     project_folder : Union[str, Path]
@@ -824,10 +824,10 @@ class Project:
         return instance
 
     def __init__(
-        self, hierarchy: List[Type[TierABC]], project_folder: Union[str, Path]
+        self, hierarchy: Sequence[Type[TierABC]], project_folder: Union[str, Path]
     ):
         self._rank_map: Dict[Type[TierABC], int] = {}
-        self._hierarchy: List[Type[TierABC]] = []
+        self._hierarchy: Sequence[Type[TierABC]] = []
 
         self.__before_setup_files__: List[Callable[[Project], None]] = []
         self.__after_setup_files__: List[Callable[[Project], None]] = []
@@ -837,7 +837,7 @@ class Project:
         ] = []
         self.__after_launch__: List[Callable[[Project, Union[LabApp, None]], None]] = []
 
-        self.hierarchy: List[Type[TierABC]] = hierarchy
+        self.hierarchy: Sequence[Type[TierABC]] = hierarchy
 
         project_folder_path = Path(project_folder).resolve()
         self.project_folder: Path = (
@@ -852,11 +852,11 @@ class Project:
         )
 
     @property
-    def hierarchy(self) -> List[Type[TierABC]]:
+    def hierarchy(self) -> Sequence[Type[TierABC]]:
         return self._hierarchy
 
     @hierarchy.setter
-    def hierarchy(self, hierarchy: List[Type[TierABC]]):
+    def hierarchy(self, hierarchy: Sequence[Type[TierABC]]):
         self._hierarchy = hierarchy
 
         for rank, tier_cls in enumerate(hierarchy):
@@ -924,7 +924,7 @@ class Project:
         if rank - 1 < 0:
             return None
         else:
-            cls: Type[TierABC] = self.hierarchy[rank - 1]
+            cls = self.hierarchy[rank - 1]
             return cls
 
     def __getitem__(self, name: str) -> TierABC:

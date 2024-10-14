@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-from typing import Iterator, List, Any, cast
+from typing import Iterator, List, Any, Sequence, cast
 
 from ..core import TierABC, FolderTierBase, NotebookTierBase, HomeTierBase
 from ..accessors import cached_prop
@@ -42,7 +42,7 @@ class WorkPackage(NotebookTierBase):
     short_type = "wp"
 
     @property
-    def exps(self) -> List[TierABC]:
+    def exps(self) -> Sequence[TierABC]:
         """
         Gets a list of all this `WorkPackage`s experiments.
         """
@@ -63,7 +63,7 @@ class Experiment(NotebookTierBase):
     short_type = "exp"
 
     @property
-    def techniques(self) -> List[str]:
+    def techniques(self) -> Sequence[str]:
         """
         Convenience property for looking up all the techniques that have been performed on samples in this experiment.
 
@@ -97,7 +97,7 @@ class Experiment(NotebookTierBase):
         print("Done")
 
     @property
-    def smpls(self) -> List[TierABC]:
+    def smpls(self) -> Sequence[TierABC]:
         """
         Get a list of this `Experiment`s samples.
         """
@@ -126,7 +126,7 @@ class Sample(NotebookTierBase):
         return self.parent.folder
 
     @property
-    def datasets(self) -> List[TierABC]:
+    def datasets(self) -> Sequence[TierABC]:
         """
         Convenient way of getting a list of `DataSet`s this sample has.
         """

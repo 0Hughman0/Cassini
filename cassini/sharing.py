@@ -21,8 +21,8 @@ from pydantic_core import CoreSchema, core_schema
 
 from . import env
 from .core import TierABC, NotebookTierBase
-from .meta import Meta, MetaManager
 from .utils import find_project
+from .meta import Meta
 
 
 class NoseyPath:
@@ -197,10 +197,14 @@ class SharingTier:
 
         self.meta = getattr(self._tier, "meta", None)
 
+        """
         if isinstance(self._tier, NotebookTierBase) and self.meta:
             # Link this instance's meta attributes to _tier's meta object
             meta_manager: MetaManager = self._tier.__meta_manager__  # type: ignore[attr-defined]
             meta_manager.metas[self] = meta_manager.metas[self._tier]
+        """
+
+    meta_model = NotebookTierBase.meta_model
 
     description = NotebookTierBase.description
     conclusion = NotebookTierBase.conclusion
@@ -395,7 +399,7 @@ class SharedTier:
         folder, meta_file, frozen_file = shared_project.make_paths(self)
 
         if meta_file.exists():
-            self.meta = NotebookTierBase.__meta_manager__.create_meta(meta_file, self)
+            self.meta = Meta.create_meta(meta_file, self)
 
         with open(frozen_file) as fs:
             model = SharedTierData.model_validate_json(fs.read())
@@ -416,6 +420,8 @@ class SharedTier:
                     called[method][(call["args"], call["kwargs"])] = call["returns"]
 
             self._called = called
+
+    meta_model = NotebookTierBase.meta_model
 
     description = NotebookTierBase.description
     conclusion = NotebookTierBase.conclusion
