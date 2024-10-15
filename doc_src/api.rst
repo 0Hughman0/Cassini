@@ -13,15 +13,16 @@ Environment
 .. automodule:: cassini.environment
    :members:
 
+Defaults
+--------
+
+.. automodule:: cassini.defaults.tiers
+   :members:
+
+
 IPyGui
 ------
 
 .. automodule:: cassini.ipygui
    :members:
 
-
-Defaults
---------
-
-.. automodule:: cassini.defaults.tiers
-   :members:
