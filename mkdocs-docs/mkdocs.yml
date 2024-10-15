@@ -1,0 +1,26 @@
+site_name: My Docs
+site_url: https://mydomain.org/mysite
+repo_url: https://github.com/0Hughman0/Cassini
+
+nav:
+  - Getting Started: 
+    - Home: index.md
+    - Quickstart: quickstart.md
+    - Features: features.md
+    - Advanced Customization: advanced_customization.md
+  - Contributing: 
+    - General Guidelines: contributing/index.md
+    - To Cassini: contributing/cassini.md
+    - To jupyter_cassini: contributing/jupyter_cassini.md
+
+plugins:
+- search
+- mkdocstrings:
+    default_handler: python
+
+theme:
+  name: material
+  features:
+   - navigation.tabs
+   - navigation.path
+   - navigation.sections
