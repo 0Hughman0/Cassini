@@ -60,10 +60,19 @@ jobs:
         with:
           ref: 0.2.x
           clean: false
-      - name: Build Docs
+      - name: Build 0.2.x Docs
         run: |
           poetry install --with docs
           poetry run sphinx-build doc_src docs/0.2.x
+      - name: Checkout 0.3.x
+        uses: actions/checkout@v3
+        with:
+          ref: 0.3.x
+          clean: false
+      - name: Build Docs 0.3.x
+        run: |
+          poetry install --with docs
+          poetry run mkdocs build -f=doc_src/mkdocs.yml -d=docs/0.3.x
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
