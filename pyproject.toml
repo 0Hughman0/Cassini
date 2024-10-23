@@ -32,10 +32,9 @@ pandas-stubs = "^2.0.2.230605"
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-sphinx = "^7.0"
 tomli = "^2.0.1"
-sphinx-rtd-theme = "^1.2.2"
 mkdocs = "^1.6.1"
+mkdocs-material = "^9.5.42"
 
 [tool.mypy]
 ignore_missing_imports = true
