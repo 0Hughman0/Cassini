@@ -81,16 +81,22 @@ class TierABC(ABC):
 
     Attributes
     ----------
-    id_regex: str
-        Class attribute, regex that defines a group that matches the id of a `Tier` object from a name... except the
-        name isn't the full name, but with parent names stripped, see examples basically!
-    hierarchy : list
-        Class attribute, hierarchy of `Tier`s.
     id_regex : str
         (class attribute) regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id.
-    gui_cls : Any
-        (class attribute) The class called upon initialisation to use as gui for this object. Constructor should take `self`
-         as first argument.
+        See :py:meth:`Project.parse_name` for more details.
+    gui_cls : TierGuiProtocol
+        (class attribute) The class called upon initialisation to use as gui for this object. Constructor should take ``self``
+        as first argument.
+    pretty_type : str
+        Long name for the tier type, defaults to the class name. Used in dialogues/ ui.
+    short_type : str
+        Short name for the tier type, defaults to lowercase of the type, with no vowels! Used in notebooks.
+    name_part_template : str
+        Python template that's filled in with ``self.id`` to create segment of the ``Tier`` object's name.
+    name_part_regex : str
+        Regex where first group matches ``id`` part of string. Default is fill in ``cls.name_part_template`` with
+        ``cls.id_regex``.
+
     """
 
     _cache: ClassVar[Dict[Tuple[str, ...], TierABC]] = env.create_cache()
@@ -211,10 +217,7 @@ class TierABC(ABC):
         """
         Create all the files needed for a valid `Tier` object to exist.
 
-        This includes its `.ipynb` file, its parent folder, its own folder and its `Meta` file.
-
-        Will render `.ipynb` file as Jinja template engine, passing to the template `self` with names given by
-        `self.short_type` and `tier`.
+        These parameters are ignored if not used.
 
         Parameters
         ----------
@@ -299,7 +302,7 @@ class TierABC(ABC):
     @cached_prop
     def parent(self) -> Union[TierABC, None]:
         """
-        Parent of this `Tier` _instance, `None` if has no parent :'(
+        Parent of this ``Tier`` instance, ``None`` if has no parent.
         """
         if self.parent_cls:
             return self.parent_cls(*self._identifiers[:-1], project=self.project)
@@ -309,9 +312,9 @@ class TierABC(ABC):
     @abstractmethod
     def href(self) -> Union[str, None]:
         """
-        href usable in notebook HTML giving link to `self.file`.
+        href usable in notebook HTML giving link to ``self.file``.
 
-        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
+        Assumes that ``os.getcwd()`` reflects the directory of the currently opened ``.ipynb`` (usually true, unless you're
         changing working dir).
 
         Does do escaping on the HTML, but is maybe pointless!
@@ -326,23 +329,28 @@ class TierABC(ABC):
     @abstractmethod
     def exists(self) -> bool:
         """
-        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
+        returns True if this ``Tier`` object has already been setup (e.g. by ``self.setup_files``)
+
+        Note
+        ----
+        This currently only returns ``True`` if all parts of a Tier have been created, e.g. for a NotebookTier this means its folder,
+        Notebook and meta file.
         """
         pass
 
     def get_child(self, id: str) -> TierABC:
         """
-        Get a child according to the given `id`.
+        Get a child according to the given ``id``.
 
         Parameters
         ----------
         id : str
-            id to add `self.identifiers` to form new `Tier` object of tier below.
+            id to add ``self.identifiers`` to form new ``Tier`` object of tier below.
 
         Returns
         -------
         child : Type[TierBase]
-            child `Tier` object.
+            child ``Tier`` object.
         """
         assert self.child_cls
         return self.child_cls(*self._identifiers, id, project=self.project)
@@ -358,8 +366,8 @@ class TierABC(ABC):
 
     def __iter__(self) -> Iterator[Any]:
         """
-        Iterates over all children (in no particular order). Children are found by looking through the child meta
-        folder.
+        Iterates over all children (in no particular order). Children are found by using the
+        ``child_cls.iter_siblings()`` method.
 
         Empty iterator if no children.
         """
@@ -381,7 +389,7 @@ class TierABC(ABC):
     @abstractmethod
     def remove_files(self) -> None:
         """
-        Deletes files associated with a `Tier`
+        Deletes files associated with a ``Tier``
         """
         pass
 
@@ -407,7 +415,7 @@ class FolderTierBase(TierABC):
     @cached_prop
     def folder(self) -> Path:
         """
-        Path to folder where the contents of this `Tier` lives.
+        Path to folder where the contents of this ``Tier`` lives.
 
         Defaults to `self.parent.folder / self.name`.
         """
@@ -430,31 +438,27 @@ class FolderTierBase(TierABC):
 
     def exists(self) -> bool:
         """
-        returns True if this `Tier` object has already been setup (e.g. by `self.setup_files`)
+        returns True if ``self.folder`` exists.
         """
         return self.folder.exists()
 
     @cached_prop
     def href(self) -> Union[str, None]:
-        """
-        href usable in notebook HTML giving link to `self.file`.
-
-        Assumes that `os.getcwd()` reflects the directory of the currently opened `.ipynb` (usually true, unless you're
-        changing working dir).
-
-        Does do escaping on the HTML, but is maybe pointless!
-
-        Returns
-        -------
-        href : str
-            href usable in notebook HTML.
-        """
         return html.escape(Path(os.path.relpath(self.folder, os.getcwd())).as_posix())
 
 
 class NotebookTierBase(FolderTierBase):
     """
     Base class for tiers which have a notebook and meta associated with them.
+
+    Attributes
+    ----------
+    meta : :py:class:`..meta.Meta`
+        Object for storing meta data for this tier.
+    meta_model : :py:class:`..meta.MetaCache`
+        pydantic Model for this ``Tier``'s meta. This is generated once and then cached. This is done by looking
+        for :py:class:`..meta.MetaAttr` attributes in the class.
+
     """
 
     meta: Meta
@@ -825,7 +829,7 @@ class Project:
 
     def __init__(
         self, hierarchy: Sequence[Type[TierABC]], project_folder: Union[str, Path]
-    ):
+    ) -> None:
         self._rank_map: Dict[Type[TierABC], int] = {}
         self._hierarchy: Sequence[Type[TierABC]] = []
 
