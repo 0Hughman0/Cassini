@@ -44,7 +44,6 @@ jobs:
           clean: false
       - name: Build Main Docs
         run: |
-          rm poetry.lock
           poetry install --with docs --i
           poetry run sphinx-build doc_src docs/latest -D version=latest
       - name: Checkout 0.1.x
