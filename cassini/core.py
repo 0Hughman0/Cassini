@@ -828,7 +828,7 @@ class Project:
 
     def __init__(
         self, hierarchy: Sequence[Type[TierABC]], project_folder: Union[str, Path]
-    ):
+    ) -> None:
         self._rank_map: Dict[Type[TierABC], int] = {}
         self._hierarchy: Sequence[Type[TierABC]] = []
 
