@@ -44,7 +44,8 @@ jobs:
           clean: false
       - name: Build Main Docs
         run: |
-          poetry install --with docs
+          rm poetry.lock
+          poetry install --with docs --i
           poetry run sphinx-build doc_src docs/latest -D version=latest
       - name: Checkout 0.1.x
         uses: actions/checkout@v3
@@ -53,6 +54,7 @@ jobs:
           clean: false
       - name: Build Docs
         run: |
+          rm poetry.lock
           poetry install --with docs
           poetry run sphinx-build doc_src docs/0.1.x
       - name: Checkout 0.2.x
@@ -62,6 +64,7 @@ jobs:
           clean: false
       - name: Build 0.2.x Docs
         run: |
+          rm poetry.lock
           poetry install --with docs
           poetry run sphinx-build doc_src docs/0.2.x
       - name: Checkout 0.3.x
@@ -71,6 +74,7 @@ jobs:
           clean: false
       - name: Build Docs 0.3.x
         run: |
+          rm poetry.lock
           poetry install --with docs
           poetry run mkdocs build -f=doc_src/mkdocs.yml -d=docs/0.3.x
       - name: Setup Pages
