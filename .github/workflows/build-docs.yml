@@ -44,7 +44,7 @@ jobs:
           clean: false
       - name: Build Main Docs
         run: |
-          poetry install --with docs --i
+          poetry install --with docs
           poetry run sphinx-build doc_src docs/latest -D version=latest
       - name: Checkout 0.1.x
         uses: actions/checkout@v3
