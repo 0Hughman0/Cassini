@@ -82,7 +82,7 @@ class TierABC(ABC):
     Attributes
     ----------
     id_regex : str
-        (class attribute) regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id. 
+        (class attribute) regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id.
         See :py:meth:`Project.parse_name` for more details.
     gui_cls : TierGuiProtocol
         (class attribute) The class called upon initialisation to use as gui for this object. Constructor should take ``self``
@@ -96,7 +96,7 @@ class TierABC(ABC):
     name_part_regex : str
         Regex where first group matches ``id`` part of string. Default is fill in ``cls.name_part_template`` with
         ``cls.id_regex``.
-    
+
     """
 
     _cache: ClassVar[Dict[Tuple[str, ...], TierABC]] = env.create_cache()
@@ -333,7 +333,7 @@ class TierABC(ABC):
 
         Note
         ----
-        This currently only returns ``True`` if all parts of a Tier have been created, e.g. for a NotebookTier this means its folder, 
+        This currently only returns ``True`` if all parts of a Tier have been created, e.g. for a NotebookTier this means its folder,
         Notebook and meta file.
         """
         pass
@@ -366,7 +366,7 @@ class TierABC(ABC):
 
     def __iter__(self) -> Iterator[Any]:
         """
-        Iterates over all children (in no particular order). Children are found by using the 
+        Iterates over all children (in no particular order). Children are found by using the
         ``child_cls.iter_siblings()`` method.
 
         Empty iterator if no children.
@@ -458,8 +458,9 @@ class NotebookTierBase(FolderTierBase):
     meta_model : :py:class:`..meta.MetaCache`
         pydantic Model for this ``Tier``'s meta. This is generated once and then cached. This is done by looking
         for :py:class:`..meta.MetaAttr` attributes in the class.
-    
+
     """
+
     meta: Meta
 
     @cached_class_prop
