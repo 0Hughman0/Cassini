@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cassini"
-version = "0.2.2"
+version = "0.3.0a13"
 description = "A tool to structure experimental work, data and analysis using Jupyter Lab."
 authors = ["0Hughman0 <rammers2@hotmail.co.uk>"]
 license = "GPL-3.0-only"
@@ -8,14 +8,20 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
-pandas = "^1.0"
 ipywidgets = "^8.0"
 jupyterlab = "^4.0.0"
 typing-extensions = "^4.7.1"
-jupyter_cassini_server = "^0.2.0"
+jupyter_cassini_server = "~0.3.0a0"
+pydantic = "^2.8.2"
+pandas = { version="^1.0", optional=true }
+semantic-version = { version="^2.10.0", optional=true }
+
+[tool.poetry.extras]
+ipygui = ["pandas"]
+cassini_lib = ["semantic-version"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^5.4"
+pytest = "^8.0"
 pytest-cov = "^4.1.0"
 flake8 = "^6.1.0"
 black = "^23.7.0"
@@ -26,9 +32,12 @@ pandas-stubs = "^2.0.2.230605"
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-sphinx = "^7.0"
 tomli = "^2.0.1"
-sphinx-rtd-theme = "^1.2.2"
+mkdocs = "^1.6.1"
+mkdocs-material = "^9.5.42"
+
+[tool.mypy]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry>=0.12"]

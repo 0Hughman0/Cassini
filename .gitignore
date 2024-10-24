@@ -77,4 +77,4 @@ poetry.lock
 .vscode/
 
 # docs
-docs/
+/docs/
