@@ -12,13 +12,13 @@ Within the preview panel, you have the following sections...
 
 ### Description
 
-<img alt="Description Box" src="../static/description-editor.png" width="400px"/>
+![Description Box](../static/description-editor.png){ width="400px" }
 
 A box where you can view and edit the description. Remember, the first line of your description is used in the 'info' column of the browser table.
 
 ### Highlights
 
-<img src="../static/highlights-example.png" alt="Highlights" width="400px"></img>
+![Highlights](../static/highlights-example.png){ width="400px" }
 
 [Remember these?](within-the-notebook.md#creating-highlights) - here you can see any highlight outputs from tier notebook.
 
@@ -28,7 +28,7 @@ The conclusion of this tier, works the same as the description. In this case, th
 
 ### Meta
 
-<img alt="Meta Editor" src="../static/meta-section.png" width="400px"/>
+![Meta Editor](../static/meta-section.png){ width="400px" }
 
 In this section you can attach meta-data to your tier. These can be experimental parameters, summary statistics from your analysis, you name it.
 

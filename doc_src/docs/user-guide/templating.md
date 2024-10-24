@@ -46,7 +46,7 @@ Meta value = "{{ tier.meta['key'] }}"
 
 Then in the New Child Dialogue
 
-<img alt="New Child Custom Template" src="../static/new-child-custom-template.png" width="400px"/>
+![New Child Custom Template](../static/new-child-custom-template.png){ width="400px" }
 
 This will then render as:
 
