@@ -4,7 +4,7 @@
 
 Once JupyterLab has opened, open the launcher and scroll down to the Cassini section and click the Cassini Browser button:
 
-<img src="/static/cassini-launcher.png" width="100px"/>
+<img src="../static/cassini-launcher.png" width="100px"/>
 
 This will open the Cassini Browser, which is used to navigate around your project.
 
@@ -24,7 +24,7 @@ To add a new `WorkPackage` to `Home`, click the plus button in the Tier Table:
 
 This will open the New Child Dialogue:
 
-<img src="/static/new-child-dialogue.png" width="300px"/>
+<img src="../static/new-child-dialogue.png" width="300px"/>
 
 ### New Child Dialogue Fields
 
