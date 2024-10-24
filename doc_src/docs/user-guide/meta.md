@@ -29,7 +29,7 @@ You can do this from the [preview panel](./preview-panel.md) in the tier browser
 smpl.gui.meta_editor(name=['key'])
 ```
 
-<img alt="meta editor" src="../static/inline-meta-editor.png" width="400px"/>
+![meta editor](../static/inline-meta-editor.png){ width="400px" }
 
 Once you've entered a value, and applied the change, click the save button at the top of the notebook to apply it.
 

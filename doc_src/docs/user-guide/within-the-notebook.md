@@ -95,7 +95,7 @@ This curve reminds me of U.
 
 Cassini will then capture the output of this cell and will allow it to be viewed in the Cassini Browser Preview panel _without_ having to run or open the notebook.
 
-<img src="../static/highlights-example.png" alt="Highlights" width="400px"></img>
+![Highlights](../static/highlights-example.png){ width="400px" }
 
 !!!Note
     Behind the scenes, the `%%hlt` magic only knows which tier to associate the highlight with, because you called `project.env` at the top of your notebook.
