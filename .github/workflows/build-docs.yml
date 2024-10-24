@@ -75,7 +75,7 @@ jobs:
         run: |
           rm -f poetry.lock
           poetry install --with docs
-          poetry run mkdocs build -f=doc_src/mkdocs.yml -d=docs/0.3.x
+          poetry run mkdocs build -f doc_src/mkdocs.yml -d ../docs/0.3.x
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
