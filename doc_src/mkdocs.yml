@@ -36,6 +36,7 @@ plugins:
 
 theme:
   name: material
+  logo: static/logo.svg
   features:
    - navigation.tabs
    - navigation.path
