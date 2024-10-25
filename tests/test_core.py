@@ -43,7 +43,7 @@ def test_home_attr(patch_project):
     assert home.pretty_type == 'Home'
     assert home.short_type == 'hm'
 
-    assert home.file == project.project_folder / 'Home.ipynb'
+    assert home.folder == project.project_folder / 'Tiers'
 
 
 def test_construct(patch_project):
@@ -109,8 +109,6 @@ def test_notebook_base_requires_pretty_name():
     with pytest.raises(AttributeError):
         MyNotebookTier.pretty_type
     
-
-
 
 def test_tier_accessors(patch_project):
     Tier, project = patch_project

@@ -31,7 +31,6 @@ def test_project_setup(mk_project):
     home = project['MyHome']
 
     assert home.exists()
-    assert home.file.exists()
     assert home.folder.exists()
 
 
