@@ -94,6 +94,24 @@ def test_tier_attrs(patch_project):
     assert str(tier) == '<Tier "Tier1">'
 
 
+def test_folder_base_requires_pretty_name():
+    class MyFolderTier(FolderTierBase):
+        pass
+
+    with pytest.raises(AttributeError):
+        MyFolderTier.pretty_type
+    
+
+def test_notebook_base_requires_pretty_name():
+    class MyNotebookTier(NotebookTierBase):
+        pass
+
+    with pytest.raises(AttributeError):
+        MyNotebookTier.pretty_type
+    
+
+
+
 def test_tier_accessors(patch_project):
     Tier, project = patch_project
 

@@ -113,9 +113,8 @@ class TierABC(ABC):
     @abstractmethod
     def _pretty_type(cls) -> str:
         """
-        Name used to display this Tier. Defaults to `cls.__name__`.
+        Name used to display this Tier. Must be explicity set.
         """
-        # return cls.__name__  # type: ignore[attr-defined]
         raise AttributeError("This class attribute should be explicity set")
 
     pretty_type: str = _pretty_type  # to please type checker.

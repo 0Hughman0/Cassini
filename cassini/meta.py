@@ -201,6 +201,7 @@ class Meta:
                     continue
 
                 # attr = getattr(cls, name)
+                # Avoid invoking accessors, which is not needed to find MetaAttr
                 attr = cls.__dict__[name]
 
                 if isinstance(attr, MetaAttr):
