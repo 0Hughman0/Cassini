@@ -200,7 +200,8 @@ class Meta:
                 if name == "meta_model":
                     continue
 
-                attr = getattr(cls, name)
+                # attr = getattr(cls, name)
+                attr = cls.__dict__[name]
 
                 if isinstance(attr, MetaAttr):
                     meta_attrs[name] = attr

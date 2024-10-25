@@ -11,13 +11,13 @@ def mk_project(get_Project, tmp_path):
     Project = get_Project
 
     class MyHome(Home):
-        pass
+        pretty_type = "MyHome"
 
     class Second(NotebookTierBase):
-        pass
+        pretty_type = "Second"
 
     class Third(NotebookTierBase):
-        pass
+        pretty_type = "Third"
 
     project = Project([MyHome, Second, Third], tmp_path)
     project.setup_files()

@@ -36,7 +36,7 @@ def patch_project(get_Project, tmp_path):
     Project = get_Project
 
     class Tier(NotebookTierBase):
-        pass
+        pretty_type = "Tier"
 
     project = Project([Home, Tier], tmp_path)
     return Tier, project

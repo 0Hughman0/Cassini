@@ -10,10 +10,10 @@ def test_project(get_Project, tmp_path):
     Project = get_Project
 
     class First(Home):
-        pass
+        pretty_type = "First"
 
     class Second(NotebookTierBase):
-        pass
+        pretty_type = "Second"
 
     project = Project([First, Second], tmp_path)
     with pytest.raises(RuntimeError):
@@ -107,9 +107,6 @@ def test_tier_accessors(patch_project):
 
     with pytest.raises(AttributeError):
         obj.name = 'new'
-
-    with pytest.raises(AttributeError):
-        obj.pretty_type = 'new'
 
     with pytest.raises(AttributeError):
         obj.doesnt_have
