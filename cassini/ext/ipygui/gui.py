@@ -1,4 +1,4 @@
-from typing import Dict, TYPE_CHECKING, Type
+from typing import Dict, TYPE_CHECKING, Type, Any
 
 from IPython.display import display
 from ipywidgets import Button, DOMWidget, HBox, SelectMultiple, Text
@@ -74,7 +74,7 @@ class SampleGui(BaseTierGui[Sample]):
         return components
 
 
-GUIS: Dict[Type[TierABC], Type[TierGuiProtocol]] = {
+GUIS: Dict[Any, Type[TierGuiProtocol]] = {  # Ideally would be Type[TierABC]
     Home: HomeGui,
     WorkPackage: BaseTierGui[WorkPackage],
     Experiment: ExperimentGui,

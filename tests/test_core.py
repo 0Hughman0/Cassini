@@ -10,10 +10,10 @@ def test_project(get_Project, tmp_path):
     Project = get_Project
 
     class First(Home):
-        pass
+        pretty_type = "First"
 
     class Second(NotebookTierBase):
-        pass
+        pretty_type = "Second"
 
     project = Project([First, Second], tmp_path)
     with pytest.raises(RuntimeError):
@@ -94,6 +94,24 @@ def test_tier_attrs(patch_project):
     assert str(tier) == '<Tier "Tier1">'
 
 
+def test_folder_base_requires_pretty_name():
+    class MyFolderTier(FolderTierBase):
+        pass
+
+    with pytest.raises(AttributeError):
+        MyFolderTier.pretty_type
+    
+
+def test_notebook_base_requires_pretty_name():
+    class MyNotebookTier(NotebookTierBase):
+        pass
+
+    with pytest.raises(AttributeError):
+        MyNotebookTier.pretty_type
+    
+
+
+
 def test_tier_accessors(patch_project):
     Tier, project = patch_project
 
@@ -107,9 +125,6 @@ def test_tier_accessors(patch_project):
 
     with pytest.raises(AttributeError):
         obj.name = 'new'
-
-    with pytest.raises(AttributeError):
-        obj.pretty_type = 'new'
 
     with pytest.raises(AttributeError):
         obj.doesnt_have

@@ -192,10 +192,10 @@ def test_strict_attrs(tmp_path):
 def test_meta_creation(get_Project, tmp_path):
     Project = get_Project
     class First(HomeTierBase):
-        pass
+        pretty_type = "First"
 
     class Second(NotebookTierBase):
-        pass
+        pretty_type = "Second"
 
     project = Project([First, Second], tmp_path)
     project.setup_files()
@@ -250,15 +250,16 @@ def test_meta_attr_discovery(get_Project, tmp_path):
     Project = get_Project
 
     class First(HomeTierBase):
-        pass
+        pretty_type = "First"
 
     class Second(NotebookTierBase):
-        pass
+        pretty_type = "Second"
 
     class Third(NotebookTierBase):
-        pass
+        pretty_type = "Third"
 
     class Fourth(NotebookTierBase):
+        pretty_type = "Fourth"
         test_attr = MetaAttr(str, str)
 
     for cls in [Second, Third, Fourth]:

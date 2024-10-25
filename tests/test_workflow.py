@@ -2,7 +2,8 @@ import time
 import datetime
 import pytest # type: ignore[import]
 
-from cassini import FolderTierBase, NotebookTierBase, Home
+from cassini import FolderTierBase, NotebookTierBase, Home, WorkPackage, Experiment, Sample, DataSet
+from cassini.meta import MetaAttr
 from cassini.testing_utils import get_Project, patch_project
 
 
@@ -11,13 +12,13 @@ def mk_project(get_Project, tmp_path):
     Project = get_Project
 
     class MyHome(Home):
-        pass
+        pretty_type = "MyHome"
 
     class Second(NotebookTierBase):
-        pass
+        pretty_type = "Second"
 
     class Third(NotebookTierBase):
-        pass
+        pretty_type = "Third"
 
     project = Project([MyHome, Second, Third], tmp_path)
     project.setup_files()
@@ -32,6 +33,21 @@ def test_project_setup(mk_project):
     assert home.exists()
     assert home.file.exists()
     assert home.folder.exists()
+
+
+def test_extending_default_tier(get_Project, tmp_path):
+    Project = get_Project
+
+    class MyWorkPackage(WorkPackage):
+        my_attr = MetaAttr(str, str)
+    
+    project = Project([Home, MyWorkPackage, Experiment, Sample, DataSet], tmp_path)
+    
+    WP1 = project['WP1']
+    assert isinstance(WP1, MyWorkPackage)
+    assert WP1.pretty_type == 'WorkPackage'
+    assert not hasattr(WorkPackage, 'my_attr')
+    assert hasattr(WP1, 'my_attr')
 
 
 def test_make_child(mk_project):
