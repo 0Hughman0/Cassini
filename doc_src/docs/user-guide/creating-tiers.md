@@ -24,7 +24,7 @@ To add a new `WorkPackage` to `Home`, click the plus button in the Tier Table:
 
 This will open the New Child Dialogue:
 
-![]("../static/new-child-dialogue.png"){ width="300px" }
+![](../static/new-child-dialogue.png){ width="300px" }
 
 ### New Child Dialogue Fields
 
@@ -101,6 +101,6 @@ The navigator is there to help you look around your project, but the hard work o
 !!!Note
     `DataSets` don't have notebooks, they're just folders for you to put data in. Clicking open will open your file explorer at the `DataSet`'s directory - this is incredibly useful for pasting in data!
 
-Next learn how to use cassini within a notebook
+Next learn how to use cassini within a notebook.
 
 [Next](within-the-notebook.md){ .md-button align=right }
