@@ -33,6 +33,16 @@ plugins:
 - search
 - mkdocstrings:
     default_handler: python
+    handlers: 
+      python:
+        options:
+          docstring_style: numpy
+          separate_signature: true
+          members_order: source
+        rendering:
+          show_source: true
+    watch:
+      - ../cassini
 
 theme:
   name: material

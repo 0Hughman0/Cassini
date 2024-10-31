@@ -77,13 +77,15 @@ class TierABC(ABC):
     Parameters
     ----------
     *identifiers : str
-        sequence of strings that identify this tier. With the final identifier being unique.
+        Sequence of strings that identify this tier. With the final identifier being unique.
+    project : Project
+        The project this tier is associated with. This is implicily passed to `Tier`s if they are accessed via a `project` instance.
 
     Attributes
     ----------
     id_regex : str
         (class attribute) regex used to restrict form of `Tier` object ids. Should contain 1 group that captures the id.
-        See :py:meth:`Project.parse_name` for more details.
+        See [Project.parse_name][cassini.core.Project] for more details.
     gui_cls : TierGuiProtocol
         (class attribute) The class called upon initialisation to use as gui for this object. Constructor should take ``self``
         as first argument.
@@ -169,10 +171,10 @@ class TierABC(ABC):
     _identifiers: Tuple[str, ...]
     gui: TierGuiProtocol
 
-    def __init__(self: Self, *args: str, project: Project):
+    def __init__(self: Self, *identifiers: str, project: Project):
         self.project = project
 
-        self._identifiers = tuple(filter(None, args))
+        self._identifiers = tuple(filter(None, identifiers))
         self.gui = self.gui_cls(self)
 
         rank = self.project.rank_map[self.__class__]
@@ -626,7 +628,7 @@ class NotebookTierBase(FolderTierBase):
 
         Parameters
         ----------
-        template : Path
+        template_path : Path
             path to template file. Must be relative to `project.template_folder`
 
         Returns
