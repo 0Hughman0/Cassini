@@ -4,4 +4,4 @@ dependencies:
   - pip
   - matplotlib
   - pip:
-    - cassini~=0.3.0a13
+    - cassini~=0.3.0a15
