@@ -54,13 +54,10 @@ Create your first WorkPackage by clicking the little plus (<svg xmlns="http://ww
 A walkthrough of Cassini's features can be found here:
 
 <div>
-<a href="https://mybinder.org/v2/gh/0Hughman0/Cassini/HEAD?urlpath=lab/tree/Home.ipynb"><img src="https://mybinder.org/badge_logo.svg"/></a>
+<a href="https://mybinder.org/v2/gh/0Hughman0/Cassini/0.3.x?urlpath=lab/tree/Introduction.ipynb"><img src="https://mybinder.org/badge_logo.svg"/></a>
 <i> - Note these binder notebooks can take a while to launch, so maybe click then go grab a cup off tea/ coffee!</i>
 </div>
 
 Don't want to wait/ prefer reading? - head to the [Tutorial](./user-guide/installation-setup.md).
 
 [Next](./user-guide/installation-setup.md){ .md-button align=right }
-
-
-
