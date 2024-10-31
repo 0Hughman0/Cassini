@@ -1,3 +1,10 @@
+"""
+Attributes
+----------
+env : _Env
+    Global instance which stores the state of the cassini application. There should only be one instance of this object.
+"""
+
 from __future__ import annotations
 
 from typing import Union, TYPE_CHECKING, TypeVar, Any, List, Dict

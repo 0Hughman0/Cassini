@@ -24,6 +24,16 @@ nav:
     
   - API Reference:
     - Cassini: api/index.md
+    - Modules:
+        - core: api/core.md
+        - accessors: api/accessors.md
+        - environment: api/environment.md
+        - jlgui: api/jlgui.md
+        - magics: api/magics.md
+        - meta: api/meta.md
+        - sharing: api/sharing.md
+        - testing_utils: api/testing_utils.md
+        - utils: api/utils.md
   - Contributing: 
     - General Guidelines: contributing/index.md
     - The Cassini Python Package: contributing/cassini.md

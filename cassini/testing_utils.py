@@ -19,7 +19,7 @@ ALL_TIERS = [*DEFAULT_TIERS, TierABC, HomeTierBase, FolderTierBase, NotebookTier
 @pytest.fixture
 def get_Project():
     """
-    Get a clean version of the Project class, with caches and other class attributes appropriately reset.
+    A pytest fixture that gets a clean version of the Project class, with caches and other class attributes appropriately reset.
     """
     env._reset()
 
@@ -33,6 +33,9 @@ def get_Project():
 
 @pytest.fixture
 def patch_project(get_Project, tmp_path):
+    """
+    A pytest fixture that returns a simple preconfigured `project`.
+    """
     Project = get_Project
 
     class Tier(NotebookTierBase):
@@ -47,12 +50,23 @@ def patched_default_project(
     get_Project, tmp_path
 ) -> Tuple[Project, Callable[[Sequence[str]], Sequence[TierABC]]]:
     """
+    A pytest fixture that provides a factory for setting up a project with the default configuration.
+    
     Returns
     -------
     project: Project
-        The fresh
+        The fresh project instance.
     create_tiers: Callable[[Sequence[str]], Sequence[TierABC]]
         function for creating tiers by a list of names. Returns each pre-setup tier in order.
+
+    Example
+    -------
+    ```python
+
+    def test_something(patched_default_project):
+        project, make_tiers = patched_default_project
+        WP1, = make_tiers(['WP1'])
+    ```
     """
     Project = get_Project
 

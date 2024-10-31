@@ -1,1 +1,2 @@
-::: cassini.core
+::: cassini
+    summary: modules

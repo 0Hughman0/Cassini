@@ -76,7 +76,7 @@ class TierABC(ABC):
 
     Parameters
     ----------
-    *identifiers : str
+    *identifiers : Tuple[str]
         Sequence of strings that identify this tier. With the final identifier being unique.
     project : Project
         The project this tier is associated with. This is implicily passed to `Tier`s if they are accessed via a `project` instance.
@@ -278,8 +278,6 @@ class TierABC(ABC):
 
         Notes
         -----
-        Only works on Windows machines.
-
         Window is opened via the Jupyter server, not the browser, so if you are not accessing jupyter on localhost then
         the window won't open for you!
         """
@@ -363,14 +361,14 @@ class TierABC(ABC):
 
     def __getitem__(self, item: str) -> TierABC:
         """
-        Equivalent to `self.get_child(item)`.
+        Equivalent to [self.get_child(item)][cassini.core.TierABC.get_child].
         """
         return self.get_child(item)
 
     def __iter__(self) -> Iterator[Any]:
         """
         Iterates over all children (in no particular order). Children are found by using the
-        ``child_cls.iter_siblings()`` method.
+        [child_cls.iter_siblings()][cassini.core.TierABC.iter_siblings] method.
 
         Empty iterator if no children.
         """
@@ -456,11 +454,11 @@ class NotebookTierBase(FolderTierBase):
 
     Attributes
     ----------
-    meta : :py:class:`..meta.Meta`
+    meta : cassini.meta.Meta
         Object for storing meta data for this tier.
-    meta_model : :py:class:`..meta.MetaCache`
+    meta_model : cassini.meta.MetaCache
         pydantic Model for this ``Tier``'s meta. This is generated once and then cached. This is done by looking
-        for :py:class:`..meta.MetaAttr` attributes in the class.
+        for [MetaAttr][cassini.meta.MetaAttr] attributes in the class.
 
     """
 
@@ -641,17 +639,17 @@ class NotebookTierBase(FolderTierBase):
 
     def get_highlights(self) -> Union[HighlightsType, None]:
         """
-        Get dictionary of highlights for this `Tier` _instance.
+        Get dictionary of highlights for this `Tier` instance.
 
         This dictionary is in a form that can be rendered in the notebook using `IPython.display.publish_display_data`
         see Examples.
 
-        This is implemented for you with `self.display_highlights()`.
+        This is implemented for you with [self.display_highlights()][cassini.NotebookTierBase.display_highlights].
 
         Returns
         -------
         highlights : dict
-            Get dictionary of highlights for this `Tier` _instance. If the highlights file doesn't exist, just returns an
+            Get dictionary of highlights for this `Tier` instance. If the highlights file doesn't exist, just returns an
             empty dict.
 
         Examples
@@ -683,7 +681,7 @@ class NotebookTierBase(FolderTierBase):
         ----------
         name : str
             Name of highlight (also taken as the title).
-        data : list
+        data : HighlightType
             list of data and metadata that can be passed to `IPython.display.publish_display_data` to render.
         overwrite : bool
             If `False` will raise an exception if a highlight of the same `name` exists. Default is `True`
@@ -778,6 +776,9 @@ class Project:
     """
     Represents your project. Understands your naming convention, and your project hierarchy.
 
+    Some hooks are provided to customize setup and launching behaviour, see 
+    `__before_setup_files__`, `__after_setup_files__`, `__before_launch__` and `__after_launch__`.
+
     Parameters
     ----------
     hierarchy : Sequence[Type[BaseTier]]
@@ -787,20 +788,29 @@ class Project:
         path to home directory. Note this also accepts a path to a file, but will take `project_folder.parent` in that
         case. This enables `__file__` to be used if you want `project_folder` to be based in the same dir.
 
+    
+    Attributes
+    ----------
+    __before_setup_files__ : List[Callable[[Project], None]]
+        Sequence of callables that are called, in order, first thing when `project.setup_files()` is called. 
+        `Project` is the calling project instance.
+    __after_setup_files__ : List[Callable[[Project], None]]
+        Sequence of callables that are called, in order, last thing `project.setup_files()` is called.
 
+        Note
+        ----
+        `__after_setup_files__` are only called _if_ the project hasn't already been setup.
+    
+    __before_launch__ : List[Callable[[Project, Union[LabApp, None]], None]]
+        Sequence of callables that are called first thing when `project.launch()` is ran. 
+        `Project` is the current project and `LabApp` is the lab app being launched.
+    __after_launch__ : List[Callable[[Project, Union[LabApp, None]], None]]
+        Sequence of callables that are called last thing after `project.launch()` is ran. 
+        `Project` is the current project and `LabApp` is the lab app being launched.
+    
     Notes
     -----
     This class is a singleton i.e. only 1 instance per interpreter can be created.
-
-    Project provides the following hooks, to allow customization of setting up and launching projects. These are
-    lists of functions, which are called in order at the specified time:
-
-        `__before_setup_files__` and `__after_setup_files__` - These are called when `project.setup_files()` is
-        called. These can be used, for example, to create additional directories or files. These callables
-        should take the project instance as an argument.
-
-        `__before_launch__` and `__after_launch__` - These are called during and after `project.launch()` is
-        called. These take the project and LabApp instance as an argument.
     """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Project:
@@ -842,6 +852,10 @@ class Project:
 
     @property
     def hierarchy(self) -> Sequence[Type[TierABC]]:
+        """
+        Sequence of `TierBase` subclasses representing the hierarchy for this project. i.e. earlier entries are stored
+        in higher level directories.
+        """
         return self._hierarchy
 
     @hierarchy.setter
@@ -853,6 +867,9 @@ class Project:
 
     @property
     def rank_map(self):
+        """
+        Maps `Tier` types to their position in the hierarchy.
+        """
         return self._rank_map
 
     @property
@@ -951,6 +968,11 @@ class Project:
         Setup files needed for this project.
 
         Will put everything you need in `project_folder` to get going.
+
+        Note
+        ----
+        This does not call `__after_setup_files__` if the project already exists.
+
         """
         for func in self.__before_setup_files__:
             func(self)
