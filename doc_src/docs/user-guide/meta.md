@@ -45,7 +45,7 @@ When values have been set, you can access them python-side with:
 'value'
 ```
 
-Validation of meta-values is provided by Pydantic. More advanced serialisation and deserialisation can be achieved using `MetaAttr`.
+Validation of meta-values is provided by Pydantic. More advanced serialisation and deserialisation can be achieved using [`MetaAttr`](../customization.md#meta-attributes-metaattr).
 
 ## In the Cassini Browser
 

@@ -44,7 +44,10 @@ This will setup Cassini and launch Jupyter Lab, with your new project configured
 
 In Jupyter Lab, open the launcher, scroll to the Cassini section and open the browser.
 
-Create your first WorkPackage by clicking the little plus button in the empty table.
+![browser button](./static/cassini-launcher.png){ width="100px" }
+
+Create your first WorkPackage by clicking the little plus (<svg xmlns="http://www.w3.org/2000/svg" width="16" viewBox="0 0 24 24" data-icon="ui-components:add" class=""><g xmlns="http://www.w3.org/2000/svg" class="jp-icon3" fill="#616161"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></g></svg>
+) button in the empty table.
 
 ## What Next
 
@@ -55,7 +58,9 @@ A walkthrough of Cassini's features can be found here:
 <i> - Note these binder notebooks can take a while to launch, so maybe click then go grab a cup off tea/ coffee!</i>
 </div>
 
-Don't want to wait/ prefer reading? - head to the [User Guide](./user-guide/installation-setup.md).
+Don't want to wait/ prefer reading? - head to the [Tutorial](./user-guide/installation-setup.md).
+
+[Next](./user-guide/installation-setup.md){ .md-button align=right }
 
 
 
