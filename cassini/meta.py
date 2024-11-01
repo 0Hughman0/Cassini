@@ -390,7 +390,7 @@ class Meta:
         )
 
     @classmethod
-    def create_meta(cls, path: Path, owner: object):
+    def create_meta(cls, path: Union[str, Path], owner: object):
         """
         Create meta object, that stores its data at `path` which is owned by `owner`.
 
@@ -400,7 +400,7 @@ class Meta:
 
         Parameters
         ----------
-        path : Path
+        path : Union[str, Path]
             The path to store the created meta's data.
         owner : object
             The object this meta object will belong to. If the owner has `meta_model` attribute, this is passed to the `Meta`.
@@ -443,7 +443,7 @@ class MetaAttr(Generic[AttrType, JSONType]):
     >>>
     >>> class MyClass:
     ...     def __init__(self):
-    ...         self.meta = Meta.create_meta(path=Path('data.json'), owner=self)
+    ...         self.meta = Meta.create_meta(path='data.json', owner=self)
     ...
     ...     name = MetaAttr(str, str)
     ...
