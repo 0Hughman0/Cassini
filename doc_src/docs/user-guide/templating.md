@@ -60,3 +60,13 @@ Meta value = "value"
 ```
 
 You could, for example, create templates that include experimental proceedures, or common analysis scrips.
+
+This concludes the Tutorial. 
+
+You might want to check-out [more information on customizing Cassini](../customization.md), if you do a lot of coding as 
+part of your work, you might find the official [`cassini_lib` extension](../extensions/cassini-lib.md) useful. If you think you'll be sending lots of notebooks
+to colleagues and collaborators, you might find the beta [sharing features](../sharing.md) of interest.
+
+Next up is more info on customizing Cassini.
+
+[Next](../customization.md){ .md-button }
