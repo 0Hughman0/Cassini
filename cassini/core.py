@@ -644,8 +644,6 @@ class NotebookTierBase(FolderTierBase):
         This dictionary is in a form that can be rendered in the notebook using `IPython.display.publish_display_data`
         see Examples.
 
-        This is implemented for you with [self.display_highlights()][cassini.NotebookTierBase.display_highlights].
-
         Returns
         -------
         highlights : dict
