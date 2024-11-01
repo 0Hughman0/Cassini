@@ -23,36 +23,34 @@ nav:
       - 0.2.x to 0.3.x: "0.2.x to 0.3.x.md"
     
   - API Reference:
-    - Cassini: api/index.md
-    - Modules:
-        - core: api/core.md
-        - accessors: api/accessors.md
-        - environment: api/environment.md
-        - jlgui: api/jlgui.md
-        - magics: api/magics.md
-        - meta: api/meta.md
-        - sharing: api/sharing.md
-        - testing_utils: api/testing_utils.md
-        - utils: api/utils.md
+    - Modules: api/
+        
   - Contributing: 
     - General Guidelines: contributing/index.md
     - The Cassini Python Package: contributing/cassini.md
     - The Cassini Server/ JupyterLab Extension: contributing/jupyter_cassini.md
 
 plugins:
-- search
-- mkdocstrings:
-    default_handler: python
-    handlers: 
-      python:
-        options:
-          docstring_style: numpy
-          separate_signature: true
-          members_order: source
-        rendering:
-          show_source: true
-    watch:
-      - ../cassini
+  - search
+  - gen-files:
+      scripts:
+      - build_api_docs.py
+  - literate-nav:
+      nav_file: modules.md
+  - section-index
+  - mkdocstrings:
+      default_handler: python
+      handlers: 
+        python:
+          options:
+            docstring_style: numpy
+            separate_signature: true
+            members_order: source
+          rendering:
+            show_source: true
+
+watch:
+  - ../cassini
 
 theme:
   name: material
