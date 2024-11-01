@@ -116,3 +116,9 @@ React components can be used. Ideally these should be function components. React
 Generally React components should not take models as props.
 
 React components will need to be wrapped in Lumino ReactWidgets. These should act as a go-between for the model and the React Component. They should provide handlers that can update the model, and render() should provide the appropriate properties of the model to pass to the React Component as props.
+
+## Open API Spec
+
+To ensure the `jupyter_cassini_server` API is synchronised with the frontend, we use an [Open API specification](https://learn.openapis.org/introduction.html), found in `openapi.yaml`, to define the requests and responses the server uses. We then use [Data Model Code Generator](https://koxudaxi.github.io/datamodel-code-generator/) and [Open API Typescript](https://openapi-ts.dev/introduction) to automatically generate both pydantic models (server-side) and typescript types (browser-side) to strictly check the contents of requests and responses against this schema.
+
+When making changes to the API, make these first to the `openapi.yaml` file, then you can re-build the schema using `jlpm build-schema`.
