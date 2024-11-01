@@ -161,6 +161,7 @@ class MetaCache(BaseModel):
     """
     Base Model for Meta caches. Restricts fields to be json serialisable and performs validation on assignment.
     """
+
     __pydantic_extra__: Dict[str, JsonValue] = Field(init=False)
     model_config = ConfigDict(
         extra="allow",
@@ -216,7 +217,9 @@ class Meta:
     timeout: ClassVar[int] = 1
     my_attrs: ClassVar[List[str]] = ["model", "_cache", "_cache_born", "file"]
 
-    def __init__(self, file: Union[str, Path], model: Union[Type[MetaCache], None] = None):
+    def __init__(
+        self, file: Union[str, Path], model: Union[Type[MetaCache], None] = None
+    ):
         if isinstance(file, str):
             file = Path(file)
 
@@ -344,9 +347,9 @@ class Meta:
         """
         Utility for building a `MetaModel` for a class.
 
-        Takes a class and finds all `MetaAttr`, including those of parent classes. 
-        
-        It then converts these to fields via [MetaAttr.as_field()][cassini.meta.MetaAttr.as_field] and uses these fields to create 
+        Takes a class and finds all `MetaAttr`, including those of parent classes.
+
+        It then converts these to fields via [MetaAttr.as_field()][cassini.meta.MetaAttr.as_field] and uses these fields to create
         a model which bases [MetaCache][cassini.meta.MetaCache].
 
         This can then be passed to `Meta`'s model paramter.
@@ -433,17 +436,17 @@ class MetaAttr(Generic[AttrType, JSONType]):
 
     Example
     -------
-    
+
     ```pycon
     >>> from pathlib import Path
     >>> from cassini.meta import MetaAttr, Meta
-    >>>     
+    >>>
     >>> class MyClass:
     ...     def __init__(self):
     ...         self.meta = Meta.create_meta(path=Path('data.json'), owner=self)
-    ...     
+    ...
     ...     name = MetaAttr(str, str)
-    ... 
+    ...
     >>> obj = MyClass()
     >>> obj.name
     None
@@ -452,7 +455,7 @@ class MetaAttr(Generic[AttrType, JSONType]):
     'Jeoff'
     >>> # the above is shorthand for
     >>> obj.meta['name'])
-    >>> 
+    >>>
     >>> with open('data.json') as fs:
     ...     print(fs.read())
     {"name":"Jeoff"}
@@ -461,9 +464,9 @@ class MetaAttr(Generic[AttrType, JSONType]):
     Parameters
     ----------
     json_type : JSONType
-        These can just be simple native python types, such as `str` or `int`.  
+        These can just be simple native python types, such as `str` or `int`.
         Or a more complex [Pydantic compatible type](https://docs.pydantic.dev/latest/concepts/types/).
-        
+
         In any case, pydantic will try and coerce the what's stored in `instance.meta.file` into this type.
     attr_type : AttrType
         The type you expect this MetaAttr to have internally. Usually this is the same as `json_type`.
@@ -476,7 +479,7 @@ class MetaAttr(Generic[AttrType, JSONType]):
     default : AttrType
         value to return if key not found in meta.
     cas_field : Union[None, Literal["core"], Literal["private"]]
-        If provided, this field is included when this attribute is turned into a field for a `Meta.model`. If set to `'core'` 
+        If provided, this field is included when this attribute is turned into a field for a `Meta.model`. If set to `'core'`
         or `'private'`, this field tells the jupyter cassini frontend that this attibute should not be displayed to the user
         to edit.
 

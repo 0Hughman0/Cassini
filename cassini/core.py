@@ -776,7 +776,7 @@ class Project:
     """
     Represents your project. Understands your naming convention, and your project hierarchy.
 
-    Some hooks are provided to customize setup and launching behaviour, see 
+    Some hooks are provided to customize setup and launching behaviour, see
     `__before_setup_files__`, `__after_setup_files__`, `__before_launch__` and `__after_launch__`.
 
     Parameters
@@ -788,11 +788,11 @@ class Project:
         path to home directory. Note this also accepts a path to a file, but will take `project_folder.parent` in that
         case. This enables `__file__` to be used if you want `project_folder` to be based in the same dir.
 
-    
+
     Attributes
     ----------
     __before_setup_files__ : List[Callable[[Project], None]]
-        Sequence of callables that are called, in order, first thing when `project.setup_files()` is called. 
+        Sequence of callables that are called, in order, first thing when `project.setup_files()` is called.
         `Project` is the calling project instance.
     __after_setup_files__ : List[Callable[[Project], None]]
         Sequence of callables that are called, in order, last thing `project.setup_files()` is called.
@@ -800,14 +800,14 @@ class Project:
         Note
         ----
         `__after_setup_files__` are only called _if_ the project hasn't already been setup.
-    
+
     __before_launch__ : List[Callable[[Project, Union[LabApp, None]], None]]
-        Sequence of callables that are called first thing when `project.launch()` is ran. 
+        Sequence of callables that are called first thing when `project.launch()` is ran.
         `Project` is the current project and `LabApp` is the lab app being launched.
     __after_launch__ : List[Callable[[Project, Union[LabApp, None]], None]]
-        Sequence of callables that are called last thing after `project.launch()` is ran. 
+        Sequence of callables that are called last thing after `project.launch()` is ran.
         `Project` is the current project and `LabApp` is the lab app being launched.
-    
+
     Notes
     -----
     This class is a singleton i.e. only 1 instance per interpreter can be created.

@@ -69,7 +69,7 @@ class FileMaker:
     with FileMaker() as maker:
         maker.mkdir('mydir')
         raise Exception()
-    
+
     # prints:
     # Exception occured, rolling back
     # Removing mydir

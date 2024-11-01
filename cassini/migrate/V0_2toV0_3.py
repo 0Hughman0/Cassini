@@ -16,7 +16,7 @@ class V0_2toV0_3(BaseMigrator):
     project : Project
         The project to migrate.
     """
-    
+
     def __init__(self, project) -> None:
         self.project = project
         self.home = project.home
@@ -46,7 +46,7 @@ class V0_2toV0_3(BaseMigrator):
 
     def migrate_meta(self, tier):
         """
-        Upgrade the format of `started` meta value to Timezone aware ISO string. Uses system timezone.        
+        Upgrade the format of `started` meta value to Timezone aware ISO string. Uses system timezone.
         """
         with open(tier.meta_file, "r") as fs:
             meta = json.load(fs)

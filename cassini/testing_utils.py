@@ -51,7 +51,7 @@ def patched_default_project(
 ) -> Tuple[Project, Callable[[Sequence[str]], Sequence[TierABC]]]:
     """
     A pytest fixture that provides a factory for setting up a project with the default configuration.
-    
+
     Returns
     -------
     project: Project

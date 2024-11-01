@@ -63,7 +63,7 @@ def soft_prop(wraps: Callable[[Any], V]) -> V:
         @property
         def a_hard_prop(self):
             return 'red'
-    
+
     my_instance = MyClass()
     my_instance.a_hard_prop = 'blue'  # raises error
     print(my_instance.a_hard_prop)  # still prints red
@@ -124,10 +124,10 @@ def cached_prop(wrapped: Callable[[Any], V]) -> V:
 
     ```python
     class MyClass:
-    
+
         def __init__(self):
             self.count = 0
-    
+
         @cached_prop
         def count_once(self):
             self.count += 1
@@ -184,9 +184,9 @@ def cached_class_prop(wrapped: Callable[[Any], V]) -> V:
 
     ```python
     class MyClass:
-    
+
         count = 0
-    
+
         @cached_class_prop
         def count_once(cls):
             cls.count += 1

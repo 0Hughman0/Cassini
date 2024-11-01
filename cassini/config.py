@@ -23,6 +23,7 @@ class Config:
     BASE_TEMPLATE : Path
         Path to the basic template, which is used as the default.
     """
+
     SCIFY_DIR = SCIFY_DIR
     META_DIR_TEMPLATE = ".{}s"
 
