@@ -31,7 +31,7 @@ smpl.gui.header()
 
 When you re-run this cell, you should see nothing changes! What has happened behind the scences is Cassini has wrapped `smpl` with a `SharingTier`:
 
-```python
+```pycon
 >>> smpl
 <SharingTier>
 >>> smpl._tier
@@ -40,7 +40,7 @@ When you re-run this cell, you should see nothing changes! What has happened beh
 
 This object passes all calls back to the original wrapped `smpl` object, but it keeps track of them, as you go along.
 
-```python
+```pycon
 >>> smpl / 'a path.csv'
 <NoseyPath (...\WorkPackages\WP2\a path.csv)>
 >>> smpl._called['__truediv__']
@@ -52,7 +52,7 @@ So proceede to re-run every cell in your notebook.
 
 Once you've ran through your whole notebook, to get it ready for sharing, you need to run the line:
 
-```python
+```pycon
 >>> project.make_shared()
 Creating shared directory: Shared
 Success

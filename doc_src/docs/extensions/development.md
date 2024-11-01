@@ -5,6 +5,8 @@ Cassini would like to encourage the creation of new extensions to add functional
 !!!Note
     We are still working out how best to support extensions, so these things may change!
 
+You can find examples of official extensions in the [ext package][cassini.ext].
+
 ## Extending Projects
 
 To add features to user's projects, we recommend developers create a single callable named `extend_project`. This should take a cassini project as the first argument, and should modify a `project` instance to add new functionality. Users then simply have to make a small change to their `cas_project.py`. 

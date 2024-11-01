@@ -6,7 +6,7 @@
 
 These are just stored in a JSON file on disk:
 
-```python
+```pycon
 >>> smpl = project['WP2.1a']
 >>> smpl.meta_file
 Path('.../WorkPackages/WP2/WP2.1/.smpls/WP2.1a.json')
@@ -14,7 +14,7 @@ Path('.../WorkPackages/WP2/WP2.1/.smpls/WP2.1a.json')
 
 The contents of this file can be access through the `tier.meta` attribute:
 
-```python
+```pycon
 >>> smpl.meta
 <Meta conclusion='' started=datetime.datetime(2024, 10, 16, 16, 24, 52, 274990, tzinfo=TzInfo(UTC)) description='First Attempt\n\nMore details can be put after the first line. \n\nThis box is rendered as markdown, hence can contain $M\\alpha t \\hbar$.\n' "asd"=['One', 'Two', 'Three'] (6.3ms)>
 ```
@@ -40,7 +40,7 @@ Once you've entered a value, and applied the change, click the save button at th
 
 When values have been set, you can access them python-side with:
 
-```python
+```pycon
 >>> smpl.meta['key']
 'value'
 ```

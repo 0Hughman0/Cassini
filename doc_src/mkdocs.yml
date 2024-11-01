@@ -13,10 +13,12 @@ nav:
       - Meta-Data: user-guide/meta.md
       - Templates: user-guide/templating.md
     - Customization: customization.md
-    - Official Extensions: 
-        Cassini Lib (Per Notebook Dependencies): extensions/cassini-lib.md
-        IPython Gui (Legacy): extensions/ipygui.md
+    - Extensions: 
         Development: extensions/development.md
+        Official Extensions:
+          Cassini Lib (Per Notebook Dependencies): extensions/cassini-lib.md
+          IPython Gui (Legacy): extensions/ipygui.md
+        
     - Beta Features:
         Sharing Your Work: sharing.md 
     - Migration:
@@ -59,7 +61,6 @@ theme:
     - navigation.tabs
     - navigation.path
     - navigation.sections
-    - content.code.copy
 
 markdown_extensions:
   - admonition
