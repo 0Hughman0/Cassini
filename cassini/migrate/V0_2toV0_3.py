@@ -6,11 +6,25 @@ from .base import BaseMigrator
 
 
 class V0_2toV0_3(BaseMigrator):
+    """
+    Migrate from cassini version `0.2.x` to `0.3.x`.
+
+    This class should not be used directly, instead use the CLI app! `python -m cassini.migrate --help`.
+
+    Parameters
+    ----------
+    project : Project
+        The project to migrate.
+    """
+    
     def __init__(self, project) -> None:
         self.project = project
         self.home = project.home
 
     def migrate(self):
+        """
+        Perform the migration.
+        """
         from cassini import NotebookTierBase
 
         for tier in self.walk_tiers():
@@ -31,6 +45,9 @@ class V0_2toV0_3(BaseMigrator):
                     backup_path.unlink()
 
     def migrate_meta(self, tier):
+        """
+        Upgrade the format of `started` meta value to Timezone aware ISO string. Uses system timezone.        
+        """
         with open(tier.meta_file, "r") as fs:
             meta = json.load(fs)
 

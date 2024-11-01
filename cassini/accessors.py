@@ -148,23 +148,6 @@ class _CachedClassProp(Generic[T, V]):
     The class instance is passed to the wrapped method upon calling.
 
     Also performs same caching as `_CachedProp`.
-
-    Example
-    -------
-
-    ```python
-    class MyClass:
-    
-        count = 0
-    
-        @cached_class_prop
-        def count_once(cls):
-            cls.count += 1
-            return count
-
-    print(MyClass.count_once)  # prints 1
-    print(MyClass.count_once)  # ... still prints 1!
-    ```
     """
 
     def __init__(self, func: Callable[[Type[T]], V]):
@@ -195,5 +178,22 @@ def cached_class_prop(wrapped: Callable[[Any], V]) -> V:
     Decorator for turning functions/ methods into `_CachedClassProp`s.
 
     First argument of wrapped will be `self.__class__` rather than `self`.
+
+    Example
+    -------
+
+    ```python
+    class MyClass:
+    
+        count = 0
+    
+        @cached_class_prop
+        def count_once(cls):
+            cls.count += 1
+            return count
+
+    print(MyClass.count_once)  # prints 1
+    print(MyClass.count_once)  # ... still prints 1!
+    ```
     """
     return cast(V, functools.wraps(wrapped)(_CachedClassProp(wrapped)))  # type: ignore[arg-type]

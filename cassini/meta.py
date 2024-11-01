@@ -1,3 +1,130 @@
+"""
+Module for allowing storage of object attributes in a json file.
+
+Pydantic is used for validation during de/serialisation.
+
+Examples
+--------
+Basic usage. 
+
+A [Meta][cassini.meta.Meta] object is like a dictionary, except it's contents is stored in a file on disk:
+
+```pycon
+>>> from cassini.meta import Meta
+>>> 
+>>> meta = Meta('data.json')
+>>> meta['key'] = 'value'
+>>> meta['key']
+value
+>>> with open('data.json') as fs:
+...     print(fs.read())
+{"key":"value"}
+```
+
+Pydantic looks after validation
+
+```pycon
+>>> meta['invalid'] = object  # raises ValidationError because object cannot be stored in a json.
+1 validation error for MetaCache
+invalid
+  input was not a valid JSON value [type=invalid-json-value, input_value=<class 'object'>, input_type=type]
+```
+
+You can pass a custom Pydantic model to `Meta` to change the validation behaviour. Cassini provides a helpful baseclass for these [MetaCache][cassini.meta.MetaCache].
+
+```pycon
+>>> from cassini.meta import MetaCache
+>>> from typing import Optional
+>>> from pathlib import Path
+>>> 
+>>> class MyModel(MetaCache):
+...     a_path: Optional[Path] = None
+```
+
+!!!Important
+    Because meta are initially created empty, any fields in the model should provide a default. Usually it's best to use `Optional` and a default of `None`.
+
+Which you can then pass to `Meta`:
+
+```pycon
+>>> with_path = Meta('data-with-path.json', model=MyModel)
+>>> with_path['a_path'] = Path('a path')
+>>> with_path['a_path']
+Path('a path')
+>>> with_path['a_path'] = 1
+cassini.meta.MetaValidationError: Invalid data in file: data-with-path.json, due to the following validation error:
+
+1 validation error for MyModel
+a_path
+  Input should be an instance of Path [type=is_instance_of, input_value=1, input_type=int]
+```
+
+You may want to create a class, where certain attributes are stored in a `meta.json`. E.g. [NotebookTierBase][cassini.core.NotebookTierBase].
+
+Attributes you want to store in `meta` are defined using [MetaAttr][cassini.meta.MetaAttr]. When accessing `MetaAttr` on an object, lookups are redirected to
+that object's `meta` attribute.
+
+This is easier to under by example:
+
+```pycon
+>>> from cassini.meta import MetaAttr, Meta
+>>> 
+>>> class MyClass:
+... 
+...     from_json = MetaAttr(json_type=str, attr_type=str)  # note here we provide strict types for from_json
+... 
+...     def __init__(self):
+...         self.meta = Meta.create_meta('object-meta.json', owner=self)  # this does some magic, that we'll come back to.
+... 
+>>> my_instance = MyClass()
+>>> my_instance.from_json = 'value'
+>>> my_instance.from_json
+value
+>>> 
+>>> my_instance.meta['from_json']
+value # it's magically in the meta!
+>>> with open('object-meta.json') as fs:
+...     print(fs.read())
+... 
+{"from_json":"value"}
+```
+
+As you saw, we provided a strict `json_type` to `from_json` of `str`.
+
+This type is enforced by Pydantic:
+
+```pycon
+>>> my_instance.from_json = 5  # raises ValidationError
+1 validation error for MyClassMetaCache
+from_json
+  Input should be a valid string [type=string_type, input_value=5, input_type=int]
+    For further information visit https://errors.pydantic.dev/2.9/v/string_type
+```
+
+This is because, the magic line:
+
+```pycon 
+Meta.create_meta('object-meta.json', owner=self)
+```
+
+Automatically generated a pydantic model for `MyClass`'s meta:
+
+```pycon
+>>> my_instance.meta.model
+<class 'cassini.meta.MyClassMetaCache'>
+```
+
+Which includes a `from_json` field:
+
+```pycon
+>>> my_instance.meta.model.model_fields
+{'from_json': FieldInfo(annotation=str, required=False, default=None)}
+```
+
+This is done using the [Meta.build_meta_model][cassini.meta.Meta.build_meta_model] function, which looks through an objects attributes 
+(including those it inherited), finds all the `MetaAttr`, and then uses them to build fields of the model.
+"""
+
 import time
 from pathlib import Path
 from typing import (
@@ -73,7 +200,7 @@ class Meta:
 
     Parameters
     ---------
-    file : Path
+    file : str, Path
            File Meta object stores information about.
     model : MetaCache
         Pydantic model representation of this meta object. Used to perform validation, and serial/deserialisation.
@@ -89,7 +216,10 @@ class Meta:
     timeout: ClassVar[int] = 1
     my_attrs: ClassVar[List[str]] = ["model", "_cache", "_cache_born", "file"]
 
-    def __init__(self, file: Path, model: Union[Type[MetaCache], None] = None):
+    def __init__(self, file: Union[str, Path], model: Union[Type[MetaCache], None] = None):
+        if isinstance(file, str):
+            file = Path(file)
+
         if model is None:
             model = MetaCache
 
@@ -304,25 +434,28 @@ class MetaAttr(Generic[AttrType, JSONType]):
     Example
     -------
     
-    ```python
-    from pathlib import Path
-    from cassini.meta import MetaAttr, Meta
-    
-    class MyClass:
-        def __init__(self):
-            self.meta = Meta.create_meta(path=Path('data.json'), owner=self)
-        
-        name = MetaAttr(str, str)
-    
-    obj = MyClass()
-    print(obj.name)  # prints None
-    obj.name = 'Jeoff'
-    print(obj.name)  # prints Jeoff
-    # the above is shorthand for:
-    print(obj.meta['name'])
-
-    with open('data.json') as fs:
-        print(fs.read())  # prints {"name":"Jeoff"}
+    ```pycon
+    >>> from pathlib import Path
+    >>> from cassini.meta import MetaAttr, Meta
+    >>>     
+    >>> class MyClass:
+    ...     def __init__(self):
+    ...         self.meta = Meta.create_meta(path=Path('data.json'), owner=self)
+    ...     
+    ...     name = MetaAttr(str, str)
+    ... 
+    >>> obj = MyClass()
+    >>> obj.name
+    None
+    >>> obj.name = 'Jeoff'
+    >>> obj.name
+    'Jeoff'
+    >>> # the above is shorthand for
+    >>> obj.meta['name'])
+    >>> 
+    >>> with open('data.json') as fs:
+    ...     print(fs.read())
+    {"name":"Jeoff"}
     ```
 
     Parameters

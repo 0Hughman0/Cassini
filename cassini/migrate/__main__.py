@@ -23,7 +23,7 @@ def main(args: List[str]) -> BaseMigrator:
     parser.add_argument(
         "--cassini-project",
         default="project.py:project",
-        help="cassini project to migrate, see cassini.utils.find_project for possible forms",
+        help="cassini project to migrate, of the form path/to/module.py:project_obj, see cassini.utils.find_project for more details",
     )
 
     out = parser.parse_args(args)

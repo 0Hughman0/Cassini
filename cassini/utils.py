@@ -232,7 +232,7 @@ def find_project(import_string=None):
 
     This should be of the form:
 
-        path/to/module:project_obj
+        path/to/module.py:project_obj
 
     By default, `project_obj` is assumed to be called `project`. This will be imported from `module`, which by default is
     assumed to be `cas_project`.

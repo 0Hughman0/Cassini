@@ -23,6 +23,13 @@ def mk_meta(tmp_path):
     return Meta(temp_file)
 
 
+def test_str_file_init(tmp_path):
+    with_path = Meta(tmp_path)
+    with_str = Meta(tmp_path.as_posix())
+
+    assert with_path.file == with_str.file
+
+
 def test_access(mk_meta):
     meta = mk_meta
 

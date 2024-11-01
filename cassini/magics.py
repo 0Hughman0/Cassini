@@ -10,7 +10,7 @@ from .core import NotebookTierBase
 
 def hlt(line: str, cell: str):
     """
-    Hlt IPython cell magic. Captures the output of a cell and stores it in the [cassini.environment.env.o][cassini.environment._Env.o] highlights file.
+    Highlight IPython cell magic. Captures the output of a cell and stores it in the [cassini.environment.env.o][cassini.environment._Env.o] highlights file.
 
     If the cell returns a string, this is used as a caption for the output.
 
