@@ -150,7 +150,7 @@ class SharingTier:
     This class can then create a serialised version of `tier` using `SharedTierData`, which can
     allow a `SharedTier` object to be created that emulates this `SharingTier`.
 
-    This class should not be created directly. Instead, `SharedProject` objects should be used.
+    This class should not be created directly. Instead, `SharableProject` objects should be used.
 
     Parameters
     ----------
@@ -196,13 +196,6 @@ class SharingTier:
         self._tier = sharing_project.project[self.name]
 
         self.meta = getattr(self._tier, "meta", None)
-
-        """
-        if isinstance(self._tier, NotebookTierBase) and self.meta:
-            # Link this instance's meta attributes to _tier's meta object
-            meta_manager: MetaManager = self._tier.__meta_manager__  # type: ignore[attr-defined]
-            meta_manager.metas[self] = meta_manager.metas[self._tier]
-        """
 
     meta_model = NotebookTierBase.meta_model
 
@@ -368,7 +361,7 @@ class SharedTier:
 
     Notes
     -----
-    This class is not in a valid state until `SharingTier.load` has been called.
+    This class is not in a valid state until `SharedTier.load` has been called.
     """
 
     def __init__(self, name: str) -> None:

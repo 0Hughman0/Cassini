@@ -9,6 +9,13 @@ from .core import NotebookTierBase
 
 
 def hlt(line: str, cell: str):
+    """
+    Highlight IPython cell magic. Captures the output of a cell and stores it in the [cassini.environment.env.o][cassini.environment._Env.o] highlights file.
+
+    If the cell returns a string, this is used as a caption for the output.
+
+    A title argument must be provided.
+    """
     if env.is_shared(env):
         warn(
             "This notebook is in a shared context and therefore highlights magics won't work"
@@ -69,20 +76,5 @@ def hlt(line: str, cell: str):
     return None
 
 
-def conc(line, cell):
-    if not isinstance(env.o, NotebookTierBase):
-        raise ValueError(
-            "Highlights can only be added to tiers that subclass NotebookTierBase"
-        )
-
-    if env.o.conclusion and line != "force":
-        raise RuntimeError(
-            f"Conclusion for {env.o} already set, use %%conc force to force update"
-        )
-    env.o.conclusion = cell
-    return Markdown(cell)
-
-
 def register():
     register_cell_magic(hlt)
-    register_cell_magic(conc)

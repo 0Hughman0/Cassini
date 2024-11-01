@@ -48,6 +48,28 @@ class _SoftProp(Generic[T, V]):
 def soft_prop(wraps: Callable[[Any], V]) -> V:
     """
     Create an over-writable property
+
+    Example
+    -------
+
+    ```python
+
+    class MyClass
+
+        @soft_prop
+        def a_soft_prop(self):
+            return 'red'
+
+        @property
+        def a_hard_prop(self):
+            return 'red'
+
+    my_instance = MyClass()
+    my_instance.a_hard_prop = 'blue'  # raises error
+    print(my_instance.a_hard_prop)  # still prints red
+    my_instance.a_soft_prop = 'blue'  # allowed!
+    print(my_instance.softy)  # prints blue
+    ```
     """
     return cast(V, functools.wraps(wraps)(_SoftProp(wraps)))  # type: ignore[arg-type]
 
@@ -96,6 +118,25 @@ class _CachedProp(Generic[T, V]):
 def cached_prop(wrapped: Callable[[Any], V]) -> V:
     """
     Decorator for turning functions/ methods into `_CachedProp`s.
+
+    Example
+    -------
+
+    ```python
+    class MyClass:
+
+        def __init__(self):
+            self.count = 0
+
+        @cached_prop
+        def count_once(self):
+            self.count += 1
+            return count
+
+    my_instance = MyClass
+    print(my_instance.count_once)  # prints 1
+    print(my_instance.count_once)  # ... still prints 1!
+    ```
     """
     return cast(V, functools.wraps(wrapped)(_CachedProp(wrapped)))  # type: ignore[arg-type]
 
@@ -137,5 +178,22 @@ def cached_class_prop(wrapped: Callable[[Any], V]) -> V:
     Decorator for turning functions/ methods into `_CachedClassProp`s.
 
     First argument of wrapped will be `self.__class__` rather than `self`.
+
+    Example
+    -------
+
+    ```python
+    class MyClass:
+
+        count = 0
+
+        @cached_class_prop
+        def count_once(cls):
+            cls.count += 1
+            return count
+
+    print(MyClass.count_once)  # prints 1
+    print(MyClass.count_once)  # ... still prints 1!
+    ```
     """
     return cast(V, functools.wraps(wrapped)(_CachedClassProp(wrapped)))  # type: ignore[arg-type]

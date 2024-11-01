@@ -13,38 +13,61 @@ nav:
       - Meta-Data: user-guide/meta.md
       - Templates: user-guide/templating.md
     - Customization: customization.md
-    - Official Extensions: 
-        Cassini Lib (Per Notebook Dependencies): extensions/cassini-lib.md
-        IPython Gui (Legacy): extensions/ipygui.md
+    - Extensions: 
         Development: extensions/development.md
+        Official Extensions:
+          Cassini Lib (Per Notebook Dependencies): extensions/cassini-lib.md
+          IPython Gui (Legacy): extensions/ipygui.md
+        
     - Beta Features:
         Sharing Your Work: sharing.md 
     - Migration:
       - 0.2.x to 0.3.x: "0.2.x to 0.3.x.md"
     
   - API Reference:
-    - Cassini: api/index.md
+    - Modules: api/
+        
   - Contributing: 
     - General Guidelines: contributing/index.md
     - The Cassini Python Package: contributing/cassini.md
     - The Cassini Server/ JupyterLab Extension: contributing/jupyter_cassini.md
 
 plugins:
-- search
-- mkdocstrings:
-    default_handler: python
+  - search
+  - gen-files:
+      scripts:
+      - build_api_docs.py
+  - literate-nav:
+      nav_file: modules.md
+  - section-index
+  - mkdocstrings:
+      default_handler: python
+      handlers: 
+        python:
+          options:
+            docstring_style: numpy
+            separate_signature: true
+            members_order: source
+          rendering:
+            show_source: true
+
+watch:
+  - ../cassini
 
 theme:
   name: material
   logo: static/logo.svg
   features:
-   - navigation.tabs
-   - navigation.path
-   - navigation.sections
+    - navigation.tabs
+    - navigation.path
+    - navigation.sections
 
 markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
   - attr_list
+
+extra_css:
+  - css/code_select.css
 

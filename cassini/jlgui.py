@@ -55,6 +55,16 @@ def extend_project(project: "Project"):
     -------
     project: Project
         The extended project.
+
+    Example
+    -------
+    ```python
+    ...
+    from cassini import jlgui
+
+    project = Project(...)
+    jlgui.extend_project(project)
+    ```
     """
     for tier_class in project.hierarchy:
         tier_class.gui_cls = JLGui

@@ -25,21 +25,21 @@ The final line creates a nice UI that you can use to edit the description/ concl
 
 All tier's have a folder associated with them:
 
-```python
+```pycon
 >>> smpl.folder
 Path('.../WorkPackages/WP1/WP1.1')
 ```
 
 And they can act like ``pathlib.Path`` to get relative paths:
 
-```python
->>> smpl.folder / 'diagram.png'
+```pycon
+>>> smpl / 'diagram.png'
 Path('.../WorkPackages/WP1/WP1.1/diagram.png')
 ```
 
 We can use the `__getitem__` (`tier[id]`) syntax to get children of a tier by it's identifier:
 
-```python
+```pycon
 >>> smpl
 <Sample "WP1.1a">
 >>> smpl['XRD']
@@ -48,14 +48,14 @@ We can use the `__getitem__` (`tier[id]`) syntax to get children of a tier by it
 
 This is particularly useful for loading data:
 
-```python
+```pycon
 >>> import pandas as pd
 >>> df = pd.read_csv(smpl['Raman'] / 'raw_data.csv')
 ```
 
 Anywhere we can import `project` we can access any `tier` by using the `__getitem__` (`project[name]`) syntax:
 
-```python
+```pycon
 >>> from cas_project import project
 >>> other_data = project['WP2.1c-Raman'] / 'more_raman_data.csv'
 ```
@@ -65,7 +65,7 @@ This becomes incredibly useful when trying to consolidate work, as you can load 
 !!!Tip
     For convenience, iterating over a ``DataSets`` is equivalent to using ``os.scandir``:
 
-    ```python
+    ```pycon
     >>> raman_dataset = smpl['Raman']
     >>> for entry in raman_dataset:
     ...     print(data)
@@ -84,7 +84,7 @@ You can use the `%%hlt` cell magic to mark the output of a cell as a highlight.
 
 You should provide a title for the highlight, and you can also finish the cell with a string that will be used as a caption. e.g.
 
-```python
+```pycon
 %%hlt U Gotta See This
 x = np.linspace(-5, 5)
 plt.plot(x, x * x)

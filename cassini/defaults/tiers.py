@@ -22,8 +22,6 @@ class Home(HomeTierBase):
 
     This, or a subclass of this should generally be the first entry in your hierarchy, essentially represents the top
     level folder in your hierarchy.
-
-    Creates the `Home.ipynb` notebook that allows easy navigation of your project.
     """
 
     pretty_type = "Home"

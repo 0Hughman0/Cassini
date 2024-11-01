@@ -42,21 +42,18 @@ the base class ``TierBase``:
 ```python
 from cassini import Project, Home, NotebookTierBase
 
+class Part(NotebookTierBase):
+    pretty_type = 'Part'
+    name_part_template = 'Part: {}'
 
-class MyHome(Home):
-    ...
 
-
-class TopTier(NotebookTierBase):
-    ...
-
-project = Project([MyHome, TopTier], __file__)
+project = Project([Home, Part], __file__)
 
 if __name__ == '__main__':
     project.launch()
 ```
 
-Check out the API??? for information on all the different attributes you can overwrite to customise Cassini's behaviour.
+Check out the [FolderTierBase][cassini.core.FolderTierBase] and [NotebookTierBase][cassini.core.NotebookTierBase] for information on all the different attributes you can overwrite to customise Cassini's behaviour. You can also look at the implementations of [the defaults][cassini.defaults.tiers] to see how this can be done.
 
 ## Naming Conventions
 
@@ -66,7 +63,7 @@ The name of a tier is created by taking its `tier.id`, and inserting that into t
 
 For example:
 
-```python
+```pycon
 >>> dset = project['WP5.2c-ABC']
 >>> dset.id
 'ABC'
@@ -78,7 +75,7 @@ For example:
 
 `dset` is a `DataSet` instance, which has `name_part_template="-{}"`, as `dset.id = 'ABC'`, this gets inserted into `-{}` resulting in `-ABC`.
 
-```python
+```pycon
 >>> smpl = dset.parent
 >>> smpl.name
 'WP5.2c'
@@ -88,7 +85,7 @@ For example:
 
 Giving just the `'c'` character
 
-```python
+```pycon
 >>> exp = smpl.parent
 >>> exp.name
 'WP5.2'
@@ -98,7 +95,7 @@ Giving just the `'c'` character
 
 Giving `'.2'`.
 
-```python
+```pycon
 >>> wp = wp.parent
 >>> wp.name
 'WP5'
@@ -131,30 +128,39 @@ Through setting `name_part_template` and `id_regex`, it is possible to create yo
 To make changes to the gui, you can create you own gui class and then simply set the ``gui_cls`` attribute of your ``Tier``:
 
 ```python
+from cassini import Home, WorkPackage, Experiment, Sample, DataSet
 from cassini.core import TierGuiProtocol
 
+
 class MyGui(TierGuiProtocol):
+    
     def __init__(self, tier):
         self.tier = tier
 
-Home.gui_cls = MyGui
+    def header(self):
+        print(self.tier.name)
+
+WorkPackage.gui_cls = MyGui
+
+project = Project([Home, WorkPackage, Experiment, Sample, DataSet], __file__)
 
 # or
 
-class MyTier(BaseTier):
+class MyWorkPackage(WorkPackage):
     gui_cls = MyGui
+
+project = Project([Home, MyWorkPackage, Experiment, Sample, DataSet], __file__)
 ```
 
 Each ``Tier`` creates its own ``gui_cls`` instance upon ``__init__``, passing itself as the first argument.
 
-```python
->>> mytier = project['MyTier1']
->>> mytier.gui
-<MyGui ...>
->>> mytier.gui.tier
-<MyTier 'MyTier1'>
+```pycon
+>>> WP1 = project['WP1']
+>>> WP1.gui
+<MyGui instance>
+>>> mytier.gui.header()
+WP1
 ```
-
 
 ## Meta Attributes (`MetaAttr`)
 
@@ -219,6 +225,8 @@ Whilst Pydantic provides its own methods for customising serialisation and deser
 The final parameter `cas_field` is a custom parameter which tells Cassini who should see/ access this attribute. From above, you can see for 'core' meta values, such as description, these are set to `'core'`. If you don't want your MetaAttr to appear in the Cassini UI, you should set this to `'private'`. Otherwise `MetaAtt` will always be included in the Meta Editor, both in the New Child Dialogue and the Tier Viewer. The Cassini UI will enforce the same type constraints you set in `json_type` and will try and render the most appropriate widget for setting this value e.g. a calendar for a date.
 
 You will notice that all meta values are optional, this is a requirement of Cassini.
+
+You can find more information on [Meta][cassini.meta.Meta] and [MetaAttr][cassini.meta.MetaAttr] in the [meta api docs][cassini.meta].
 
 ## Extensions
 

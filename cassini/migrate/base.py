@@ -18,6 +18,9 @@ class BaseMigrator:
         return f
 
     def walk_tiers(self):
+        """
+        Generator for iterating through each tier in a project.
+        """
         yield self.home
 
         for wp in self.home:
