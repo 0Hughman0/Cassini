@@ -1,6 +1,6 @@
 # Welcome to Cassini's documentation!
 
-Cassini enhances Python and Jupyter Lab by providing the features to help you manage and explore your data in a research project.
+Cassini enhances Python and Jupyter Lab by providing tools to help you manage and explore your data in a research project.
 
 Features:
 

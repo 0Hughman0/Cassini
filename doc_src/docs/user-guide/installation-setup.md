@@ -2,9 +2,16 @@
 
 ## Installation
 
-Cassini is built into the Python and Jupyter Lab ecosystem. Python will need to be installed before you install Cassini. We recommend using the [`conda`](https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html) package management system to install Python and create an isolated environment for you to run it in. You can also install Python directly from [python.org](https://www.python.org/downloads/).
+Cassini is built into the Python and [JupyterLab](https://jupyterlab.readthedocs.io/) ecosystem. 
 
-Once you've installed Python (and maybe activated your environment), check it's set up properly by running:
+!!!Note
+    Cassini is currently only compatible with JupyterLab version `4.x.x`. 
+
+Python will need to be installed before you install Cassini. 
+
+We recommend using the [`conda`](https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html) package management system to install Python and create an isolated environment for you to run it in.
+
+Once you've installed Python (and maybe activated your `conda` environment), check it's set up properly by running:
 
 ```bash
 python --version
@@ -29,9 +36,6 @@ pip show cassini
 ```
 
 Which should produce a bunch of info about your installation, including its version number.
-
-
-Note that this project is still in active development, so you may encounter some bugs, so please [report them!](https://github.com/0Hughman0/Cassini/issues/new)
 
 ## A Cassini Project
 
@@ -78,6 +82,11 @@ WorkPackages/
         |
 ...
 ```
+
+1. Folder where WorkPackages are stored.
+2. Notebook file for `WP1`
+3. Folder where `WP1`'s children are stored.
+4. `WP1.1`'s Notebook.
 
 Within Python, Cassini defines objects that represent each branch on the tree.
 
@@ -135,9 +144,7 @@ So let's get a project set up...
 
 ### The `cas_project.py` file
 
-Now you have Cassini installed, and you know what a Cassini project _is_, it's time to make one.
-
-This is done in a `cas_project.py` file, which defines your `project` object. As you might expect, this contains all the information about your project.
+We define our `project` in a `cas_project.py` file. `project` is a python object that contains all the information about your project and its configuration.
 
 The simplest `cas_project.py` is:
 
@@ -145,38 +152,22 @@ The simplest `cas_project.py` is:
 # cas_project.py
 from cassini import Project, DEFAULT_TIERS
 
-project = Project(hierarchy=DEFAULT_TIERS, project_folder=__file__)
+project = Project(
+    hierarchy=DEFAULT_TIERS, # (1)!
+    project_folder=__file__ # (2)!
+) 
 
-if __name__ == '__main__':
-    project.launch()
+if __name__ == '__main__': # (3)!
+    project.launch() # (4)!
 
 ```
 
-In it we create a `project` object and launch it.
+1. This defines the `hierarchy` of your project. Cassini provides the `DEFAULT_TIERS` which are `[Home, WorkPackage, Experiment, Sample, DataSet]`.
+2. This tells Cassini this project lives in the same directory as this file.
+3. This allows us to to import `project` without launching it.
+4. If this file is ran as a script, this launches JupyterLab with this `project` configured.
 
-#### **`hierarchy=DEFAULT_TIERS`**
-
-The first parameter to `Project` defines the `hierarchy` of your project. Cassini provides the `DEFAULT_TIERS` for you to use as your hierarchy, which we recommend you use.
-
-These are:
-
-```python
-> from cassini import DEFAULT_TIERS
-> DEFAULT_TIERS
-[cassini.defaults.tiers.Home,
- cassini.defaults.tiers.WorkPackage,
- cassini.defaults.tiers.Experiment,
- cassini.defaults.tiers.Sample,
- cassini.defaults.tiers.DataSet]
-```
-
-#### **`project_folder=__file__`**
-
-The second parameter to `Project`, `project_folder`, simply tells Cassini this project lives in the same directory as this file.
-
-#### **`project.launch()`**
-
-Finally we add ``project.launch()``, this allows the project instance to launch itself...
+This configures a `project` object and launches it.
 
 ### Launching your project
 
@@ -186,9 +177,9 @@ Now you have defined your `cas_project.py`, you can then run:
 
 This will run `project.launch()`, which does a number of things:
 
-1. Launch Jupyter Lab.
+1. Launch JupyterLab.
 2. Add `project_folder` to the `%PYTHONPATH%`, allowing `cas_project.py` to be imported from anywhere.
-3. Tell the Cassini Jupyter Lab extension, this is where to find your project, so you can manage it from within JupyterLab.
+3. Tell the Cassini JupyterLab extension, this is where to find your project, so you can manage it from within JupyterLab.
 
 !!! Tip
     If for some reason, you cannot run `project.launch()`, for example you are using JupyterLab Desktop, you can explicitly add `project_folder` to the `%PYTHONPATH%`, and point the Cassini JupyterLab extension to your project by setting the environment variable `CASSINI_PROJECT=path/to/cas_project.py`.

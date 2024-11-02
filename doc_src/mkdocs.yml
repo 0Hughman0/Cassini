@@ -61,12 +61,15 @@ theme:
     - navigation.tabs
     - navigation.path
     - navigation.sections
+    - content.code.annotate
 
 markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
   - attr_list
+  - pymdownx.tabbed:
+      alternate_style: true
 
 extra_css:
   - css/code_select.css
