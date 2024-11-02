@@ -26,9 +26,11 @@ For example, the default template has the form:
 ```python
 from cas_project import project
 
-{{ tier.short_type }} = project.env('{{ tier.name }}')
+{{ tier.short_type }} = project.env('{{ tier.name }}')  # (1)!
 {{ tier.short_type }}.gui.header()
 ```
+
+1. `{{ tier.short_type }}` and `{{ tier.name }}` will be filled in when you create a new tier.
 
 When rendered for a `WorkPackage`, this replaced `tier.short_type` with `wp` and `tier.name` with the name of whatever tier you just created.
 

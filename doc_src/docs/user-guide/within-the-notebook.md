@@ -7,17 +7,15 @@ Now you've opened up a tier notebook by clicking the open icon:
 The default tier templates will have created a first cell that e.g. for `<Sample "WP1.1a">` will look something like:
 
 ```python
-from cas_project import project
+from cas_project import project # (1)!
 
-smpl = project.env('WP1.1a')
-smpl.gui.header()
+smpl = project.env('WP1.1a')  # (2)!
+smpl.gui.header()  # (3)!
 ```
 
-The first line simply imports the `project` object you defined in your `cas_project.py` file (remember `project.launch()` added it to your `PYTHONPATH` so it can be imported anywhere?).
-
-The second line tells the `project`, I want this notebook (and it's interpretter) to be associated with the `Sample` called `WP1.1a`. It can grab `WP1.1a` by name because it understands your project's naming convention - neat!
-
-The final line creates a nice UI that you can use to edit the description/ conclusion for this tier as well as a list of the tier's children:
+1. import the `project` object you defined in your `cas_project.py` file (remember `project.launch()` added it to your `PYTHONPATH` so it can be imported anywhere?).
+2. Tells the `project`, I want this notebook (and it's interpretter) to be associated with the `Sample` called `WP1.1a`. It can grab `WP1.1a` by name because it understands your project's naming convention - neat!
+3. Display a nice UI that you can use to edit the description/ conclusion for this tier as well as a list of the tier's children:
 
 ![Tier Header](../static/tier-nb-header.png)
 
@@ -58,6 +56,8 @@ Anywhere we can import `project` we can access any `tier` by using the `__getite
 ```pycon
 >>> from cas_project import project
 >>> other_data = project['WP2.1c-Raman'] / 'more_raman_data.csv'
+>>> other_data
+Path('.../WorkPackages/WP2/WP2.1/Raman/c/more_raman_data.csv')
 ```
 
 This becomes incredibly useful when trying to consolidate work, as you can load data without having to move it around.
@@ -84,14 +84,17 @@ You can use the `%%hlt` cell magic to mark the output of a cell as a highlight.
 
 You should provide a title for the highlight, and you can also finish the cell with a string that will be used as a caption. e.g.
 
-```pycon
-%%hlt U Gotta See This
+```python
+%%hlt U Gotta See This # (1)!
 x = np.linspace(-5, 5)
 plt.plot(x, x * x)
 """
 This curve reminds me of U.
-"""
+""" # (2)!
 ```
+
+1. The text after `%%hlt` forms the title of the highlight.
+2. A `str` at the bottom of the cell acts as a caption.
 
 Cassini will then capture the output of this cell and will allow it to be viewed in the Cassini Browser Preview panel _without_ having to run or open the notebook.
 
