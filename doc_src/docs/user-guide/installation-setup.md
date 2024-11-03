@@ -50,74 +50,47 @@ The default hierarchy comprises `WorkPackages`, `Experiments`, `Samples` and `Da
 
 On disk, such a project may look like:
 
-```
-WorkPackages/
-    +- WP1.ipynb (a WorkPackage)
-    +- WP1/
-    |    |
-    |    +- WP1.1.ipynb (an Experiment)
-    |    +- WP1.1/
-    |    |     |
-    |    |     +- WP1.1a.ipynb (a Sample)
-    |    |     +- WP1.1b.ipynb (a Sample)
-    |    |     +- A/
-    |    |        +- a/ (a Dataset)
-    |    |        |  +- WP1.1a-A-first.csv 
-    |    |        |  +- WP1.1a-A-second.csv
-    |    |        |
-    |    |        |- b/ (a Dataset)
-    |    |           +- WP1.1b-A-first.csv
-    |    |
-    |    +- WP1.2.ipynb (an Experiment)
-    |    +- WP1.2/
-    |           |
-    |           +- WP1.2a.ipynb (a Sample)
-    |           |
-    |           +- A/
-    |              +- a/ (a DataSet)
-    |                 +- WP1.2a-data.csv 
-    |
-    +- WP2.ipynb (a WorkPackage)
-    +- WP2/
-        |
-...
+```yaml
+WorkPackages/: # (1)!
+    - WP1.ipynb # (2)!
+    - WP1/: # (3)!
+        - WP1.1.ipynb # (4)!
+        - WP1.1/: # (5)!
+            - WP1.1a.ipynb # (6)!
+            - WP1.1b.ipynb
+            - A/: # (7)!
+                - a/: # (8)!
+                    - WP1.1a-A-first.csv 
+                    - WP1.1a-A-second.csv
+                - b/:
+                    - WP1.1b-A-first.csv
+        - WP1.2.ipynb # (9)!
+        - WP1.2/:
+            - WP1.2a.ipynb # (10)!
+            - A/:
+                - a/:
+                    - WP1.2a-data.csv 
+    - WP2.ipynb # (11)!
+    - WP2/: # (12)!
+        ... # (13)!
 ```
 
 1. Folder where WorkPackages are stored.
-2. Notebook file for `WP1`
-3. Folder where `WP1`'s children are stored.
-4. `WP1.1`'s Notebook.
+2. Jupyter Notebook file for WorkPackage, `WP1`
+3. Folder where WorkPackage `WP1`'s children are stored.
+4. Experiment, `WP1.1`'s Jupyter Notebook.
+5. Folder where Experiment `WP1.1`'s children are stored.
+6. Sample, `WP1.1a`'s Jupyter Notebook.
+7. Folder where DataSets of type `A` are stored.
+8. Folder where DataSet `WP1.1a-A` is stored.
+9. Experiment, `WP1.2`'s Jupyter Notebook.
+10. Sample, `WP1.2a`'s Jupyter Notebook.
+11. Jupyter Notebook file for WorkPackage, `WP2`
+12. Folder where WorkPackage `WP2`'s children are stored.
+13. Tree structure continues!
+
 
 Within Python, Cassini defines objects that represent each branch on the tree.
-
-Which it also stores in a tree-like structure:
-
-```
-<Home "Home">
-  |
-  +- <WorkPackage "WP1">
-  |      |
-  |      +- <Experiment "WP1.1">
-  |      |     |
-  |      |     +- <Sample "WP1.1a">
-  |      |     |   |
-  |      |     |   +- <DataSet "WP1.1a-A">
-  |      |     |   +- <DataSet "WP1.1a-B">
-  |      |     |   
-  |      |     +- <Sample "WP1.1b">
-  |      |         |
-  |      |         +- <DataSet "WP1.1b-A">
-  |      |        
-  |      +- <Experiment "WP1.2">
-  |            |
-  |            +- <Sample "WP1.2a">
-  |                |
-  |                +- <DataSet "WP1.2a-A">
-  |
-  +- <WorkPackage "WP2">
-  |      |
-...
-```
 
 Each branch on the tree has a unique name. Which follows a set naming convention:
 
@@ -130,13 +103,15 @@ Work Package id -+ ||  |
                     |  |
       Sample id ----+  |
                        |
-     Dataset id -------+
+     DataSet id -------+
 ```
 
 !!!Note
     Through [customization](../customization.md), all these things can be configured. However, it can be a little complicated, so we recommend sticking to the defaults if you can.
 
-Through understanding your project structure and naming convention, Cassini is able to create new children on your behalf, putting them in the right place. Because it knows where it put them, it can quickly navigate you to, or retrieve any part of your project tree.
+Cassini understands this project structure and naming convention. 
+
+Thus Cassini will help you build your project with this ordered structure, help you quickly navigate around it and retrieve any part of your project by name.
 
 So let's get a project set up...
 

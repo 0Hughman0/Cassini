@@ -1,6 +1,6 @@
 # Welcome to Cassini's documentation!
 
-Cassini enhances Python and Jupyter Lab by providing tools to help you manage and explore your data in a research project.
+Cassini enhances Python and JupyterLab by providing tools to help you manage and explore your data in a research project.
 
 Features:
 
@@ -12,13 +12,15 @@ Features:
 
 ## Quickstart
 
+If you have a bit more time, we recommend you check out the [Tutorial](./user-guide/installation-setup.md).
+
+Otherwise...
+
 ### Installation
 
 ```bash
 pip install cassini
 ```
-
-Note that this project is still in active development, so you may encounter some bugs, so please [report them!](https://github.com/0Hughman0/Cassini/issues/new)
 
 ### Setup
 
@@ -28,11 +30,15 @@ In the directory you want your project to live, create your `cas_project.py`:
 # cas_project.py
 from cassini import Project, DEFAULT_TIERS
 
-project = Project(hierarchy=DEFAULT_TIERS, project_folder=__file__)
+project = Project(hierarchy=DEFAULT_TIERS, project_folder=__file__)  # (1)!
 
-if __name__ == '__main__':
-    project.launch()
+if __name__ == '__main__': # (2)!
+    project.launch() # (3)!
 ```
+
+1. Define your Cassini `project` object with the default hierarchy of `WorkPackages`, `Experiments`, `Samples` and `DataSets`, which lives in this directory.
+2. Only run this block when this file is ran as a script by itself.
+3. Launch this project instance, which launches JupyterLab, with this `project` configured.
 
 Launch your new project from the command line:
 
