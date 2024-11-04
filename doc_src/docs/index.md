@@ -2,6 +2,10 @@
 
 Cassini enhances Python and JupyterLab by providing tools to help you manage and explore your data in a research project.
 
+<video controls>
+  <source src="https://github.com/user-attachments/assets/efd2359b-dd58-4cbc-991b-f308fe45e227" type="video/mp4">
+</video>
+
 Features:
 
 * **Structure your project** into a logical hierarchy _- no more lost data!_
