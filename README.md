@@ -4,7 +4,7 @@ An electronic laboratory notebook (ELN), built inside Jupyter Lab.
 
 Cassini's goal is to help you explore, analyse and organise your data in an environment that's familiar.
 
-![Screenshot](demo.gif)
+https://github.com/user-attachments/assets/efd2359b-dd58-4cbc-991b-f308fe45e227
 
 ## Features
 
