@@ -1,0 +1,76 @@
+site_name: Cassini Documentation
+site_url: https://mydomain.org/
+repo_url: https://github.com/0Hughman0/Cassini
+
+nav:
+  - User Guide:  
+    - Home/ Quickstart: index.md
+    - Tutorial:
+      - Installation and Setup: user-guide/installation-setup.md
+      - Tier Browser: user-guide/creating-tiers.md
+      - In the Notebook: user-guide/within-the-notebook.md
+      - Tier Preview Panel: user-guide/preview-panel.md
+      - Meta-Data: user-guide/meta.md
+      - Templates: user-guide/templating.md
+    - Customization: customization.md
+    - Extensions: 
+        Development: extensions/development.md
+        Official Extensions:
+          Cassini Lib (Per Notebook Dependencies): extensions/cassini-lib.md
+          IPython Gui (Legacy): extensions/ipygui.md
+        
+    - Beta Features:
+        Sharing Your Work: sharing.md 
+    - Migration:
+      - 0.2.x to 0.3.x: "0.2.x to 0.3.x.md"
+    
+  - API Reference:
+    - Modules: api/
+        
+  - Contributing: 
+    - General Guidelines: contributing/index.md
+    - The Cassini Python Package: contributing/cassini.md
+    - The Cassini Server/ JupyterLab Extension: contributing/jupyter_cassini.md
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+      - build_api_docs.py
+  - literate-nav:
+      nav_file: modules.md
+  - section-index
+  - mkdocstrings:
+      default_handler: python
+      handlers: 
+        python:
+          options:
+            docstring_style: numpy
+            separate_signature: true
+            members_order: source
+          rendering:
+            show_source: true
+
+watch:
+  - ../cassini
+
+theme:
+  name: material
+  logo: static/logo.svg
+  features:
+    - navigation.tabs
+    - navigation.path
+    - navigation.sections
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra_css:
+  - css/code_select.css
+

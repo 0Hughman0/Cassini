@@ -1,20 +1,24 @@
+import time
+import datetime
 import pytest # type: ignore[import]
 
-from cassini import TierBase, Home, Project
+from cassini import FolderTierBase, NotebookTierBase, Home, WorkPackage, Experiment, Sample, DataSet
+from cassini.meta import MetaAttr
+from cassini.testing_utils import get_Project, patch_project
 
 
 @pytest.fixture
-def mk_project(tmp_path):
-    Project._instance = None
+def mk_project(get_Project, tmp_path):
+    Project = get_Project
 
     class MyHome(Home):
-        pass
+        pretty_type = "MyHome"
 
-    class Second(TierBase):
-        pass
+    class Second(NotebookTierBase):
+        pretty_type = "Second"
 
-    class Third(TierBase):
-        pass
+    class Third(NotebookTierBase):
+        pretty_type = "Third"
 
     project = Project([MyHome, Second, Third], tmp_path)
     project.setup_files()
@@ -27,8 +31,22 @@ def test_project_setup(mk_project):
     home = project['MyHome']
 
     assert home.exists()
-    assert home.file.exists()
     assert home.folder.exists()
+
+
+def test_extending_default_tier(get_Project, tmp_path):
+    Project = get_Project
+
+    class MyWorkPackage(WorkPackage):
+        my_attr = MetaAttr(str, str)
+    
+    project = Project([Home, MyWorkPackage, Experiment, Sample, DataSet], tmp_path)
+    
+    WP1 = project['WP1']
+    assert isinstance(WP1, MyWorkPackage)
+    assert WP1.pretty_type == 'WorkPackage'
+    assert not hasattr(WorkPackage, 'my_attr')
+    assert hasattr(WP1, 'my_attr')
 
 
 def test_make_child(mk_project):
@@ -42,13 +60,31 @@ def test_make_child(mk_project):
     assert not second.exists()
     assert list(home) == []
 
+    before = datetime.datetime.now(datetime.timezone.utc)
     second.setup_files()
+    after = datetime.datetime.now(datetime.timezone.utc)
 
+    assert before <= second.started <= after
     assert second.exists()
     assert second in home
     assert f"scnd = project.env('{second.name}')" in second.file.read_text()
 
     assert list(home) == [second]
+
+
+def test_created_times_unique(mk_project):
+    project = mk_project
+
+    home = project['MyHome']
+
+    first = home['3']
+    second = home['4']
+
+    first.setup_files()
+    time.sleep(0.001)
+    second.setup_files()
+
+    assert first.started < second.started
 
 
 def test_make_child_with_meta(mk_project):

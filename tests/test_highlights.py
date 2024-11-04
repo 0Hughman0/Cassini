@@ -1,10 +1,11 @@
 import pytest # type: ignore[import]
 
-from cassini import Project, DEFAULT_TIERS
+from cassini import DEFAULT_TIERS, Project
+from cassini.testing_utils import get_Project, patch_project
 
 @pytest.fixture
-def mk_project(tmp_path):
-    Project._instance = None
+def mk_project(get_Project, tmp_path):
+    Project = get_Project
 
     # this crazy line is required for testing because cachedclassprop values may be set by other tests!    
     project = Project([type(cls.__name__, (cls,), {}) for cls in DEFAULT_TIERS], tmp_path)
@@ -25,8 +26,8 @@ def mk_project(tmp_path):
     return project
 
 
-def test_add_highlight(mk_project) -> None:
-    project: Project = mk_project
+def test_add_highlight(mk_project):
+    project = mk_project
 
     wp = project['WP1']
 
@@ -57,11 +58,6 @@ def test_add_highlight(mk_project) -> None:
 
     dset = project['WP1.1a-data']
 
-    assert dset.highlights_file is None 
-        
-    dset.add_highlight('test', [{'data': {}}])
-
-
-
-
+    with pytest.raises(AttributeError):
+        assert dset.highlights_file is None 
 
