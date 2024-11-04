@@ -45,7 +45,7 @@ jobs:
       - name: Build Main Docs
         run: |
           poetry install --with docs
-          poetry run mkdocs build -f doc_src/mkdocs.yml -d docs/latest
+          poetry run mkdocs build -f doc_src/mkdocs.yml -d ../docs/latest
       - name: Checkout 0.1.x
         uses: actions/checkout@v3
         with:
@@ -53,6 +53,7 @@ jobs:
           clean: false
       - name: Build Docs
         run: |
+          rm -f poetry.lock
           poetry install --with docs
           poetry run sphinx-build doc_src docs/0.1.x
       - name: Checkout 0.2.x
@@ -62,6 +63,7 @@ jobs:
           clean: false
       - name: Build 0.2.x Docs
         run: |
+          rm -f poetry.lock
           poetry install --with docs
           poetry run sphinx-build doc_src docs/0.2.x
       - name: Checkout 0.3.x
@@ -71,8 +73,9 @@ jobs:
           clean: false
       - name: Build Docs 0.3.x
         run: |
+          rm -f poetry.lock
           poetry install --with docs
-          poetry run mkdocs build -f doc_src/mkdocs.yml -d docs/0.3.x
+          poetry run mkdocs build -f doc_src/mkdocs.yml -d ../docs/0.3.x
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
