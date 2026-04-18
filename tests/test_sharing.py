@@ -286,7 +286,7 @@ def test_meta_wrapping(get_Project, tmp_path):
     assert tier.meta['started'] == now
 
 
-def test_making_share(get_Project, tmp_path):
+def test_making_share(get_Project, tmp_path, monkeypatch):
     Project = get_Project
     project = Project(DEFAULT_TIERS, tmp_path)
     shared_project = ShareableProject(location=tmp_path / 'shared')
@@ -305,6 +305,8 @@ def test_making_share(get_Project, tmp_path):
 
     stier / 'data.txt'
     child = stier['1']
+    
+    monkeypatch.chdir(tier.folder)  # Required because href assumes cwd is same as directory notebook open in
     child_href = child.href
 
     shared_project.make_shared()
