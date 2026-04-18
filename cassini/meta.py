@@ -540,13 +540,19 @@ class MetaAttr(Generic[AttrType, JSONType]):
         if self.cas_field:
             return self.name, (
                 self.json_type,
-                Field(
-                    default=self.default,
-                    json_schema_extra={"x-cas-field": self.cas_field},
+                cast(
+                    FieldInfo,
+                    Field(
+                        default=self.default,
+                        json_schema_extra={"x-cas-field": self.cas_field},
+                    ),
                 ),
             )
         else:
-            return self.name, (self.json_type, Field(default=self.default))
+            return self.name, (
+                self.json_type,
+                cast(FieldInfo, Field(default=self.default)),
+            )
 
 
 T = TypeVar("T")
