@@ -7,7 +7,7 @@ from .components import BaseTierGui
 
 warnings.warn(
     "Use of the ipy GUI is deprecrated, please use the JL GUI instead. This GUI will be removed in the next minor version",
-    DeprecationWarning
+    DeprecationWarning,
 )
 
 
