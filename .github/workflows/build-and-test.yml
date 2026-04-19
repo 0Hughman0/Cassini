@@ -31,7 +31,8 @@ jobs:
       uses: abatilo/actions-poetry@v3
     - name: Install dependencies
       run: |
-        poetry install --all-extras --python ${{ matrix.python-version }}  # stops poetry getting too clever and finding other python installs!
+        poetry env use ${{ matrix.python-version }}  # stops poetry getting too clever and finding other python installs!
+        poetry install --all-extras 
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
