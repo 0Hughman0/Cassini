@@ -30,7 +30,7 @@ Create a `cas_project.py`:
 
 And launch it:
 
-    > python project.py
+    > python cas_project.py
 
 Head to [Quickstart](https://0hughman0.github.io/Cassini/0.3.x/) for more info.
 

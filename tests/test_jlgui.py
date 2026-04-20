@@ -43,7 +43,7 @@ def test_gui_header(monkeypatch):
     monkeypatch.setattr(cassini.jlgui, 'publish_display_data', mock)
     gui = JLGui(None)
     gui.header()
-    assert mock.called_with({"application/cassini.header+json": {}})
+    assert mock.call_args.args == ({"application/cassini.header+json": {}},)
 
 
 def test_meta_editor_single_key(monkeypatch):

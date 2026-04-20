@@ -18,11 +18,15 @@ Dependencies and code isolation in jupyter_cassini are handled by [conda](https:
 
 To get started, create a new conda environment:
 
-    conda create -n jupyter_cassini python=3.8
+    conda create -n jupyter_cassini python=3.9
 
 Activate it!:
 
     conda activate jupyter_cassini
+
+You will likely need to install nodejs, which you can do with conda:
+
+    conda install nodejs
 
 Install ``jupyter_cassini_server`` in editable mode (this allows any changes to the server extension to be applied without reinstalling the extension):
 
