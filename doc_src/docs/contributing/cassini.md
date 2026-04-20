@@ -14,7 +14,7 @@ Then head into the directory:
 
 Let poetry install the project dependencies and set up a virtual environment:
 
-    poetry install --with dev
+    poetry install --with dev --all-extras
 
 You can then run the test suite with:
 

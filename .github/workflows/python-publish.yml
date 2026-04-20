@@ -24,14 +24,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.8
+    - name: Set up Python 3.9
       uses: actions/setup-python@v3
       with:
-        python-version: "3.8"
+        python-version: "3.9"
+    - name: Install Poetry
+      uses: abatilo/actions-poetry@v3
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        curl -sSL https://install.python-poetry.org | python3 -
         poetry install --all-extras
     - name: check tag and release version match
       shell: bash
@@ -62,11 +62,11 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: '3.8'
+        python-version: '3.9'
+    - name: Install Poetry
+      uses: abatilo/actions-poetry@v3
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        curl -sSL https://install.python-poetry.org | python3 -
         poetry install --all-extras
     - name: Build package
       run: poetry build
