@@ -34,8 +34,7 @@ jobs:
           exit 1
         fi
 
-        if [[ $THIS_VERSION =~ "a"]]; then
+        if [[ $THIS_VERSION =~ a ]] ; then
           echo "looks like an alpha version number, this should not be merged into a release branch"
           exit 1
         fi
-
