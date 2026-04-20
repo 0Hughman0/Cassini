@@ -63,6 +63,8 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: '3.9'
+    - name: Install Poetry
+      uses: abatilo/actions-poetry@v3
     - name: Install dependencies
       run: |
         poetry install --all-extras
