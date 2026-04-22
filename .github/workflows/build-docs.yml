@@ -29,10 +29,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.9
+      - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
-          python-version: "3.9"
+          python-version: "3.12"
       - name: Install Poetry
         uses: abatilo/actions-poetry@v3
       - name: Checkout Main
