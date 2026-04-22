@@ -29,6 +29,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      # Build latest docs
       - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
@@ -42,28 +43,20 @@ jobs:
           clean: false
       - name: Build Main Docs
         run: |
+          poetry env use python3.12
           poetry install --with docs
           poetry run mkdocs build -f doc_src/mkdocs.yml -d ../docs/latest
-      - name: Checkout 0.1.x
-        uses: actions/checkout@v3
+
+      # Build 0.3.x docs
+      - name: Build 0.3.x docs
+        run:
+          echo "building 0.3.x docs"
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v3
         with:
-          ref: 0.1.x
-          clean: false
-      - name: Build Docs
-        run: |
-          rm -f poetry.lock
-          poetry install --with docs
-          poetry run sphinx-build doc_src docs/0.1.x
-      - name: Checkout 0.2.x
-        uses: actions/checkout@v3
-        with:
-          ref: 0.2.x
-          clean: false
-      - name: Build 0.2.x Docs
-        run: |
-          rm -f poetry.lock
-          poetry install --with docs
-          poetry run sphinx-build doc_src docs/0.2.x
+          python-version: "3.12"
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
       - name: Checkout 0.3.x
         uses: actions/checkout@v3
         with:
@@ -72,6 +65,7 @@ jobs:
       - name: Build Docs 0.3.x
         run: |
           rm -f poetry.lock
+          poetry env use python3.12
           poetry install --with docs
           poetry run mkdocs build -f doc_src/mkdocs.yml -d ../docs/0.3.x
       - name: Setup Pages
